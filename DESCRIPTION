@@ -1,0 +1,25 @@
+Package: testerror
+Title: What the Package Does (One Line, Title Case)
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Robert",
+           family = "Challen",
+           role = c("aut", "cre"),
+           email = "rob.challen@bristol.ac.uk",
+           comment = c(ORCID = "0000-0002-5504-7768"))
+Description: What the package does (one paragraph).
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.2
+Imports: 
+    magrittr
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+Config/testthat/edition: 3
+URL: https://bristol-vaccine-centre.github.io/testerror/index.html,
+	https://github.com/bristol-vaccine-centre/testerror
+BugReports: https://github.com/bristol-vaccine-centre/testerror/issues
