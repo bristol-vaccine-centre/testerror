@@ -1,0 +1,799 @@
+---
+  title: "Uncertainty propagation in VE studies"
+output: html_document
+date: "2023-03-19"
+---
+  
+```{r setup, include=FALSE}
+library(tidyverse)
+library(rstan)
+knitr::opts_chunk$set(echo = TRUE)
+devtools::load_all()
+here::i_am("vignettes/stan-test.Rmd")
+source(here::here("vignettes/vignette-utils.R"))
+options(mc.cores = parallel::detectCores())
+# vignettes/latex/s2/fig
+```
+
+```{stan output.var="stan_model"}
+data {
+  int<lower = 0> y_sample;
+  int<lower = 0> n_sample;
+  int<lower = 0> y_spec;
+  int<lower = 0> n_spec;
+  int<lower = 0> y_sens;
+  int<lower = 0> n_sens;
+}
+parameters {
+  real<lower=0, upper = 1> p;
+  real<lower=0.8, upper = 1> spec;
+  real<lower=0.5, upper = 1> sens;
+}
+model {
+  real p_sample = p * sens + (1 - p) * (1 - spec);
+  y_sample ~ binomial(n_sample, p_sample);
+  y_spec ~ binomial(n_spec, spec);
+  y_sens ~ binomial(n_sens, sens);
+}
+```
+
+```{r}
+# data
+est_data = list(
+  y_sample = 50,
+  n_sample = 1000,
+  y_spec = 800-2*13,
+  n_spec = 800,
+  y_sens = 260*0.75,
+  n_sens = 260
+)
+
+```
+
+```{r}
+
+
+fit1 = rstan::sampling(
+  stan_model,
+  data = est_data,
+  chains = 4,
+  warmup = 2000,          # number of warmup iterations per chain
+  iter = 4000,            # total number of iterations per chain
+  show_messages = FALSE
+)
+
+# print(fit1)
+
+```
+
+```{r}
+pairs(fit1, pars=c("p","sens","spec"))
+
+draws = as.data.frame(fit1)
+# draws %>% summarise(across(-lp__, ~ sprintf("%1.3f [%1.3f \u2014 %1.3f]", quantile(.x,0.5), quantile(.x,0.025), quantile(.x,0.975))))
+
+summ <- summary(fit1, pars = c("p","sens","spec"))$summary
+tibble(
+  param = rownames(summ),
+  cred_int = sprintf("%1.3f [%1.3f \u2014 %1.3f]", summ[,"50%"], summ[,"2.5%"], summ[,"97.5%"])  
+)
+
+```
+
+# Less certain specificity
+
+```{stan output.var="stan_model_2"}
+data {
+  int<lower = 1> n_sample;
+  int<lower = 0,upper = 1> y_sample[n_sample];
+  
+  int<lower = 0> n_control;
+  int<lower = 0,upper = 1> y_control[n_control];
+  
+  int<lower = 0> n_disease;
+  int<lower = 0,upper = 1> y_disease[n_disease];
+  
+  
+  // specifity prior hyperparameters
+  real<lower = 0> a_spec;
+  real<lower = 0> b_spec;
+  
+  // sensitivity prior hyperparameters
+  real<lower = 0> a_sens;
+  real<lower = 0> b_sens;
+}
+parameters {
+  real<lower=0, upper = 1> p;
+  real<lower=0, upper = 1> spec;
+  real<lower=0, upper = 1> sens;
+}
+model {
+  
+  real p_sample = p * sens + (1 - p) * (1 - spec);
+  
+  sens ~ beta(a_sens, b_sens);
+  spec ~ beta(a_spec, b_spec);
+  
+  for (n in 1:n_control) {
+    y_control[n] ~ bernoulli(1-spec);
+  }
+  
+  for (n in 1:n_disease) {
+    y_disease[n] ~ bernoulli(sens);
+  }
+  
+  for (n in 1:n_sample) {
+    y_sample[n] ~ bernoulli(p_sample);
+  }
+  
+}
+```
+
+```{r}
+# data
+est_data_2 = list(
+  n_sample = 1000,
+  y_sample = c(rep(1,4), rep(0,996)),
+  n_control = 400,
+  # 1 FP + 399 TN
+  y_control = c(1,rep(0,399)),
+  n_disease = 100, # 0 to disable,
+  # 50 FN + 50 TP
+  y_disease = c(rep(0,50),rep(1,50)), # integer(),
+  a_spec = 398,
+  b_spec = 2,
+  a_sens = 1, # 260*0.75,
+  b_sens = 1 # 260*0.25
+)
+
+```
+
+```{r}
+fit_2 = rstan::sampling(
+  stan_model_2,
+  data = est_data_2,
+  chains = 4,
+  warmup = 2000,          # number of warmup iterations per chain
+  iter = 4000,            # total number of iterations per chain
+  show_messages = FALSE
+)
+
+# print(fit1)
+
+```
+
+```{r}
+pairs(fit_2, pars=c("p","sens","spec"))
+
+draws = as.data.frame(fit_2)
+# draws %>% summarise(across(-lp__, ~ sprintf("%1.3f [%1.3f \u2014 %1.3f]", quantile(.x,0.5), quantile(.x,0.025), quantile(.x,0.975))))
+
+summ <- summary(fit_2, pars = c("p","sens","spec"))$summary
+tibble(
+  param = rownames(summ),
+  cred_int = sprintf("%1.3f [%1.3f \u2014 %1.3f]", summ[,"50%"], summ[,"2.5%"], summ[,"97.5%"])  
+)
+
+```
+
+
+# Multiple tests
+
+```{stan output.var="stan_model_combined"}
+data {
+  int<lower = 1> n_test;
+  
+  // samples are rows; tests are columns although this is transposed in R
+  // a positive result is 1 a negative result is 0
+  int<lower = 1> n_sample;
+  int<lower = 0,upper = 1> y_sample[n_sample,n_test];
+  
+  // negative disease free controls (for sensitivity)
+  // a positive result is 1 a negative result is 0
+  int<lower = 0> n_control;
+  int<lower = 0,upper = 1> y_control[n_control,n_test];
+  
+  // positive disease present controls (for sensitivity)
+  // a positive result is 1 a negative result is 0
+  int<lower = 0> n_disease;
+  int<lower = 0,upper = 1> y_disease[n_disease,n_test];
+  
+  // specificity prior hyper-parameters
+  // a is true negatives
+  // b is false positives
+  real<lower = 0> a_spec;
+  real<lower = 0> b_spec;
+  
+  // sensitivity prior hyper-parameters
+  // a is true positives
+  // b is false negatives
+  real<lower = 0> a_sens;
+  real<lower = 0> b_sens;
+}
+transformed data {
+  // combine the results of n_test tests, for each of n_sample samples 
+  // (1=pos, 0=neg) with logical OR.
+  // this has to be done by iteration because of the way stan handles integers.
+  int<lower = 0,upper = 1> y_sample_combined[n_sample];
+  for (n in 1:n_sample) {
+    int tmp = 1;
+    for (t in 1:n_test) {
+      tmp *= 1-y_sample[n,t];
+    }
+    y_sample_combined[n] = 1-tmp;
+  }
+}
+parameters {
+  // The real prevalence of each of the components of the test
+  vector<lower=0, upper = 1>[n_test] p;
+  // The specificity of the component test
+  vector<lower=0.75, upper = 1>[n_test] spec;
+  // The sensitivity of the component test
+  vector<lower=0.5, upper = 1>[n_test] sens;
+  // The real prevalence of the combination of the panel
+  real<lower=0, upper = 1> p_combined;
+}
+transformed parameters {
+  
+  // this is the panel specificity from the formal analysis (supplementary 1)
+  real spec_combined = prod(spec);
+  // this is the panel sensitivity from the formal analysis (supplementary 1)
+  real sens_combined = 1-(
+    prod((1-sens) .* p + spec .* (1-p) ) - prod(spec .* (1-p))
+  )/(
+    1 - prod(1-p)
+  );
+}
+model {
+  
+  // the expected value of the apparent prevalence of the panel test:
+  real p_sample_combined = p_combined * sens_combined + (1 - p_combined) * (1 - spec_combined);
+  
+  // group observed test results of combined panel.
+  for (n in 1:n_sample) {
+    y_sample_combined[n] ~ bernoulli(p_sample_combined);
+  }
+  
+  for (t in 1:n_test) {
+    
+    // test-wise expected value of apparent prevalence of each component
+    real p_sample = p[t] * sens[t] + (1 - p[t]) * (1 - spec[t]);
+    
+    // test-wise sensitivity and specificity priors of each component.
+    sens[t] ~ beta(a_sens, b_sens);
+    spec[t] ~ beta(a_spec, b_spec);
+    
+    // test-wise specificity control group results for each component (optional)
+    for (n in 1:n_control) {
+      y_control[n,t] ~ bernoulli(1-spec[t]);
+    }
+    
+    // test-wise sensitivity control group results for each component (optional)
+    // TODO: needs rethink as different subtypes will not all be positive in a 
+    // supertype disease positive cohort. To get info about sensitivity we need
+    // an expected result per serotype.
+    // need to multiply this by an indicator function per seroptype whcih means
+    // we need to submit a full matrix of disease positive controls and serotype
+    // status and check against that, if we do this at all.
+    // for (n in 1:n_disease) {
+    //   y_disease[n,t] ~ bernoulli(sens[t]);
+    // }
+    
+    // test-wise observed test results for each component
+    for (n in 1:n_sample) {
+      y_sample[n,t] ~ bernoulli(p_sample);
+    }
+    
+  }
+  
+}
+
+```
+
+```{r}
+# data
+est_data_combined = list(
+  n_test = 2,
+  n_sample = 1000,
+  y_sample = t(matrix(c(
+    c(rep(0,990),rep(1,10)),
+    c(rep(1,20), rep(0,980))), nrow = 2, ncol = 1000, byrow = TRUE)),
+  n_control = 400,
+  y_control = t(matrix(c(
+    c(1,1,rep(0,398)),
+    c(1,rep(0,399))), nrow = 2, ncol = 400, byrow = TRUE)),
+  
+  n_disease = 0,
+  y_disease = t(matrix(numeric(), nrow = 2, ncol = 0, byrow = TRUE)),
+  
+  a_spec = 398,
+  b_spec = 2,
+  a_sens = 26*0.75,
+  b_sens = 26*0.25
+)
+
+```
+
+```{r}
+fit_combined = rstan::sampling(
+  stan_model_combined,
+  data = est_data_combined,
+  chains = 4,
+  warmup = 1000,          # number of warmup iterations per chain
+  iter = 2000,            # total number of iterations per chain
+  show_messages = FALSE
+)
+
+# print(fit1)
+
+```
+
+```{r}
+pairs(fit_combined, pars=c("p_combined","sens_combined","spec_combined"))
+
+draws = as.data.frame(fit_combined)
+# draws %>% summarise(across(-lp__, ~ sprintf("%1.3f [%1.3f \u2014 %1.3f]", quantile(.x,0.5), quantile(.x,0.025), quantile(.x,0.975))))
+
+summ <- summary(fit_combined, pars = c("p","sens","spec","p_combined","sens_combined","spec_combined"))$summary
+tibble(
+  param = rownames(summ),
+  cred_int = sprintf("%1.3f [%1.3f \u2014 %1.3f]", summ[,"50%"], summ[,"2.5%"], summ[,"97.5%"])  
+)
+```
+
+
+# pneumo serotype example
+
+```{r}
+
+
+# assume = list(
+#   comp_sens = 0.75,
+#   n_sens = 
+#   comp_spec = 
+# )
+
+```
+
+```{r}
+
+# Assume PCV13 serotype distribution as per IPD paper.
+# Assume component sensitivity 0.8 / spec = 0.9975
+# Assume component
+
+
+do_scenario = function(
+    pcv_group = c("PCV7","PCV13-7","PCV15-13","PCV20-15"), 
+    sens = 0.8, 
+    spec = 0.9975, 
+    # false_pos_controls = (n_controls)*(1-spec),
+    n_controls = 2/(1-spec),
+    # false_neg_diseased = (n_diseased)*(1-sens),
+    n_diseased = 20/(1-sens)
+) {
+  ipd = readRDS(here::here("vignettes/ipd-serotype-distribution.rds"))
+  serotype_prevalence = ipd$by_serotype %>% 
+    dtrackr::untrack() %>%
+    filter(pneumo.group %in% pcv_group) %>% 
+    mutate(n= sum(x)) %>%
+    mutate(binom::binom.confint(x,n,methods="wilson")) %>%
+    transmute(
+      test_id = pneumo.phe_serotype,
+      distribution = mean,
+      false_neg_rate = 1-sens, # + rlnorm(n(), log(0.01), 0.5),
+      n_diseased = n_diseased,
+      false_pos_rate = 1-spec, # + rlnorm(n(), log(0.005), 0.5),
+      n_controls = n_controls
+    ) %>%
+    cross_join(
+      tibble(
+        group_prevalence = seq(0.025, 0.2, 0.025),
+        group = sprintf("panel prev: %1.3f",seq(0.025, 0.2, 0.025))
+      )
+    ) %>%
+    mutate( 
+      false_neg_diseased = false_neg_rate * n_diseased, 
+      false_pos_controls = false_pos_rate * n_controls, 
+      # group = factor(sprintf("group %d",group))
+    ) %>%
+    group_by(group) %>%
+    group_modify(function(d,g,...) {
+      d %>% mutate(
+        group_size = n(),
+        prevalence = distribution*group_prevalence
+      )
+    })
+  
+    set.seed(101)
+    serotype_tests = serotype_prevalence %>%
+      group_by(across(starts_with("group"))) %>%
+      group_modify(sim_dist, n=1000, boots=1, exact=TRUE) %>%
+      group_by(across(c(starts_with("group"),starts_with("test")))) %>%
+      group_modify(sim_test_2) 
+
+    return(serotype_tests %>% group_by(group))
+}
+
+serotype_tests = do_scenario()
+
+# ggplot(serotype_prevalence_2, aes(x=false_neg_rate))+geom_density()
+# ggplot(serotype_prevalence_2, aes(x=false_pos_rate))+geom_density()
+
+
+
+
+# The simulated data (which is grouped) needs to be fed to stan.
+# the data has a pateint id (id) and a test id (test_id)
+```
+
+```{r}
+do_bayesian_model = function(d, g = tibble::tibble(), idCol = id, testIdCol = test_id, resultCol = test, sens = 0.8, spec = 0.9975, 
+                             #false_pos_controls = (n_controls-2/3)*(1-spec)+1/3,
+                             false_pos_controls = (n_controls)*(1-spec),
+                             n_controls = 1/(1-spec),
+                             #false_neg_diseased = (n_diseased-2/3)*(1-sens)+1/3,
+                             false_neg_diseased = (n_diseased)*(1-sens),
+                             n_diseased = 1/(1-sens), 
+                             controls = NULL, 
+                             diseased = NULL, ...) {
+  idCol = enexpr(idCol)
+  testIdCol = enexpr(testIdCol)
+  resultCol = enexpr(resultCol)
+  
+  tmp = d %>%
+    transmute(
+      id = !!idCol,
+      test_id = !!testIdCol,
+      result = !!resultCol
+    ) 
+  if (is.factor(tmp$test_id)) {
+    tests = levels(forcats::fct_drop(tmp$test_id))
+  } else {
+    tests = unique(tmp$test_id)
+  }
+  n_test = length(tests)
+  
+  tmp = tmp %>%
+    pivot_wider(names_from = test_id, values_from = result,values_fill = NA_integer_) %>%
+    select(-id) %>% 
+    as.matrix()
+  
+  if (!is.null(controls)) {
+    
+    y_control = controls %>%
+      transmute(
+        id = !!idCol,
+        test_id = !!testIdCol,
+        result = !!resultCol
+      ) %>%
+      pivot_wider(names_from = test_id, values_from = result,values_fill = NA_integer_) %>%
+      select(-id) %>% as.matrix()
+    
+  } else {
+    y_control =  matrix(numeric(), ncol = n_test, nrow = 0, byrow = TRUE)
+  }
+  
+  if (!is.null(diseased)) {
+    
+    y_disease = diseased %>%
+      transmute(
+        id = !!idCol,
+        test_id = !!testIdCol,
+        result = !!resultCol
+      ) %>%
+      pivot_wider(names_from = test_id, values_from = result,values_fill = NA_integer_) %>%
+      select(-id) %>% as.matrix()
+    
+  } else {
+    y_disease =  matrix(numeric(), ncol = n_test, nrow = 0, byrow = TRUE)
+  }
+  
+  est_data_combined = list(
+    n_test = n_test,
+    n_sample = nrow(tmp),
+    y_sample = tmp,
+    n_control = nrow(y_control),
+    y_control = y_control,
+    n_disease = nrow(y_disease),
+    y_disease = y_disease,
+    # Priors on sensitivity / specificity
+    a_spec = n_controls-false_pos_controls,
+    b_spec = false_pos_controls,
+    a_sens = n_diseased-false_neg_diseased,
+    b_sens = false_neg_diseased
+  )
+  
+  sens_prior = do.call(sprintf, c(list(fmt = "%1.4f [%1.4f \u2013 %1.4f]"), 1-false_neg_diseased/n_diseased, 
+                                  qbeta(c(0.025,0.975), shape1 = n_diseased-false_neg_diseased, shape2 = false_neg_diseased)))
+  
+  spec_prior = do.call(sprintf, c(list(fmt = "%1.4f [%1.4f \u2013 %1.4f]"), 1-false_pos_controls/n_controls, 
+                                  qbeta(c(0.025,0.975), shape1 = n_controls-false_pos_controls, shape2 = false_pos_controls)))
+  
+  fit_combined = rstan::sampling(
+    stan_model_combined,
+    data = est_data_combined,
+    chains = 4,
+    warmup = 1000,          # number of warmup iterations per chain
+    iter = 2000,            # total number of iterations per chain
+    show_messages = FALSE
+  )
+  
+  summ = summary(fit_combined, pars = c("p","sens","spec"))$summary
+  
+  summ2 = as_tibble(summ,rownames = "param") %>% 
+    mutate(
+      test_id = tests[as.integer(stringr::str_extract(param,"[0-9]+"))],
+      param = stringr::str_extract(param,"[a-zA-Z]+")
+    )
+  
+  comb_summ = summary(fit_combined, pars = c("p_combined","sens_combined","spec_combined"))$summary
+  comb_summ2 = as_tibble(comb_summ,rownames = "param") %>% 
+    mutate(
+      param = stringr::str_extract(param,"[a-zA-Z]+")
+    )
+  
+  return(
+    tibble(
+      data = list(est_data_combined),
+      stanfit = list(fit_combined),
+      component = list(summ2),
+      panel = list(comb_summ2),
+      tests = list(tests),
+      sens_prior = sens_prior,
+      spec_prior = spec_prior
+    )
+  )
+}
+
+tmp = serotype_tests %>% 
+  # filter(group == "panel prev: 0.200") %>% 
+  group_by(group) %>%
+  group_modify(do_bayesian_model, sens=0.8, spec = 0.9975, n_controls=800, n_diseased=26)
+
+# tmp %>% select(group,sens_prior, spec_prior, panel) %>% unnest(panel)
+
+# pairs(tmp$stanfit[[1]], pars=c("p_combined","sens_combined","spec_combined"))
+```
+
+```{r}
+
+do_plots = function(tmp, serotype_tests) {
+
+  disagg_prev = serotype_tests %>%
+    group_by(group, test_id, test_sens, test_spec, test_prevalence) %>%
+    summarise(
+      actual = sum(actual),
+      test = sum(test),
+      total = n()
+    ) %>% 
+    mutate(
+      actual_prevalence = actual/total,
+      prev.est = testerror::rogan_gladen(test/total, test_sens, test_spec)
+    )
+  
+  combined_prev = serotype_tests %>% 
+    rename(sens = test_sens, spec = test_spec, prevalence = test_prevalence) %>%
+    group_by(across(starts_with("group"))) %>% 
+    estimate_panel_performance(test_id) %>%
+    mutate(
+      prev_est.0.5 = testerror::rogan_gladen(panel_apparent_prevalence, panel_sens_est, panel_spec),
+      panel_actual_prevalence = actual/total
+    )
+  
+  sens_prior = do.call(sprintf, c(list(fmt = "%1.2f [%1.2f\u2013%1.2f]"), tmp$data[[1]]$a_sens/ (tmp$data[[1]]$a_sens + tmp$data[[1]]$b_sens), 
+                                  qbeta(c(0.025,0.975), shape1 = tmp$data[[1]]$a_sens, shape2 = tmp$data[[1]]$b_sens)))
+  
+  spec_prior = do.call(sprintf, c(list(fmt = "%1.2f [%1.2f\u2013%1.2f]"), tmp$data[[1]]$a_spec/ (tmp$data[[1]]$a_spec + tmp$data[[1]]$b_spec), 
+                                  qbeta(c(0.025,0.975), shape1 = tmp$data[[1]]$a_spec, shape2 = tmp$data[[1]]$b_spec)))
+  
+  #priors = sprintf("prior:\nsens: %s\nspec: %s", sens_prior, spec_prior)
+  priors = sprintf("prior:\nsens: %s", sens_prior)
+  #params = sprintf("simulation:\nsens: %s\nspec: %s",unique(serotype_tests$test_sens),unique(serotype_tests$test_spec))
+  params = sprintf("simulation:\nsens: %1.2f",unique(serotype_tests$test_sens))
+  
+  comp_tmp = tmp %>% select(group,component) %>% unnest(component) %>% filter(param=="p") %>%
+    left_join(disagg_prev %>% mutate(test_id = as.character(test_id)), by=c("group","test_id")) %>%
+    mutate(binom_ci_2(test,total,"apparent"))
+  
+  panel_tmp = tmp %>% select(group,panel) %>% unnest(panel) %>%  filter(param=="p") %>%
+    inner_join(combined_prev,by="group") %>%
+    mutate(binom_ci_2(test,total,"apparent"))
+  
+  
+  p1 = ggplot(comp_tmp, aes(x=actual_prevalence, y= `50%`, ymin=`2.5%`, ymax=`97.5%`))+
+    geom_point(position=position_nudge(x=0.001), size=0.25)+
+    geom_errorbar(position=position_nudge(x=0.001), width = 0, alpha=0.4)+
+    geom_abline(colour="grey")+
+    coord_fixed(xlim=c(0,0.1),ylim=c(0,0.1))+
+    #geom_point(aes(y=prev.est), colour="magenta", size=1)+
+    geom_point(aes(y=apparent.0.5), colour="red",position=position_nudge(x=-0.001/2.5), size=0.25)+
+    geom_errorbar(aes(ymin=apparent.0.025, ymax=apparent.0.975), colour="red",position=position_nudge(x=-0.001/2.5), width = 0, alpha=0.4)+
+    annotate("text", x=0.005, y=0.095, label = params, vjust="inward", hjust="inward")+
+    annotate("text", x=0.095, y=0.005, label = priors, vjust="inward", hjust="inward")+
+    xlab("simulation prevalence")+
+    ylab("estimated prevalence")+
+    facet_wrap(~"components")
+  
+  p2 = ggplot(panel_tmp, aes(x=panel_actual_prevalence, y= `50%`, ymin=`2.5%`, ymax=`97.5%`))+
+    geom_point(position=position_nudge(x=0.001),  size=0.25)+
+    geom_errorbar(position=position_nudge(x=0.001), width = 0, alpha=0.4)+
+    geom_abline(colour="grey")+
+    coord_fixed(xlim=c(0,0.25),ylim=c(0,0.25))+
+    #geom_point(aes(y=prev_est.0.5), colour="magenta", size=1)+
+    geom_point(aes(y=apparent.0.5), colour="red",position=position_nudge(x=-0.001),  size=0.25)+
+    geom_errorbar(aes(ymin=apparent.0.025, ymax=apparent.0.975), colour="red",position=position_nudge(x=-0.001), width = 0, alpha=0.4)+
+    annotate("text", x=0.01, y=0.24, label = params, vjust="inward", hjust="inward")+
+    annotate("text", x=0.24, y=0.01, label = priors, vjust="inward", hjust="inward")+
+    xlab("simulation prevalence")+
+    ylab("estimated prevalence")+
+    facet_wrap(~"panel")
+  
+  # browser()
+  
+  p3 = ggplot(comp_tmp %>% 
+           filter(group == "panel prev: 0.100") %>%
+           mutate(test_id = factor(test_id,tmp$tests[[1]]))
+         , aes(x=test_id, y=test))+geom_bar(stat="identity",fill="grey80")+
+    geom_errorbar(aes(ymin=actual,ymax=actual),colour="#8080FF")+
+    geom_point(aes(y=`50%`*1000), colour="black",size=1)+
+    geom_errorbar(aes(ymin=`2.5%`*1000, ymax=`97.5%`*1000), colour="black",width=0)+
+    ggpp::annotate("text_npc", npcx = 0.05, npcy = 0.95, label = sprintf("prevalence: 0.1\n\n%s \n\n%s", priors, params), size=6/ggplot2::.pt )+
+    xlab(NULL)+ylab("count")+coord_cartesian(ylim=c(0,150))
+  
+  p4 = ggplot(panel_tmp %>% 
+           filter(group == "panel prev: 0.100")
+         , aes(x=factor("PCV20"), y=test))+geom_bar(stat="identity",fill="grey80")+
+    geom_errorbar(aes(ymin=actual,ymax=actual),colour="#8080FF")+
+    geom_point(aes(y=`50%`*1000), colour="black",size=1)+
+    geom_errorbar(aes(ymin=`2.5%`*1000, ymax=`97.5%`*1000), colour="black",width=0)+
+    xlab(NULL)+ylab("count")+coord_cartesian(ylim=c(0,150))
+  
+  p5 = p3+p4+no_y()+patchwork::plot_layout(nrow=1,widths = c(20,1))
+  
+  return(list(p1,p2,p5))
+}
+
+p = tmp %>% do_plots(serotype_tests)
+p
+```
+
+
+```{r}
+serotype_tests_60 = do_scenario(
+  spec = 0.9975,n_controls = 800,
+  sens = 0.6,n_diseased = 260
+)
+
+model_60 = serotype_tests_60 %>% 
+  # filter(group == "panel prev: 0.200") %>% 
+  group_by(group) %>%
+  group_modify(do_bayesian_model, sens=0.6, spec = 0.9975, n_controls=800, n_diseased=26)
+
+p_60 = model_60 %>% do_plots(serotype_tests_60)
+
+p_60
+```
+
+
+```{r}
+serotype_tests_75 = do_scenario(
+  spec = 0.9975,n_controls = 800,
+  sens = 0.75,n_diseased = 260
+)
+
+model_75 = serotype_tests_75 %>% 
+  # filter(group == "panel prev: 0.200") %>% 
+  group_by(group) %>%
+  group_modify(do_bayesian_model, sens=0.75, spec = 0.9975, n_controls=800, n_diseased=26)
+
+p_75 = model_75 %>% do_plots(serotype_tests_75)
+
+p_75
+```
+
+```{r}
+serotype_tests_90 = do_scenario(
+  spec = 0.9975,n_controls = 800,
+  sens = 0.90,n_diseased = 260
+)
+
+model_90 = serotype_tests_90 %>% 
+  # filter(group == "panel prev: 0.200") %>% 
+  group_by(group) %>%
+  group_modify(do_bayesian_model, sens=0.90, spec = 0.9975, n_controls=800, n_diseased=26)
+
+p_90 = model_90 %>% do_plots(serotype_tests_90)
+
+p_90
+```
+
+```{r}
+
+p = p_60[[1]]+ no_x()+ #facet_grid("sens: 0.60"~"components")+
+  p_60[[2]]+ no_x()+ #facet_grid("sens: 0.60"~"panel")+
+  p_75[[1]]+ no_x()+ #facet_grid("sens: 0.75"~"components")+
+  p_75[[2]]+ no_x()+ #facet_grid("sens: 0.75"~"panel")+
+  p_90[[1]]+ #facet_grid("sens: 0.90"~"components")+
+  p_90[[2]]+ #facet_grid("sens: 0.90"~"panel")+
+  plot_layout(ncol=2)+plot_annotation(tag_levels = "A")
+
+save_as(p, here::here("vignettes/latex/s2/figs/bayesian-sim"),size = std_size$full)
+
+
+p2 = 
+  p_60[[2]]+ #facet_grid("sens: 0.60"~"panel")+
+  p_75[[2]]+ no_y()+ #facet_grid("sens: 0.75"~"panel")+
+  p_90[[2]]+ no_y()+ #facet_grid("sens: 0.90"~"panel")+
+  plot_layout(ncol=3)+plot_annotation(tag_levels = "A")
+
+p6 = (p2)+p_90[[3]]+plot_layout(design = "
+AAAAAAABBBBBBBCCCCCCC
+AAAAAAABBBBBBBCCCCCCC
+AAAAAAABBBBBBBCCCCCCC
+AAAAAAABBBBBBBCCCCCCC
+AAAAAAABBBBBBBCCCCCCC
+AAAAAAABBBBBBBCCCCCCC
+AAAAAAABBBBBBBCCCCCCC
+DDDDDDDDDDDDDDDDDDDEE
+DDDDDDDDDDDDDDDDDDDEE
+DDDDDDDDDDDDDDDDDDDEE
+DDDDDDDDDDDDDDDDDDDEE
+DDDDDDDDDDDDDDDDDDDEE
+DDDDDDDDDDDDDDDDDDDEE
+")
+                           
+                           
+
+save_as(p2, here::here("vignettes/latex/main/figs/bayesian-sim"),size = std_size$third)
+
+save_as(p_90[[3]], here::here("vignettes/latex/main/figs/sim-90-example"),size = std_size$third)
+```
+
+
+```{r}
+serotype_tests_60_90 = do_scenario(
+  spec = 0.9975,n_controls = 800,
+  sens = 0.60,n_diseased = 260
+)
+
+model_60_90 = serotype_tests_60_90 %>% 
+  # filter(group == "panel prev: 0.200") %>% 
+  group_by(group) %>%
+  group_modify(do_bayesian_model, sens=0.90, spec = 0.9975, n_controls=800, n_diseased=26)
+
+p_60_90 = model_60_90 %>% do_plots(serotype_tests_60_90)
+
+p_60_90
+```
+
+
+```{r}
+serotype_tests_90_60 = do_scenario(
+  spec = 0.9975,n_controls = 800,
+  sens = 0.90,n_diseased = 260
+)
+
+model_90_60 = serotype_tests_90_60 %>% 
+  # filter(group == "panel prev: 0.200") %>% 
+  group_by(group) %>%
+  group_modify(do_bayesian_model, sens=0.60, spec = 0.9975, n_controls=800, n_diseased=26)
+
+p_90_60 = model_90_60 %>% do_plots(serotype_tests_90_60)
+
+p_90_60
+```
+
+```{r}
+
+p = p_60_90[[2]]+ #facet_grid("sens: 0.60"~"panel")+
+  p_90_60[[2]]+no_y()+ #facet_grid("sens: 0.90"~"panel")+
+  plot_layout(ncol=2)+plot_annotation(tag_levels = "A")
+
+save_as(p, here::here("vignettes/latex/s2/figs/bayesian-sim-mismatch"),size = std_size$third)
+
+```
+```{r}
+model_90 %>% filter(group=="panel prev: 0.100") %>% select(component) %>% unnest(component) %>% filter(param=="p")
+model_90 %>% filter(group=="panel prev: 0.100") %>% select(panel) %>% unnest(panel) %>% filter(param=="p")
+
+```

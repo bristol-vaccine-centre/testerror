@@ -1,0 +1,673 @@
+---
+title: "Test combination"
+output: html_document
+---
+
+
+If you have 24 tests with a specificity of "at least 97%", and you apply them to 
+a population with between 1-2% prevalance for each test result, 
+and you then combine the test results, 
+what do you expect the specificity of the combined result to be?
+
+```{r setup}
+library(tidyverse)
+
+here::i_am("vignettes/test-combination.Rmd")
+source(here::here("vignettes/vignette-utils.R"))
+devtools::load_all()
+```
+
+replicate theoretical distributions results
+
+```{r}
+
+# * false_pos_controls: the number of positives that appeared in the specificity
+#   disease-free control group. These are by definition false positives. This
+#   is (1-specificity)*n_controls
+# * n_controls the number of controls in the specificity disease-free control group. 
+# * false_neg_diseased the number of negatives that appeared in the sensitivity
+#   confirmed disease group. These are by definition false negatives. This
+#   is (1-sensitivity)*n_controls
+# * n_diseased the number of confirmed disease cases in the sensitivity control group.
+
+serotype_prevalence = tribble(
+  ~name, ~rel_prop, ~false_neg_diseased, ~n_diseased, ~false_pos_controls, ~n_controls,
+  "Sim 1x16%", 1, 0.25*260, 260, 2, 800
+) %>% update_prevalence(prevalence = 0.16)
+
+test1 = serotype_prevalence %>%
+  group_by(across(everything())) %>%
+  group_modify(sim_pop, exact=TRUE, boots=100) %>%
+  group_modify(sim_test) %>%
+  group_by(name) %>%
+  combine_as_panel() %>% 
+  summarise_boots()
+
+serotype_prevalence2 = tribble(
+  ~name, ~rel_prop, ~false_neg_diseased, ~n_diseased, ~false_pos_controls, ~n_controls,
+  "Sim 20x0.5%", 1, 0.25*260, 260, 2, 800
+) %>% inner_join(tibble(test_name = 1:20), by=character()) %>% 
+  update_prevalence(prevalence = 0.005*20,global = FALSE)
+
+test2 = serotype_prevalence2 %>%
+  group_by(across(everything())) %>%
+  group_modify(sim_pop, exact=TRUE, boots=100, n=1000) %>%
+  group_modify(sim_test) %>%
+  group_by(name) %>%
+  combine_as_panel() %>% 
+  summarise_boots()
+
+t = bind_rows(test1,test2) %>%
+  group_by(col = name) %>%
+  select(
+    N = total, 
+    Prevalence = true_prevalence, 
+    Sensitivity = sens_est,
+    Specificity = spec_est,
+    `Condition pos` = actual,
+    FP = FP,
+    FN = FN,
+    `Test pos` = test
+  ) %>%
+  mutate(across(everything(), as.character)) %>%
+  ungroup() %>%
+  pivot_longer(-col, names_to = "characteristic", values_to = "value") %>%
+  ggrrr::hux_tidy(rowGroupVars = vars(characteristic), colGroupVars = vars(col))
+
+t
+
+
+# t %>% table_to_google("Combined panel tests", 4)
+
+```
+
+# pre
+
+```{r}
+
+serotype_prevalence_2 = tribble(
+  ~false_neg_diseased, ~n_diseased, ~false_pos_controls, ~n_controls,
+  0.25*260, 260, 2, 800
+) %>% inner_join(tibble(
+  prevalence = seq(0,0.022,length.out=12)
+), by=character()) %>%
+mutate( 
+  group = sprintf("group %0.2d",(row_number()+3) %/% 4),
+  name = sprintf("subtype %0.2d",row_number()),
+  params = sprintf("prev=%1.2f%%; sens=%1.4f; spec=%1.4f", prevalence*100, 1-false_neg_diseased/n_diseased, 1-false_pos_controls/n_controls) 
+)
+
+set.seed(101)
+
+serotype_tests_2 = serotype_prevalence_2 %>%
+  group_by(across(everything())) %>%
+  group_modify(sim_pop) %>%
+  group_modify(sim_test) 
+
+serotype_group_2 = serotype_tests_2 %>%
+  group_by(group,name,params) %>%
+  combine_as_panel() %>%
+  inner_join(serotype_prevalence_2, by=c("name","params","group")) %>%
+  mutate(
+    p_value = fp_p_value(
+      pos_obs = test,
+      n_obs = total,
+      false_pos_controls = false_pos_controls, n_controls = n_controls),
+    sig_level = fp_signif_level(
+      n_obs = total,
+      false_pos_controls = false_pos_controls, n_controls = n_controls),
+    true_prevalence(
+      pos_obs = test,
+      n_obs = total,
+      false_neg_diseased = false_neg_diseased, n_diseased = n_diseased, 
+      false_pos_controls = false_pos_controls, n_controls = n_controls)
+  )
+
+
+# single boot
+t2 = serotype_group_2 %>% 
+  filter(boot == 1) %>%
+  ungroup() %>%
+  transmute(
+    Group = group, 
+    Simulation = name, 
+    Params = params,
+    `Condition pos` = sprintf("%d",actual), 
+    `Test pos` = sprintf("%d",test),  
+    `P-value` = format_fp_p_value(p_value,bonferroni = 12)
+  ) %>% ggrrr::hux_default_layout()
+  
+t2 # %>% table_to_google("Combined panel tests", 5, colWidths = c(1,1,3,1,1,1))
+
+t3 = serotype_group_2 %>% 
+  mutate(signif_0.05 = p_value < 0.05) %>%
+  select(-prevalence.method) %>%
+  summarise_boots() %>%
+  transmute(
+    Group = group, 
+    `Simulation x100` = name, 
+    `Condition pos` = actual, 
+    `Test pos` = test, 
+    `P-value` = p_value,
+    `Reached significance` = signif_0.05
+  ) %>% ggrrr::hux_default_layout()
+
+t3 # %>% table_to_google("Combined panel tests", 6, colWidths = c(0.75,1,1.25,1.5,2,1))
+
+# The confidence limits
+
+t4 = serotype_group_2 %>% 
+  filter(boot == 1) %>%
+  ungroup() %>%
+  transmute(
+    Group = group, 
+    Simulation = name,
+    `Condition pos / Test pos` = sprintf("%d / %d",actual, test),  
+    `True prevalence` = sprintf("%1.2f%%", prevalence*100),
+    `Apparent prevalence` = sprintf("%1.2f%%", prevalence.apparent*100),
+    `Adjusted Prevalence` = sprintf("%1.2f%% [%1.2f \u2014 %1.2f]",prevalence.median*100, prevalence.lower*100, prevalence.upper*100),
+  ) %>% ggrrr::hux_default_layout()
+  
+t4 # %>% table_to_google("Combined panel tests", 9, colWidths = c(1,1,1,1,1,2))
+
+t5 = serotype_group_2 %>% 
+  mutate(
+    calibration = mean(prevalence.lower <= prevalence & prevalence.upper >= prevalence),
+    prevalence.median = prevalence.median*100,
+    prevalence.apparent = prevalence.apparent *100
+  ) %>%
+  group_by(calibration, prevalence, .add=TRUE) %>%
+  select(-prevalence.method) %>%
+  summarise_boots() %>%
+  transmute(
+    Group = group, 
+    `Simulation x100` = name,
+    `True prevalence (%)` = as.character(prevalence*100),
+    `Apparent prevalence (%)` = prevalence.apparent,
+    `Median adjusted prevalence (%)` = prevalence.median, 
+    `Calibration` = calibration
+  ) %>% ggrrr::hux_default_layout()
+
+t5 # %>% table_to_google("Combined panel tests", 10, colWidths = c(0.75,1,1,2,2,1))
+
+```
+
+# agg to panel - p value:
+
+```{r}
+combined_prev = serotype_tests_2 %>% 
+  group_by(group) %>% 
+  estimate_panel_performance(name)
+  # summarise(
+  #   # So this is the bit we are uncertain about - how do we combine the false 
+  #   # negatives to get an estimate of sensitivity of the combined test.
+  #   false_neg_diseased = max(false_neg_diseased), 
+  #   n_diseased = max(n_diseased), 
+  #   false_pos_controls = sum(false_pos_controls), # ignoring collisions of false positive controls accross tests
+  #   # false_pos_controls = max(n_controls) - (1-prod(1-false_pos_controls/n_controls)), # assuming duplicates FP occur at random.
+  #   n_controls = max(n_controls),
+  #   prevalence = 1-prod(1-prevalence),
+  #   panel_sensitivity = testerror::panel_sens(prevalence, 1-false_neg_diseased/n_diseased, 1-false_pos_controls/n_controls),
+  #   panel_specificity = testerror::panel_spec(1-false_pos_controls/n_controls)
+  # )
+
+ggplot(combined_prev)+
+  geom_density(aes(x=sens_est.0.5))+
+  #geom_density(aes(x=panel_sens_est))+
+  geom_vline(aes(xintercept=panel_sens))+
+  facet_wrap(~group)
+
+ggplot(combined_prev)+
+  geom_density(aes(x=spec_est.0.5))+
+  #geom_density(aes(x=panel_sens_est))+
+  geom_vline(aes(xintercept=panel_spec))+
+  facet_wrap(~group)
+
+ggplot(combined_prev)+
+  # geom_density(aes(x=sens_est))+
+  geom_density(aes(x=panel_sens_est))+
+  geom_vline(aes(xintercept=panel_sens))+
+  facet_wrap(~group)
+
+
+combined_prev %>% filter(panel_sens_est < 0.7) %>% select(boot,group)
+# group 01, boot 13
+serotype_tests_2 %>% filter(boot == 13 & group == "group 01") %>% view()
+serotype_tests_2 %>% filter(boot == 13 & group == "group 01") %>% group_by(name) %>% summarise(act = sum(actual), test = sum(test))
+
+
+combined_prev %>% group_by(group) %>%
+  summarise(
+    
+    sens = sprintf("%1.3f [%1.3f \u2014 %1.3f]",quantile(sens_est,0.5),quantile(sens_est,0.025),quantile(sens_est,0.975)),
+    panel_sens = mean(panel_sens),
+    
+    spec = sprintf("%1.3f [%1.3f \u2014 %1.3f]",quantile(spec_est,0.5),quantile(spec_est,0.025),quantile(spec_est,0.975)),
+    panel_spec = mean(panel_spec)
+  )
+
+combined_prev %>% group_by(group, panel_sens, panel_spec) %>%
+  summarise(
+    TP = sum(TP),
+    FP = sum(FP),
+    TN = sum(TN),
+    FN = sum(FN),
+    panel_sens_est.0.5 = quantile(panel_sens_est,0.5),
+    panel_sens_est.0.025 = quantile(panel_sens_est,0.025),
+    panel_sens_est.0.975 = quantile(panel_sens_est,0.975)
+  ) %>% mutate(
+    binom_ci_2(TP, TP+FN, "sens"),
+    binom_ci_2(TN, TN+FP, "spec"),
+    calibrated_sens = panel_sens > sens.0.025 & panel_sens < sens.0.975,
+    calibrated_spec = panel_spec > spec.0.025 & panel_spec < spec.0.975
+  )
+```
+
+```{r}
+serotype_group_2b = serotype_tests_2 %>%
+  group_by(group) %>%
+  combine_as_panel() %>%
+  inner_join(
+    combined_prev, by = c("group")
+  ) %>%
+  mutate(
+    p_value = fp_p_value(
+      pos_obs = test,
+      n_obs = total,
+      false_pos_controls = false_pos_controls, n_controls = n_controls),
+    sig_level = fp_signif_level(
+      n_obs = total,
+      false_pos_controls = false_pos_controls, n_controls = n_controls),
+    true_prevalence(
+      pos_obs = test,
+      n_obs = total,
+      false_neg_diseased = false_neg_diseased, n_diseased = n_diseased, 
+      false_pos_controls = false_pos_controls, n_controls = n_controls)
+  )
+
+# single boot
+t2 = serotype_group_2b %>% 
+  filter(boot == 1) %>%
+  ungroup() %>%
+  transmute(
+    Group = group,
+    `Prevalence` = sprintf("%1.2f%%", prevalence*100),
+    `Condition pos` = sprintf("%d",actual), 
+    `Test pos` = sprintf("%d",test), 
+    `P-value` = format_fp_p_value(p_value,bonferroni = 3)
+  ) %>% ggrrr::hux_default_layout()
+  
+t2 # %>% table_to_google("Combined panel tests", 7, colWidths = c(1,1,1,1,1))
+
+t3 = serotype_group_2b %>% 
+  mutate(signif_0.05 = p_value < 0.05) %>%
+  select(-prevalence.method) %>%
+  summarise_boots() %>%
+  transmute(
+    `Group x100` = group, 
+    `Condition pos` = actual, 
+    `Test pos` = test, 
+    `P-value` = p_value,
+    `Reached significance` = signif_0.05
+  ) %>% ggrrr::hux_default_layout()
+
+t3 # %>% table_to_google("Combined panel tests", 8, colWidths = c(1,2,2,3,2))
+
+# The confidence limits
+
+t4 = serotype_group_2b %>% 
+  filter(boot == 1) %>%
+  ungroup() %>%
+  transmute(
+    Group = group, 
+    `Condition pos / Test pos` = sprintf("%d / %d",actual, test),  
+    `True prevalence` = sprintf("%1.2f%%", prevalence*100),
+    `Apparent prevalence` = sprintf("%1.2f%%", prevalence.apparent*100),
+    `Adjusted Prevalence` = sprintf("%1.2f%% [%1.2f \u2014 %1.2f]",prevalence.median*100, prevalence.lower*100, prevalence.upper*100),
+  ) %>% ggrrr::hux_default_layout()
+  
+t4 # %>% table_to_google("Combined panel tests", 11, colWidths = c(1,1,1,1,2))
+
+t5 = serotype_group_2b %>% 
+  select(-prevalence.method) %>%
+  mutate(
+    calibration = mean(prevalence.lower <= prevalence & prevalence.upper >= prevalence),
+    prevalence.median = prevalence.median*100
+  ) %>%
+  group_by(calibration, prevalence, .add=TRUE) %>%
+  summarise_boots() %>%
+  transmute(
+    `Group x100` = group, 
+    `True prevalence (%)` = sprintf("%1.2f%%", prevalence*100),
+    `Apparent prevalence (%)` = prevalence.apparent,
+    `Median adjusted prevalence (%)` = prevalence.median, 
+    `Calibration` = calibration
+  ) %>% ggrrr::hux_default_layout()
+
+t5 # %>% table_to_google("Combined panel tests", 12, colWidths = c(1,1,2,2,1))
+
+```
+
+```{r}
+
+# grand total group 
+
+combined_prev_total = serotype_prevalence_2 %>% 
+  summarise(
+    # So this is the bit we are uncertain about - how do we combine the false 
+    # negatives to get an estimate of sensitivity of the combined test.
+    false_neg_diseased = max(false_neg_diseased), 
+    n_diseased = max(n_diseased), 
+    false_pos_controls = sum(false_pos_controls), # ignoring collisions of false positive controls accross tests
+    # false_pos_controls = max(n_controls) - (1-prod(1-false_pos_controls/n_controls)), # assuming duplicates FP occur at random.
+    n_controls = max(n_controls),
+    prevalence = 1-prod(1-prevalence)
+  )
+
+
+serotype_group_2c = serotype_tests_2 %>%
+  ungroup %>%
+  combine_as_panel() %>%
+  inner_join(
+    combined_prev_total, by=character()
+  ) %>%
+  mutate(
+    p_value = fp_p_value(
+      pos_obs = test,
+      n_obs = total,
+      false_pos_controls = false_pos_controls, n_controls = n_controls),
+    sig_level = fp_signif_level(
+      n_obs = total,
+      false_pos_controls = false_pos_controls, n_controls = n_controls),
+    true_prevalence(
+      pos_obs = test,
+      n_obs = total,
+      false_neg_diseased = false_neg_diseased, n_diseased = n_diseased, 
+      false_pos_controls = false_pos_controls, n_controls = n_controls)
+  )
+
+combined_table = bind_rows(
+  serotype_group_2 %>% 
+  filter(boot == 1) %>%
+  ungroup() %>%
+  transmute(
+    Group = group, 
+    Type = name,
+    `Test positives` = sprintf("%d", test),  
+    `P-value` = format_fp_p_value(p_value,bonferroni = 12, format="%1.3f", lim = 0.001),
+    `Adjusted Prevalence [95% CI]` = sprintf("%1.2f%% [%1.2f \u2014 %1.2f]",prevalence.median*100, prevalence.lower*100, prevalence.upper*100),
+  ),
+
+serotype_group_2b %>% 
+  filter(boot == 1) %>%
+  ungroup() %>%
+  transmute(
+    Group = group, 
+    Type = group, 
+    `Test positives` = sprintf("%d", test),  
+    `P-value` = format_fp_p_value(p_value,bonferroni = 3, format="%1.3f", lim = 0.001),
+    `Adjusted Prevalence [95% CI]` = sprintf("%1.2f%% [%1.2f \u2014 %1.2f]",prevalence.median*100, prevalence.lower*100, prevalence.upper*100),
+  ),
+  
+  serotype_group_2c %>% 
+    filter(boot == 1) %>%
+    ungroup() %>%
+    transmute(
+      Group = "total", 
+      Type = "total",
+      `Test positives` = sprintf("%d", test),  
+      `P-value` = format_fp_p_value(p_value,bonferroni = 12, format="%1.3f", lim = 0.001),
+      `Adjusted Prevalence [95% CI]` = sprintf("%1.2f%% [%1.2f \u2014 %1.2f]",prevalence.median*100, prevalence.lower*100, prevalence.upper*100),
+    )
+) 
+
+levels = c("total",as.vector(sapply(1:3, function(x) c(sprintf("group %0.2d",x), sapply(((x-1)*4)+1:4, function(y) sprintf("subtype %0.2d",y))))))
+
+tx = combined_table %>% mutate(
+  col = "Total (N=1000)",
+  Type = factor(Type, levels)
+  ) %>%
+  ggrrr::hux_tidy(rowGroupVars = vars(Group,Type), colGroupVars = vars(col)) %>%
+  `[`(-1)
+
+tx # %>% table_to_google("Combined panel tests", 13, colWidths = c(1,1,1,2))
+
+```
+
+```{r}
+
+p = ggplot(serotype_group_2 %>% 
+  unnest(lang_set) %>%
+  filter(boot == 1), aes(x=name, colour = group, y=median*100, ymin=lower*100, ymax=upper*100))+geom_point(size=1)+geom_errorbar(width=0.4)+
+  ylab("Adjusted prevalence (%)")+
+  xlab(NULL)
+
+p %>% plot_to_google("Combined panel tests", 4, size = std_size$sixth)
+
+```
+
+```{r}
+serotype_prevalence = tribble(
+  ~panel, ~group, ~name, ~rel_prop, ~false_neg_diseased, ~n_diseased, ~false_pos_controls, ~n_controls,
+  "panel 01", "group 01", "test 01", 1, 0, Inf, 2, 800,
+  "panel 01", "group 01", "test 02", 1, 0, Inf, 2, 800,
+  "panel 01", "group 01", "test 03", 1, 0, Inf, 2, 800,
+  "panel 01", "group 01", "test 04", 1, 0, Inf, 2, 800,
+  "panel 01", "group 01", "test 05", 1, 0, Inf, 2, 800,
+  "panel 01", "group 02", "test 06", 1, 0, Inf, 2, 800,
+  "panel 01", "group 02", "test 07", 1, 0, Inf, 2, 800,
+  "panel 01", "group 02", "test 08", 1, 0, Inf, 2, 800,
+  "panel 01", "group 02", "test 09", 1, 0, Inf, 2, 800,
+  "panel 01", "group 02", "test 10", 1, 0, Inf, 2, 800,
+  "panel 02", "group 03", "test 11", 1, 0, Inf, 2, 800,
+  "panel 02", "group 03", "test 12", 1, 0, Inf, 2, 800,
+  "panel 02", "group 03", "test 13", 1, 0, Inf, 2, 800,
+  "panel 02", "group 03", "test 14", 1, 0, Inf, 2, 800,
+  "panel 02", "group 03", "test 15", 1, 0, Inf, 2, 800,
+  "panel 02", "group 04", "test 16", 1, 0, Inf, 2, 800,
+  "panel 02", "group 04", "test 17", 1, 0, Inf, 2, 800,
+  "panel 02", "group 04", "test 18", 1, 0, Inf, 2, 800,
+  "panel 02", "group 04", "test 19", 1, 0, Inf, 2, 800,
+  "panel 02", "group 04", "test 20", 1, 0, Inf, 2, 800,
+) %>% update_prevalence(prevalence = 0.16)
+
+serotype_tests = serotype_prevalence %>%
+  group_by(across(everything())) %>%
+  group_modify(sim_pop) %>%
+  group_modify(sim_test)
+
+serotype_tests %>% 
+  group_by(group, name) %>%
+  combine_as_panel() %>% 
+  summarise_boots()
+
+
+serotype_tests %>% 
+  group_by(group) %>%
+  combine_as_panel() %>% 
+  summarise_boots()
+
+serotype_tests %>% 
+  ungroup() %>%
+  combine_as_panel() %>% 
+  summarise_boots()
+
+```
+
+
+```{r}
+serotype_prevalence_2 = serotype_prevalence %>%
+  mutate(
+    rel_prop = case_when(
+      group == "group 01" ~ 0,
+      group == "group 02" ~ 5,
+      group == "group 03" ~ 20,
+      group == "group 04" ~ 75,
+    )
+  ) %>% update_prevalence(prevalence = 0.3)
+
+serotype_tests_2 = serotype_prevalence_2 %>%
+  group_by(across(everything())) %>%
+  group_modify(sim_pop) %>%
+  group_modify(sim_test)
+
+serotype_tests_2 %>% 
+  group_by(group, name) %>%
+  combine_as_panel() %>% 
+  summarise_boots()
+
+serotype_tests_2 %>% 
+  group_by(group) %>%
+  combine_as_panel() %>% 
+  summarise_boots()
+
+serotype_tests_2 %>% 
+  ungroup() %>%
+  combine_as_panel() %>% 
+  summarise_boots()
+
+
+```
+
+```{r}
+
+# A more reslistic scenario except sensitivity set at 100%
+
+serotype_tests_3 = serotype_prevalence_2 %>%
+  update_prevalence(prevalence = 0.075) %>%
+  group_by(across(everything())) %>%
+  group_modify(sim_pop) %>%
+  group_modify(sim_test)
+
+serotype_tests_3 %>% 
+  group_by(group, name) %>%
+  combine_as_panel() %>% 
+  summarise_boots()
+
+serotype_tests_3 %>% 
+  group_by(group) %>%
+  combine_as_panel() %>% 
+  summarise_boots()
+
+serotype_tests_3 %>% 
+  ungroup() %>%
+  combine_as_panel() %>% 
+  summarise_boots()
+
+```
+
+
+```{r}
+
+# A more reslistic scenario except sensitivity set at 100%
+
+serotype_prevalence_4 = serotype_prevalence_2 %>%
+  update_prevalence(prevalence = 0.075) %>%
+  mutate(
+    n_diseased = 260, 
+    false_neg_diseased = 0.25*260
+  )
+
+serotype_tests_4 = serotype_prevalence_4 %>%
+  group_by(across(everything())) %>%
+  group_modify(sim_pop) %>%
+  group_modify(sim_test)
+
+serotype_tests_4 %>% 
+  group_by(group, name) %>%
+  combine_as_panel() %>% 
+  summarise_boots()
+
+serotype_tests_4 %>% 
+  group_by(group) %>%
+  combine_as_panel() %>% 
+  summarise_boots()
+
+serotype_tests_4 %>% 
+  group_by(panel) %>%
+  combine_as_panel() %>% 
+  summarise_boots()
+
+serotype_tests_4 %>% 
+  ungroup() %>%
+  combine_as_panel() %>% 
+  summarise_boots()
+
+```
+
+
+
+```{r}
+to_correct = serotype_tests_4 %>% 
+  group_by(group, name) %>%
+  combine_as_panel()
+
+tmp = to_correct %>% inner_join(
+  # get the test parameters:
+  serotype_prevalence_4 %>% select(group, name, false_neg_diseased, n_diseased, false_pos_controls, n_controls), 
+  by=c("group","name")) %>%
+  mutate(
+    p_value = fp_p_value(
+      pos_obs = test,
+      n_obs = total,
+      false_pos_controls = false_pos_controls, n_controls = n_controls),
+    sig_level = fp_signif_level(
+      n_obs = total,
+      false_pos_controls = false_pos_controls, n_controls = n_controls),
+    true_prevalence(
+      pos_obs = test,
+      n_obs = total,
+      false_neg_diseased = false_neg_diseased, n_diseased = n_diseased, 
+      false_pos_controls = false_pos_controls, n_controls = n_controls)
+  )
+
+tmp %>% 
+  select(-prevalence.method) %>%
+  mutate(
+    adjusted = prevalence.median*total,
+    residual_bias = adjusted-actual
+  ) %>% 
+  summarise_boots()
+
+
+to_correct_group = serotype_tests_3 %>% 
+  group_by(group) %>%
+  combine_as_panel()
+
+tmp3 = to_correct_group %>% inner_join(
+      serotype_prevalence_2 %>% group_by(group) %>% summarise(
+        control_pos = sum(control_pos), 
+        control_neg = max(control_pos+control_neg) - sum(control_pos),
+        sens_pos = max(sens_pos+sens_neg)*(1-prod(sens_neg/(sens_pos+sens_neg))), 
+        sens_neg = ifelse(prod(sens_neg/(sens_pos+sens_neg)) == 0, 0, max(sens_pos+sens_neg)*(prod(sens_neg/(sens_pos+sens_neg))))
+      ), by="group"
+    ) %>%
+   mutate(
+    p_value = uad_p_value(samples = total, positives = test, positive_controls = control_pos, baseline_pos = 0, baseline = control_pos+control_neg),
+    sig_level = uad_signif_level(samples = total,positive_controls = control_pos,baseline_pos = 0,baseline = control_pos+control_neg,bonferroni = 1),
+    bonferroni_sig_level = uad_signif_level(samples = total,positive_controls = control_pos,baseline_pos = 0,baseline = control_pos+control_neg,bonferroni = 24),
+    lang_set = prev_lang_reiczigel(nprev = total, kprev = test, nsens = sens_pos+sens_neg, ksens = sens_pos, nspec = control_pos+control_neg, kspec = control_neg)
+  ) 
+  
+
+tmp3 %>% unnest(lang_set) %>%
+  mutate(
+    adjusted = median*total,
+    residual_bias = adjusted-actual,
+    lower = lower*total, 
+    upper = upper*total
+    ) %>% 
+  summarise_boots() %>% select(
+    group, expected, actual, observed = test, adjusted, lower, upper
+  )
+
+  tmp %>% group_by(group, boot) %>% summarise(
+    adjusted = list(reduce(adjusted, uad_corr_reducer))
+  ) %>% unnest(adjusted)
+
+to_compare %>% inner_join(tmp3,by=c("group","boot")) %>%
+  mutate(residual_bias = adjusted-actual) %>%
+  summarise_boots()
+
+
+```

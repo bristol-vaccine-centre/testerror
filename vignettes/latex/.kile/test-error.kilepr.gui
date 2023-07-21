@@ -1,0 +1,122 @@
+[General]
+kile_livePreviewEnabled=true
+kile_livePreviewStatusUserSpecified=true
+kile_livePreviewTool=LivePreview-PDFLaTeX
+lastDocument=main/main.tex
+
+[document-settings,item:main/main.tex]
+Bookmarks=
+Encoding=UTF-8
+Highlighting=LaTeX
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=LaTeX
+Mode Set By User=false
+
+[document-settings,item:main/refs.bib]
+Bookmarks=
+Encoding=UTF-8
+Highlighting=BibTeX
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=BibTeX
+Mode Set By User=false
+
+[document-settings,item:refs.bib]
+Bookmarks=
+Encoding=UTF-8
+Highlighting=BibTeX
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=BibTeX
+Mode Set By User=false
+
+[document-settings,item:s1/supplementary_chapter_1.tex]
+Bookmarks=
+Encoding=UTF-8
+Highlighting=LaTeX
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=LaTeX
+Mode Set By User=false
+
+[document-settings,item:s2/supplementary_2.tex]
+Bookmarks=0,239
+Encoding=UTF-8
+Highlighting=LaTeX
+Highlighting Set By User=false
+Indentation Mode=normal
+Mode=LaTeX
+Mode Set By User=false
+
+[item:main/main.tex]
+open=false
+order=1
+
+[item:main/refs.bib]
+open=true
+order=1
+
+[item:refs.bib]
+open=false
+order=3
+
+[item:s1/refs.bib]
+open=false
+order=-1
+
+[item:s1/supplementary_chapter_1.tex]
+open=false
+order=2
+
+[item:s2/refs.bib]
+open=false
+order=-1
+
+[item:s2/supplementary_2.tex]
+open=false
+order=0
+
+[item:test-error.kilepr]
+open=false
+order=-1
+
+[view-settings,view=0,item:main/main.tex]
+CursorColumn=10
+CursorLine=189
+Dynamic Word Wrap=true
+JumpList=
+TextFolding=[]
+ViMarks=
+
+[view-settings,view=0,item:main/refs.bib]
+CursorColumn=17
+CursorLine=236
+Dynamic Word Wrap=false
+JumpList=
+TextFolding=[]
+ViMarks=
+
+[view-settings,view=0,item:refs.bib]
+CursorColumn=20
+CursorLine=407
+Dynamic Word Wrap=false
+JumpList=
+TextFolding=[]
+ViMarks=
+
+[view-settings,view=0,item:s1/supplementary_chapter_1.tex]
+CursorColumn=25
+CursorLine=20
+Dynamic Word Wrap=true
+JumpList=
+TextFolding=[]
+ViMarks=
+
+[view-settings,view=0,item:s2/supplementary_2.tex]
+CursorColumn=25
+CursorLine=20
+Dynamic Word Wrap=true
+JumpList=
+TextFolding=[]
+ViMarks=a,239,0,b,0,0

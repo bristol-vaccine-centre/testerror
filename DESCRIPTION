@@ -1,25 +1,49 @@
 Package: testerror
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Title: Uncertainty in Multiplex Panel Testing 
+Version: 0.0.0.9001
 Authors@R: 
     person(given = "Robert",
            family = "Challen",
            role = c("aut", "cre"),
            email = "rob.challen@bristol.ac.uk",
            comment = c(ORCID = "0000-0002-5504-7768"))
-Description: What the package does (one paragraph).
+Description: Provides methods to support the estimation of epidemiological
+  parameters based on the results of multiplex panel tests.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.2
+RoxygenNote: 7.2.3
 Imports: 
-    magrittr
+    DescTools,
+    magrittr,
+    methods,
+    Rcpp (>= 0.12.0),
+    RcppParallel (>= 5.0.1),
+    rstan (>= 2.18.1),
+    rstantools (>= 2.3.1),
+    stats,
+    testthat,
+    tidyverse,
+    MASS,
+    extraDistr,
+    interfacer
+Remotes: interfacer=github::bristol-vaccine-centre/interfacer
 Suggests: 
     knitr,
-    rmarkdown,
-    testthat (>= 3.0.0)
+    rmarkdown
 VignetteBuilder: knitr
 Config/testthat/edition: 3
-URL: https://bristol-vaccine-centre.github.io/testerror/index.html,
-	https://github.com/bristol-vaccine-centre/testerror
+URL: https://bristol-vaccine-centre.github.io/testerror/index.html, https://github.com/bristol-vaccine-centre/testerror, https://doi.org/10.5281/zenodo.7691196
 BugReports: https://github.com/bristol-vaccine-centre/testerror/issues
+Depends: 
+    R (>= 3.4.0)
+LazyData: true
+Biarch: true
+LinkingTo: 
+    BH (>= 1.66.0),
+    Rcpp (>= 0.12.0),
+    RcppEigen (>= 0.3.3.3.0),
+    RcppParallel (>= 5.0.1),
+    rstan (>= 2.18.1),
+    StanHeaders (>= 2.18.0)
+SystemRequirements: GNU make

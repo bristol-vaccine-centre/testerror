@@ -1,0 +1,920 @@
+---
+title: "Test combination mathematical analysis"
+output: html_document
+---
+
+```{r setup}
+library(tidyverse)
+
+here::i_am("vignettes/formal-analysis.Rmd")
+source(here::here("vignettes/vignette-utils.R"))
+devtools::load_all()
+```
+
+Assume we have a series of patients presenting who we are testing for disease. Their true disease status 
+may be either positive of negative. The rates of arrival of the patients in a given time period ($t$) for testing may be assumed to be due to a poisson distributed process. If the overall probability of disease in the population (i.e. the prevalence) is $prev$
+then we can define $\alpha_p$ and $\beta$ such that $\frac{\alpha_p}{\beta} = prev$ then in a bayesian framework with an uninformed prior for $prev$ the expected number of actual positive cases ($E(A)$) arriving in a given time period ($t$) is:
+
+$$
+E(A_t) \sim Gamma(\alpha_p, \beta)
+$$
+
+Similarly we nay define the expected number of actual negative cases ($E(\neg A)$) arriving in a given time period, with $alpha_n = \beta-\alpha_p$ and $\frac{alpha_n}{\beta} = 1-p$ then:
+
+$$
+E(\neg A_t) \sim Gamma(\alpha_n, \beta)
+$$
+
+and the prevalence ($prev$), or probability that a person is an actual case ($P(A)$) is given by:
+
+$$
+prev = P(A_t) = \frac{E(A_t)}{E(A_t)+E(\neg A_t)} \\
+prev \sim \frac{Gamma(\alpha_p, \beta)}{  Gamma(\alpha_p, \beta) + Gamma(\alpha_n, \beta)} \\
+\sim Beta(\alpha_p,\alpha_n) \\
+1 - prev = P(\neg A_t) \sim {Beta}(\alpha_n, \alpha_p)
+$$
+
+Assume we have a sample of size $n$ of a binomially distributed quantity $X$
+with probability of actual disease of $P(A)$. After a single observation of a number of positives ($\hat{x}$) 
+Give a non-informative prior, the posterior distribution parameters of ($P(A)$) give the observation of positives ($\hat{x}$) in a Bayesian framework is given by:   
+
+$$
+\alpha_p = \hat{x} \\
+\alpha_n = n-\hat{x}
+$$
+
+If we assume all arrivals are tested for disease there is a observation of positive test results $O$. The probability of observation ($P(O)$) is known as the _apparent prevalence_ ($\widehat{AP}$).
+There are is a potential for test error. Type 1 errors are false positives, the rate of which may be defined as the probability of observing a positive test result given an actual negative case ($P(O| \neg A)$). 
+The complement of this quantity is the true negative rate and is known as the specificity ($spec$). 
+Type 2 errors are false negatives and the rate of these is the probability of observing a negative test result given an actual positive case ($P(\neg O|A)$). 
+The complement of this quantity is the true positive rate and is known as the specificity ($sens$).
+
+$$
+spec = TNR = P(\neg O| \neg A) = 1 - P(O| \neg A)  = 1-FPR \\
+sens = TPR = P(O|A) = 1 - P(\neg O|A)  = 1-FNR
+$$
+
+The likelihood that any given person is actual case positive and observed test positive is the true positives $TP$, and can be defined in terms of the senstivity and prevalence ($sens$ and $prev$).
+
+$$
+
+P(TN) = P(\neg O|\neg A) \times P(\neg A) = spec \times (1-prev) \\
+P(FP) = P(O|\neg A) \times P(\neg A) = (1-spec) \times (1-prev) \\
+P(FN) = P(\neg O|A) \times P(A) = (1-sens) \times prev \\
+P(TP) = P(O|A) \times P(A) = sens \times prev \\ 
+
+$$
+Rogan Gladen derivation
+
+$$
+P(O) = P(O|A)P(A) + P(O|\neg A)P(\neg A) \\
+P(O) = P(O|A)P(A) + P(O|\neg A)(1-P(A)) \\
+P(O) = P(O|A)P(A) + P(O|\neg A)-P(O|\neg A)P(A) \\
+P(A) = \frac{P(O) - P(O|\neg A)}{P(O|A) - P(O|\neg A)} \\
+
+$$
+
+$$
+E(AP) = sens \times prev + (1-spec) \times (1-prev)\\
+prev \approx \frac{\widehat{AP} + spec -1}{sens + spec - 1} \\
+$$
+For $(1-spec) < \widehat{AP} < sens$.
+
+$$
+
+P(\neg O) = P(\neg O|A)P(A) + P(\neg O|\neg A)P(\neg A) \\
+P(\neg A) = \frac{P(\neg O) - P(\neg O|A)}{P(\neg O|\neg A) - P(\neg O|A)} \\
+P(\neg A) = \frac{P(\neg O) - FNR}{TNR - FNR} \\
+
+$$
+
+# Combination of tests
+
+
+```{r}
+
+#, R.options = list(width = 120000)}
+
+.md = function(x) {
+  tmp = sapply(x, function(y) markdown::markdownToHTML(text=y,fragment.only = TRUE))
+  return(tmp)
+}
+
+.tex = function(x) {
+  tmp = sapply(x, function(y) {
+    t = tth::ttm(y, L = TRUE)
+    t = paste0(t,collapse="")
+    sprintf("<p>%s</p>",t)
+  })
+  return(tmp)
+}
+
+.eq = function(x) {
+  .tex(sapply(x, sprintf, fmt="$%s$"))
+}
+
+map = tibble::tribble(
+  ~test1, ~test2, ~combination,
+  "TP", "TP", "TP",
+  "TP", "FP", "TP",
+  "TP", "FN", "TP",
+  "TP", "TN", "TP",
+  "FP", "TP", "TP",
+  "FP", "FP", "FP",
+  "FP", "FN", "TP+",
+  "FP", "TN", "FP",
+  "FN", "TP", "TP",
+  "FN", "FP", "TP+",
+  "FN", "FN", "FN",
+  "FN", "TN", "FN",
+  "TN", "TP", "TP",
+  "TN", "FP", "FP",
+  "TN", "FN", "FN",
+  "TN", "TN", "TN",
+) %>% mutate(
+  p1 = case_when(
+    test1 == "TP" ~ "P(O_i|A_i) P(A_i)",
+    test1 == "FP" ~ "P(O_i|\\neg A_i) P(\\neg A_i)",
+    test1 == "FN" ~ "P(\\neg O_i|A_i) P(A_i)",
+    test1 == "TN" ~ "P(\\neg O_i|\\neg A_i) P(\\neg A_i)",
+  ),
+  p2 = case_when(
+    test2 == "TP" ~ "P(O_j|A_j) P(A_j)",
+    test2 == "FP" ~ "P(O_j|\\neg A_j) P(\\neg A_j)",
+    test2 == "FN" ~ "P(\\neg O_j|A_j) P(A_j)",
+    test2 == "TN" ~ "P(\\neg O_j|\\neg A_j) P(\\neg A_j)",
+  ),
+  test1group = .eq(ifelse(test1 %in% c("TP","FP"), "O", "\\neg O")),
+  test2group = .eq(ifelse(test2 %in% c("TP","FP"), "O", "\\neg O")),
+  p_combined = sprintf("%s %s",p1,p2)
+  #p_combined = sprintf("\\biggl(%s\\biggr) \\times \\biggl(%s\\biggr)",p1,p2)
+) 
+
+
+
+t = map %>% 
+  select(` ` = test1group, `  ` = test1, test2group, test2, combination) %>%
+  ggrrr::hux_tidy(vars(` `, `  `),vars(test2group, test2)) %>% 
+  huxtable::map_escape_contents(huxtable::everywhere, huxtable::everywhere, huxtable::by_function(function(s) !stringr::str_starts(s,"<p"))) 
+# %>% 
+#   huxtable::to_html() %>%
+#   htmltools::HTML()
+
+t %>% ggrrr::hux_save_as(here::here("vignettes/latex/probability-table.pdf"))
+
+```
+
+Aside:
+
+$$
+P(\neg Y|\neg X)P(\neg X) = P(\neg X|\neg Y)P(\neg Y) \\
+= (1-P(X|\neg Y))P(\neg Y) \\
+= P(\neg Y)-P(X|\neg Y)P(\neg Y) \\
+= P(\neg Y)-P(\neg Y|X)P(X)
+$$
+
+$$
+P(\neg Y|\neg X)P(\neg X) = P(\neg Y)-(1-P(Y|X))P(X) \\
+= P(\neg Y)-P(X)+P(Y|X)P(X) \\
+= 1-P(Y)-P(X)+P(Y|X)P(X) \\
+$$
+
+
+
+Prevalence of multiple conditions with assumption of independence 
+
+
+$$
+P(A_N) = 1 - \prod_{n \in N}{P(\neg A_n)} \\
+P(A_N) = 1 - \prod_{n \in N}{\frac{P(\neg O_n) - P(\neg O_n|A_n)}{P(\neg O_n|\neg A_n) - P(\neg O_n|A_n)}} \\
+P(A_N) = 1 - \prod_{n \in N}{\frac{P(\neg O_n) - P(\neg O_n|A_n)}{P(\neg O_n|\neg A_n) - P(\neg O_n|A_n)}}
+$$
+
+
+
+
+
+
+
+
+
+
+
+
+# specificity = TNR = 1-FPR
+
+$$
+P(TN_k) = P(\neg O_k|\neg A_k)P(\neg A_k) \\
+= P(\neg O_i|\neg A_i) P(\neg A_i) P(\neg O_j|\neg A_j) P(\neg A_j) \\
+TNR_k = P(\neg O_k|\neg A_k) 
+= \frac{P(\neg O_i|\neg A_i) P(\neg A_i) P(\neg O_j|\neg A_j) P(\neg A_j)}{P(\neg A_k)} \\
+
+TNR_k = P(\neg O_k|\neg A_k) 
+= \frac{P(\neg O_i|\neg A_i) P(\neg A_i) P(\neg O_j|\neg A_j) P(\neg A_j)}{P(\neg A_i)P(\neg A_j)} \\
+
+TNR_k = P(\neg O_k|\neg A_k) = P(\neg O_i|\neg A_i) P(\neg O_j|\neg A_j)  \\
+
+TNR_k = TNR_i \times TNR_j  \\
+$$
+
+
+
+$$
+P(FP_k) =  P(O_k|\neg A_k)P(\neg A_k)\\ 
+= P(O_i|\neg A_i) P(\neg A_i) P(O_j|\neg A_j) P(\neg A_j) + \\
+P(O_i|\neg A_i) P(\neg A_i) P(\neg O_j|\neg A_j) P(\neg A_j) + \\
+P(\neg O_i|\neg A_i) P(\neg A_i) P(O_j|\neg A_j) P(\neg A_j)
+$$
+
+
+## sensitivity = TPR = 1-FNR
+
+Direct from table as sum of probabilities (FN/FN, FN/TN, TN/FN)
+
+$$
+P(FN_k) = P(\neg O_k|A_k) P(A_k)\\ =
+P(\neg O_i|A_i) P(A_i) P(\neg O_j|A_j) P(A_j) + \\
+P(\neg O_i|A_i) P(A_i) P(\neg O_j|\neg A_j) P(\neg A_j) + \\
+P(\neg O_i|\neg A_i) P(\neg A_i) P(\neg O_j|A_j) P(A_j) \\
+
+=
+P(\neg O_i|A_i) P(A_i) \times 
+  \Big( 
+    P(\neg O_j|A_j) P(A_j) + 
+    P(\neg O_j|\neg A_j) P(\neg A_j)
+  \Big)+ 
+
+P(\neg O_j|A_j) P(A_j) \times 
+  \Big(
+    P(\neg O_i|A_i) P(A_i)  + 
+    P(\neg O_i|\neg A_i) P(\neg A_i)
+  \Big) -
+
+P(\neg O_i|A_i) P(A_i) P(\neg O_j|A_j) P(A_j)\\
+
+
+=
+
+P(\neg O_i|A_i) P(A_i) P(\neg O_j) + 
+P(\neg O_j|A_j) P(A_j) P(\neg O_i) - 
+P(\neg O_i|A_i) P(A_i) P(\neg O_j|A_j) P(A_j)\\
+
+FNR_k = 
+FNR_i \times \frac{P(A_i) P(\neg O_j)}{1-P(\neg A_i)P(\neg A_j)} + 
+FNR_j \times \frac{ P(A_j) P(\neg O_i)}{1-P(\neg A_i)P(\neg A_j)} - 
+FNR_i \times FNR_j \times \frac{P(A_i) P(A_j)}{1-P(\neg A_i)P(\neg A_j)}\\
+$$
+
+From table FN are also any test negatives N/N except TN/TN 
+
+* TODO: consider substituting for $P(\neg O) = P(\neg O|A)P(A) + P(\neg O|\neg A)P(\neg A)$ at line 4 here
+
+$$
+P(FN_k) = P(\neg O_k|A_k)P(A_k)\\
+= P(\neg O_i)P(\neg O_j) - P(\neg O_i|\neg A_i) P(\neg A_i) P(\neg O_j|\neg A_j) P(\neg A_j) \\
+= P(\neg O_i)P(\neg O_j) - \Big(P(\neg O_i) - P(\neg O_i|A_i) P(A_i)\Big) \Big(P(\neg O_j) - P(\neg O_j|A_j) P(A_j)\Big) \\
+= P(\neg O_i|A_i) P(A_i)P(\neg O_j) + P(\neg O_j|A_j) P(A_j)P(\neg O_i) - P(\neg O_i|A_i) P(A_i) P(\neg O_j|A_j) P(A_j)\\
+
+FNR_k = \frac{P(\neg O_i|A_i) P(A_i)P(\neg O_j) + P(\neg O_j|A_j) P(A_j)P(\neg O_i) - P(\neg O_i|A_i) P(A_i) P(\neg O_j|A_j) P(A_j)}{1-P(\neg A_i)P(\neg A_j)} \\
+
+FNR_k = \frac{P(\neg O_i|A_i) P(A_i)P(\neg O_j) }{1-P(\neg A_i)P(\neg A_j)} + \frac{P(\neg O_j|A_j) P(A_j)P(\neg O_i)}{1-P(\neg A_i)P(\neg A_j)} - \frac{P(\neg O_i|A_i) P(A_i) P(\neg O_j|A_j) P(A_j)}{1-P(\neg A_i)P(\neg A_j)}\\
+
+FNR_k =  FNR_i \times \Big(\frac{ P(A_i)P(\neg O_j) }{1-P(\neg A_i)P(\neg A_j)}\Big) + FNR_j \times \Big(\frac{ P(A_j)P(\neg O_i)}{1-P(\neg A_i)P(\neg A_j)} \Big) - FNR_i \times FNR_j \times \Big(\frac{P(A_i) P(A_j)}{1-P(\neg A_i)P(\neg A_j)}\Big)\\
+$$
+
+$$
+
+
+FNR_k =  
+  FNR_i \times 
+  \Big(
+    \frac{ 
+      P(A_i)
+      (FNR_j \times P(A_j) + TNR_j \times P(\neg A_j))
+    }{
+      1-P(\neg A_i)P(\neg A_j)
+    }
+  \Big)
+  + FNR_j \times 
+  \Big(
+    \frac{ 
+      P(A_j)
+      (FNR_i \times P(A_i) + TNR_i \times P(\neg A_i))
+    }{
+      1-P(\neg A_i)P(\neg A_j)
+    } 
+  \Big) 
+  - FNR_i \times FNR_j \times 
+  \Big(
+    \frac{P(A_i) P(A_j)}{1-P(\neg A_i)P(\neg A_j)}
+  \Big)\\
+
+
+
+FNR_k =  
+  FNR_i \times TNR_j \times 
+  \Big(
+    \frac{ 
+      P(\neg A_j)
+    }{
+      1-P(\neg A_i)P(\neg A_j)
+    }
+  \Big)
+  + FNR_j \times TNR_i \times 
+  \Big(
+    \frac{ 
+      P(\neg A_i)
+    }{
+      1-P(\neg A_i)P(\neg A_j)
+    } 
+  \Big) 
+  + FNR_i \times FNR_j \times 
+  \Big(
+    \frac{P(A_i) P(A_j)}{1-P(\neg A_i)P(\neg A_j)}
+  \Big)\\
+
+
+$$
+
+This is a interim result. But in terms of actual disease positives is less useful as
+we rarely have estimates of this. USing the Rogan gladen estimators we can get an 
+estimate in terms of $O$
+
+$$
+P(FN_k) = P(\neg O_k|A_k)P(A_k)\\
+= P(\neg O_i)P(\neg O_j) - P(\neg O_i|\neg A_i) P(\neg A_i) P(\neg O_j|\neg A_j) P(\neg A_j) \\
+= P(\neg O_i)P(\neg O_j) - P(\neg O_i|\neg A_i) \frac{P(\neg O_i) - P(\neg O_i|A_i)}{P(\neg O_i|\neg A_i) - P(\neg O_i|A_i)} P(\neg O_j|\neg A_j) \frac{P(\neg O_j) - P(\neg O_j|A_j)}{P(\neg O_j|\neg A_j) - P(\neg O_j|A_j)} \\
+$$
+
+$$
+FNR_k = \frac{P(FN_k)}{1-P(\neg A_i)P(\neg A_j)} \\
+= \frac{
+  P(\neg O_i)P(\neg O_j) - P(\neg O_i|\neg A_i) \frac{P(\neg O_i) - P(\neg O_i|A_i)}{P(\neg O_i|\neg A_i) - P(\neg O_i|A_i)} P(\neg O_j|\neg A_j) \frac{P(\neg O_j) - P(\neg O_j|A_j)}{P(\neg O_j|\neg A_j) - P(\neg O_j|A_j)}
+}{1-
+\bigg(
+  \frac{P(\neg O_i) - P(\neg O_i|A_i)}{P(\neg O_i|\neg A_i) - P(\neg O_i|A_i)}
+\bigg)
+\bigg(
+  \frac{P(\neg O_j) - P(\neg O_j|A_j)}{P(\neg O_j|\neg A_j) - P(\neg O_j|A_j)}
+\bigg)
+} \\
+
+= \frac{
+  P(\neg O_i)P(\neg O_j) - P(\neg O_i|\neg A_i) \frac{P(\neg O_i) - P(\neg O_i|A_i)}{P(\neg O_i|\neg A_i) - P(\neg O_i|A_i)} P(\neg O_j|\neg A_j) \frac{P(\neg O_j) - P(\neg O_j|A_j)}{P(\neg O_j|\neg A_j) - P(\neg O_j|A_j)}
+}{1-
+\bigg(
+  \frac{P(\neg O_i) - P(\neg O_i|A_i)}{P(\neg O_i|\neg A_i) - P(\neg O_i|A_i)}
+\bigg)
+\bigg(
+  \frac{P(\neg O_j) - P(\neg O_j|A_j)}{P(\neg O_j|\neg A_j) - P(\neg O_j|A_j)}
+\bigg)
+} \\
+
+
+= \frac{
+  P(\neg O_i)P(\neg O_j) - TNR_i  \times \frac{P(\neg O_i) - FNR_i}{TNR_i - FNR_i}  \times TNR_j  \times \frac{P(\neg O_j) - FNR_j}{TNR_j - FNR_j}
+}{1-
+\bigg(
+  \frac{P(\neg O_i) - FNR_i}{TNR_i - FNR_i}
+\bigg)
+\bigg(
+  \frac{P(\neg O_j) - FNR_j}{TNR_j - FNR_j}
+\bigg)
+} \\
+
+= \frac{
+  P(\neg O_i) \times P(\neg O_j) \times (TNR_i - FNR_i) \times (TNR_j - FNR_j) - TNR_i  \times (P(\neg O_i) - FNR_i) \times TNR_j \times (P(\neg O_j) - FNR_j)
+}{(TNR_i - FNR_i) \times (TNR_j - FNR_j)-
+\big(
+  P(\neg O_i) - FNR_i
+\big)
+\big(
+  P(\neg O_j) - FNR_j
+\big)
+} \\
+$$
+
+Numerator
+
+$$
+P(\neg O_i) \times P(\neg O_j) \times TNR_i \times TNR_j \\ 
+- P(\neg O_i) \times P(\neg O_j) \times FNR_i \times TNR_j \\
+- P(\neg O_i) \times P(\neg O_j) \times FNR_j \times TNR_i \\
++ P(\neg O_i) \times P(\neg O_j) \times FNR_i \times FNR_j \\
+- TNR_i \times TNR_j  \times P(\neg O_i) \times P(\neg O_j) \\
++ TNR_i \times TNR_j  \times FNR_i \times P(\neg O_j) \\
++ TNR_i \times TNR_j  \times FNR_j \times P(\neg O_i) \\ 
+- TNR_i \times TNR_j  \times FNR_i \times FNR_j \\
+$$
+
+$$
+
+(TNR_i - P(\neg O_i)) \times FNR_i \times TNR_j  \times P(\neg O_j)  \\
++ (TNR_j - P(\neg O_j)) \times FNR_j \times TNR_i  \times P(\neg O_i)  \\
++ (P(\neg O_i) \times P(\neg O_j) - TNR_i \times TNR_j)  \times FNR_i \times FNR_j \\
+$$
+
+Denominator:
+
+$$
+TNR_i \times TNR_j \\ 
+- FNR_i \times TNR_j \\
+- FNR_j \times TNR_i \\
++ FNR_i \times FNR_j \\
+- P(\neg O_i) \times P(\neg O_j) \\
++ FNR_i \times P(\neg O_j) \\
++ FNR_j \times P(\neg O_i) \\ 
+- FNR_i \times FNR_j \\
+$$
+
+$$
+
+(P(\neg O_j) - TNR_j) \times FNR_i \\
++ (P(\neg O_i) - TNR_i) \times FNR_j \\
+- (P(\neg O_i) \times P(\neg O_j) - TNR_i \times TNR_j) \\
+
+ 
+$$
+
+
+
+$$
+FNR_k = \frac{
+(TNR_i - P(\neg O_i)) \times FNR_i \times TNR_j  \times P(\neg O_j)  \\
++ (TNR_j - P(\neg O_j)) \times FNR_j \times TNR_i  \times P(\neg O_i)  \\
++ (P(\neg O_i) \times P(\neg O_j) - TNR_i \times TNR_j)  \times FNR_i \times FNR_j
+}{
+(P(\neg O_j) - TNR_j) \times FNR_i \\
++ (P(\neg O_i) - TNR_i) \times FNR_j \\
++ (TNR_i \times TNR_j - P(\neg O_i) \times P(\neg O_j))
+}
+$$
+
+
+
+
+
+$$
+P(TP_k) = P(O_k|A_k)P(A_k) = \\
+  P(O_i|A_i) P(A_i) P(O_j|A_j) P(A_j) + \\
+  P(O_i|A_i) P(A_i) P(O_j|\neg A_j) P(\neg A_j) + \\
+  P(O_i|A_i) P(A_i) P(\neg O_j|A_j) P(A_j) + \\
+  P(O_i|A_i) P(A_i) P(\neg O_j|\neg A_j) P(\neg A_j) + \\
+  P(O_i|\neg A_i) P(\neg A_i) P(O_j|A_j) P(A_j) + \\
+  P(\neg O_i|A_i) P(A_i) P(O_j|A_j) P(A_j) + \\
+  P(\neg O_i|\neg A_i) P(\neg A_i) P(O_j|A_j) P(A_j) + \\
+  P(O_i|\neg A_i) P(\neg A_i) P(\neg O_j|A_j) P(A_j) + \\
+  P(\neg O_i|A_i) P(A_i) P(O_j|\neg A_j) P(\neg A_j)
+$$
+
+
+
+# combinations
+
+a   | TN | FN | FP | TP 
+----|----|----|----|----
+TN  | TN | FN | FP | TP 
+FN  | FN | FN | TP+| TP
+FP  | FP | TP+| FP | TP
+TP  | TP | TP | TP | TP
+
+
+
+
+In a panel of $N$ tests the panel result is a true negative, if and only if all the $N$ test results are also true 
+negatives.
+
+$$
+P(TN_N) = P(\neg O_N|\neg A_N)P(\neg A_N) = \prod_{n \in N}{P(\neg O_n|\neg A_n)P(\neg A_n)} \\
+P(\neg A_N) = \prod_{n \in N}{P(\neg A_n)} \\
+TNR_N = P(\neg O_N|\neg A_N) = \prod_{n \in N}{P(\neg O_n|\neg A_n)} \\
+TNR_N = \prod_{n \in N}{TNR_n} \\
+spec_N = \prod_{n \in N}{spec_n} \\
+$$
+
+In a panel of $N$ tests the panel result is a false negative, if all tests are negative ($P(\neg O_N)$) but not a true negative ($P(\neg O_N|\neg A_N)P(\neg A_N)$).
+
+
+$$
+P(\neg O_N) = P(\neg O_N|A_N)P(A_N) + P(\neg O_N|\neg A_N)P(\neg A_N) \\
+P(FN_N) = P(\neg O_N|A_N) \times P(A_N) = P(\neg O_N) - P(\neg O_N|\neg A_N)P(\neg A_N) \\
+= \prod_{n \in N}{P(\neg O_n)} - \prod_{n \in N}{P(\neg O_n|\neg A_n) P(\neg A_n)} \\
+P(A_N) = 1 - \prod_{n \in N}{P(\neg A_n)} =  1 - \prod_{n \in N}{ \frac{P(\neg O_n) - P(\neg O_n|A_n)}{P(\neg O_n|\neg A_n) - P(\neg O_n|A_n)} } \\
+$$
+
+$$
+P(FN_N) = P(\neg O_N|A_N) \times P(A_N) = P(\neg O_N) - P(\neg O_N|\neg A_N)P(\neg A_N) \\
+
+
+= \prod_{n \in N}{P(\neg O_n)} - \prod_{n \in N}{P(\neg O_n|\neg A_n) P(\neg A_n)} \\
+$$
+
+$$
+FNR_N = P(\neg O_N|A_N) = \frac{
+  \prod_{n \in N}{P(\neg O_n)} - \prod_{n \in N}{P(\neg O_n|\neg A_n) \frac{P(\neg O_n) - P(\neg O_n|A_n)}{P(\neg O_n|\neg A_n) - P(\neg O_n|A_n)}}
+}{
+  1 - \prod_{n \in N}{ \frac{P(\neg O_n) - P(\neg O_n|A_n)}{P(\neg O_n|\neg A_n) - P(\neg O_n|A_n)} }
+}
+$$
+$$
+FNR_N = P(\neg O_N|A_N) = \frac{
+  \prod_{n \in N}{P(\neg O_n)} - \prod_{n \in N}{TNR_n \frac{P(\neg O_n) - FNR_n}{TNR_n - FNR_n}}
+}{
+  1 - \prod_{n \in N}{ \frac{P(\neg O_n) - FNR_n}{TNR_n - FNR_n} }
+} \\
+
+sens_N \approx 1-\frac{
+  \prod_{n \in N}{(1-\widehat{AP_n})} - \prod_{n \in N}{spec_n \times \frac{(1-\widehat{AP_n}) - (1-sens_n)}{spec_n - (1-sens_n)}}
+}{
+  1 - \prod_{n \in N}{ \frac{(1-\widehat{AP_n}) - (1-sens_n)}{spec_n - (1-sens_n)} }
+} \\
+
+sens_N \approx 1-\frac{
+  \prod_{n \in N}{(1-\widehat{AP_n})} - \prod_{n \in N}{\frac{(sens_n-\widehat{AP_n}) \times spec_n}{spec_n + sens_n - 1}}
+}{
+  1 - \prod_{n \in N}{ \frac{sens_n-\widehat{AP_n}}{spec_n + sens_n - 1} }
+}
+$$
+
+
+
+
+$$
+P(\neg O_N) = \prod_{n \in N}{P(\neg O_n)} \\
+= \prod_{n \in N}{ \bigg(P(\neg O_n|\neg A_n)P(\neg A_n) + P(\neg O_n|A_n)P(A_n)} \bigg) \\
+
+
+
+E(AP_N) = 1- \prod_{n \in N}{ \bigg(TNR_n \times (1-prev_n) + FNR_n \times prev_n} \bigg) \\
+= 1- \prod_{n \in N}{ \bigg(spec_n \times (1-prev_n) + (1-sens_n) \times prev_n} \bigg) \\
+
+
+P(\neg A_N) = \prod_{n \in N}{P(\neg A_n)} \\
+
+prev_N = 1- \prod_{n \in N}{ (1-prev_n) } \\
+
+$$
+
+
+
+
+$$
+FNR_N = P(\neg O_N|A_N) = \frac{
+  \prod_{n \in N}{P(\neg O_n)} - \prod_{n \in N}{P(\neg O_n|\neg A_n) P(\neg A_n)}
+}{
+  1 - \prod_{n \in N}{ P(\neg A_n) }
+} \\
+
+= \frac{
+  \prod_{n \in N}{\bigg(P(\neg O_n|A_n)P(A_n) + P(\neg O_n|\neg A_n)P(\neg A_n) \bigg)} - \prod_{n \in N}{P(\neg O_n|\neg A_n) P(\neg A_n)}
+}{
+  1 - \prod_{n \in N}{ P(\neg A_n) }
+} \\
+
+
+sens_N = 1-\frac{
+  \prod_{n \in N}{\bigg((1-sens_n) \times prev_n + spec_n \times (1-prev_n) \bigg) } - \prod_{n \in N}{spec_n \times (1-prev_n)}
+}{
+  1 - \prod_{n \in N}{ (1-prev_n)}
+} \\
+$$
+
+# Relationship with prevalence / apparent prevalence
+
+* Assume 10 identical tests & 10 identically prevalent diseases
+* Fix sensitivity to 75%; specificity to 99.75% of each component test
+* Vary prevalence of all subtypes simultaneously from 0 to 100%
+
+```{r}
+
+plot_data = tidyr::crossing(
+    test = 1:10,
+    p = seq(0,1,length.out=1001),
+    sens = 0.75,
+    spec = 0.9975
+  ) %>% 
+  # group by the thing we are varying
+  group_by(p) %>%
+  mutate(
+    panel_sens = panel_sens(p, sens, spec),
+    panel_sens_est = panel_sens_estimator(ap = p,sens, spec)
+  )
+
+ggrrr::gg_pedantic()
+
+ggplot(plot_data, aes(x=p)) + geom_line(aes(y=panel_sens,linetype="true prevalence")) + geom_line(aes(y=panel_sens_est,linetype="apparent prevalence")) + scale_linetype_discrete(name=NULL)
+
+```
+
+# Variable component test sensitivity #1
+
+* Assume 10 identically prevalent diseases
+* Fix sensitivity to 75% of each component test; and fix prevalence of all subtypes 
+to 2%
+* Fix sensitivity of components to either 60% or 90%.
+* Varying number of tests with low verus high sensitivity; 
+
+```{r}
+
+
+plot_data = tidyr::crossing(
+    test = 1:10,
+    p = seq(0,0.25,length.out=101),
+    sens = seq(0.5,1,length.out=101),
+    spec = 0.975
+  ) %>% 
+  # group by the thing we are varying
+  group_by(p,sens) %>%
+  mutate(
+   `combined sens` = panel_sens(p, sens, spec),
+  )
+
+p1 = ggplot(plot_data, aes(x=sens, y=`combined sens`, colour=p, z=p)) + 
+  geom_point(size=0.25) + 
+  geom_abline(colour="grey50") + coord_fixed(ylim = c(0.5,1))+
+  scale_color_viridis_c(option = "magma",name="prevalence")+
+  geom_line(data = plot_data %>% filter(p %in% seq(0,0.25,length.out=5)), mapping = aes(x=sens, y=`combined sens`, group=factor(p)), colour="cyan", size=0.25)+
+  xlab("component sensitivity")+ylab("combined sensitivity") + 
+  facet_wrap(~"prevalence")+theme(legend.box = "horizontal")
+
+#p1
+```
+
+
+# Variable component test sensitivity
+
+* Assume 10 identically prevalent diseases
+* Fix specificity to 99.75% of each component test; 
+* Fix sensitivity of components to either 60% or 90%.
+* Varying number of tests with low verus high sensitivity; 
+* allow prevalence of components to vary from 0 to 25%
+
+```{r}
+
+
+
+plot_data = tidyr::crossing(
+    test = 1:10,
+    n_low_versus_high = 0:10,
+    p = 0.05,
+    sens_lo = seq(0.5,1,length.out = 1001),
+    spec = 0.975
+  ) %>% 
+  mutate(
+    sens_hi = (1-(1-sens_lo)*0.2),
+    sens = ifelse(test <= n_low_versus_high, sens_lo, sens_hi),
+    ratio = factor(n_low_versus_high+1, labels = sapply(0:10, function(x) sprintf("%d:%d",x,10-x)))
+  ) %>%
+  # group by the thing we are varying
+  group_by(n_low_versus_high, sens_lo, sens_hi) %>%
+  mutate(
+   `combined sens` = panel_sens(p, sens, spec),
+  )
+
+p2 = ggplot(plot_data, aes(x=sens_lo, y=`combined sens`, colour=factor(ratio))) + 
+  geom_line() + 
+  geom_abline(colour="grey50") + 
+  scale_color_viridis_d(option=  "plasma",direction = -1, name="low:high ratio")+
+  geom_abline(colour="black",intercept = 0.8,slope = 0.2) +
+  coord_fixed(ylim = c(0.5,1)) +
+  xlab("low component sensitivity")+ylab("combined sensitivity")+
+  facet_wrap(~"composition")+theme(legend.box = "horizontal")
+
+#p2
+
+```
+
+
+
+# Variable component test specificity
+
+* Assume 10 identically prevalent diseases
+* Fix sensitivity to 75% of each component test; and fix prevalence of all subtypes 
+to 2%
+* Fix sensitivity of components to either 60% or 90%.
+* Varying number of tests with low verus high sensitivity; 
+
+```{r}
+
+plot_data = tidyr::crossing(
+    test = 1:10,
+    p = 0.05,
+    sens = seq(0.5,1,length.out=101),
+    spec = seq(0.75,1,length.out=101)
+  ) %>% 
+  # group by the thing we are varying
+  group_by(spec,sens) %>%
+  mutate(
+   `combined sens` = panel_sens(p, sens, spec)
+  )
+
+p3 = ggplot(plot_data, aes(x=sens, y=`combined sens`, colour=spec, z=spec)) + 
+  geom_point(size=0.25) + 
+  geom_abline(colour="grey50") + coord_fixed(ylim = c(0.5,1))+
+  scale_color_viridis_c(name="specificity")+
+  geom_line(data = plot_data %>% filter(spec %in% seq(0.75,1,length.out=5)), mapping = aes(x=sens, y=`combined sens`, group=factor(spec)), colour="grey20", size=0.25)+
+  xlab("component sensitivity")+ylab("combined sensitivity")+
+  facet_wrap(~"specificity")+theme(legend.box = "horizontal")
+
+p = p1+p2+p3+patchwork::plot_layout(ncol=2,guides = "collect")+patchwork::plot_annotation(tag_levels = "A")
+
+save_as(p, here::here("vignettes/latex/component-vs-combined-specificity"),size = std_size$half)
+
+
+```
+
+# Simulation validation
+
+```{r}
+
+set.seed(101)
+
+
+serotype_prevalence_2 = tibble::tibble(
+  group = c(1:800,unlist(sapply(seq(800,100,-100), function(x) 1:x))),
+    #c(1:1000,1:1000,sample.int(1000,2400,replace = TRUE)),
+  test_id = 1:4400,
+  
+  false_neg_rate = rbeta(4400,0.2*100,0.8*100),
+  n_diseased = 100+sample.int(200,4400,replace = TRUE), 
+  false_pos_rate = rbeta(4400,0.025*100,0.975*100), 
+  
+  n_controls = 600+sample.int(400,4400,replace = TRUE),
+  prevalence = rbeta(4400,.2,9.8)
+) %>% mutate( 
+  false_neg_diseased = false_neg_rate * n_diseased, 
+  false_pos_controls = false_pos_rate * n_controls, 
+  group = factor(sprintf("group %d",group))
+)
+
+# ggplot(serotype_prevalence_2, aes(x=false_neg_rate))+geom_density()
+# ggplot(serotype_prevalence_2, aes(x=false_pos_rate))+geom_density()
+
+
+serotype_tests_2 = serotype_prevalence_2 %>%
+  group_by(across(everything())) %>%
+  group_modify(sim_pop, n=10000, boots=1) %>%
+  group_modify(sim_test) 
+
+combined_prev = serotype_tests_2 %>% 
+  group_by(group) %>% 
+  estimate_panel_performance(test_id)
+  # summarise(
+  #   # So this is the bit we are uncertain about - how do we combine the false 
+  #   # negatives to get an estimate of sensitivity of the combined test.
+  #   false_neg_diseased = max(false_neg_diseased), 
+  #   n_diseased = max(n_diseased), 
+  #   false_pos_controls = sum(false_pos_controls), # ignoring collisions of false positive controls accross tests
+  #   # false_pos_controls = max(n_controls) - (1-prod(1-false_pos_controls/n_controls)), # assuming duplicates FP occur at random.
+  #   n_controls = max(n_controls),
+  #   prevalence = 1-prod(1-prevalence),
+  #   panel_sensitivity = testerror::panel_sens(prevalence, 1-false_neg_diseased/n_diseased, 1-false_pos_controls/n_controls),
+  #   panel_specificity = testerror::panel_spec(1-false_pos_controls/n_controls)
+  # )
+
+tmp = combined_prev %>% 
+  filter(actual > 0) # & panel_sens_est > 0  & panel_sens_est < 1 )
+tmp = tmp %>% mutate(
+  
+  prev_est.0.5 = testerror::rogan_gladen(panel_apparent_prevalence, panel_sens_est, panel_spec),
+  prev_est_diff.0.5 = panel_prevalence - prev_est.0.5,
+  
+  sens_est_diff.0.5 = (panel_sens_est - sens_est.0.5),
+  sens_est_diff.0.975= (panel_sens_est - sens_est.0.975),
+  sens_est_diff.0.025= (panel_sens_est - sens_est.0.025),
+  sens_est_calib = panel_sens_est > sens_est.0.025 & panel_sens_est < sens_est.0.975,
+  
+  sens_diff.0.5 = (panel_sens - sens_est.0.5),
+  sens_diff.0.975 = (panel_sens - sens_est.0.975),
+  sens_diff.0.025 = (panel_sens - sens_est.0.025),
+  sens_calib = panel_sens > sens_est.0.025 & panel_sens < sens_est.0.975,
+  
+  spec_diff.0.5 = (panel_spec - spec_est.0.5),
+  spec_diff.0.975 = (panel_spec - spec_est.0.975),
+  spec_diff.0.025 = (panel_spec - spec_est.0.025),
+  spec_calib = panel_spec > spec_est.0.025 & panel_spec < spec_est.0.975
+) %>% inner_join(serotype_prevalence_2 %>% group_by(group) %>% count(), by="group")
+```
+
+```{r}
+library(patchwork)
+
+
+
+p1 = ggplot(tmp,aes(x=panel_sens_est, y=sens_est.0.5, ymin=sens_est.0.025, ymax=sens_est.0.975, colour=sens_est_calib))+geom_abline(colour="red")+
+  geom_point(size=0.25,alpha=0.5)+geom_errorbar(size=0.25,alpha=0.05)+
+  coord_fixed(xlim=c(0.5,1),ylim=c(0.5,1))+scale_color_manual(values = list("TRUE" = "#000000", "FALSE" = "#FF00FF"), guide="none")+facet_wrap(~"sensitivity (theory)")+
+  xlab("predicted")+ylab("simulation")
+
+p2 = ggplot(tmp,aes(x=panel_sens, y=sens_est.0.5, ymin=sens_est.0.025, ymax=sens_est.0.975, colour=sens_calib))+geom_abline(colour="red")+
+  geom_point(size=0.25,alpha=0.5)+geom_errorbar(size=0.25,alpha=0.05)+
+  coord_fixed(xlim=c(0.5,1),ylim=c(0.5,1))+scale_color_manual(values = list("TRUE" = "#000000", "FALSE" = "#FF00FF"), guide="none")+facet_wrap(~"sensitivity (estimate)")+
+  xlab("predicted")+ylab("simulation")
+
+p3 = ggplot(tmp,aes(x=panel_spec, y=spec_est.0.5, ymin=spec_est.0.025, ymax=spec_est.0.975, colour=spec_calib))+geom_abline(colour="red")+
+  geom_point(size=0.25,alpha=0.5)+geom_errorbar(size=0.25,alpha=0.05)+
+  coord_fixed(xlim=c(0.5,1),ylim=c(0.5,1))+scale_color_manual(values = list("TRUE" = "#000000", "FALSE" = "#FF00FF"), guide="none")+facet_wrap(~"specificity")+
+  xlab("predicted")+ylab("simulation")
+
+p4 = ggplot(tmp,aes(x=panel_prevalence, y=prev_est.0.5))+geom_abline(colour="red")+
+  geom_point(size=0.25,alpha=0.5)+
+  coord_fixed(xlim=c(0,0.5),ylim=c(0,0.5))+facet_wrap(~"prevalence (estimate)")+
+  xlab("predicted")+ylab("simulation")
+
+p = p4+p3+p1+p2+patchwork::plot_layout(ncol=2)+patchwork::plot_annotation(tag_levels = "A")
+
+save_as(p, here::here("vignettes/latex/qq-prediction-v-simulation"),size = std_size$two_third)
+```
+
+```{r}
+
+
+p1 = ggplot(tmp, aes(x=panel_prevalence, y=sens_diff.0.5, ymin=sens_diff.0.025, ymax=sens_diff.0.975, colour=sens_calib))+geom_point(size=0.25)+geom_errorbar(size=0.25,alpha=0.2)+geom_hline(yintercept=0, colour="red")+scale_color_manual(values = list("TRUE" = "#000000", "FALSE" = "#FF00FF"), guide="none")+facet_wrap(~"sensitivity (theory)")+
+  xlab("prevalence")+ylab("error")+ylim(c(-1,1))
+p2 = ggplot(tmp, aes(x=panel_prevalence, y=sens_est_diff.0.5, ymin=sens_est_diff.0.025, ymax=sens_est_diff.0.975,colour=sens_est_calib))+geom_point(size=0.25)+geom_errorbar(size=0.25,alpha=0.2)+geom_hline(yintercept=0, colour="red")+scale_color_manual(values = list("TRUE" = "#000000", "FALSE" = "#FF00FF"), guide="none")+facet_wrap(~"sensitivity (estimate)")+
+  xlab("prevalence")+ylab("error")+ylim(c(-1,1))
+p3 = ggplot(tmp, aes(x=panel_prevalence, y=spec_diff.0.5, ymin=spec_diff.0.025, ymax=spec_diff.0.975,colour=spec_calib))+geom_point(size=0.25)+geom_errorbar(size=0.25,alpha=0.2)+geom_hline(yintercept=0, colour="red")+scale_color_manual(values = list("TRUE" = "#000000", "FALSE" = "#FF00FF"), guide="none")+facet_wrap(~"specificity")+
+  xlab("prevalence")+ylab("error")+ylim(c(-1,1)*0.02)
+
+p4 = ggplot(tmp, aes(x=panel_spec, y=sens_diff.0.5, ymin=sens_diff.0.025, ymax=sens_diff.0.975, colour=sens_calib))+geom_point(size=0.25)+geom_errorbar(size=0.25,alpha=0.2)+geom_hline(yintercept=0, colour="red")+scale_color_manual(values = list("TRUE" = "#000000", "FALSE" = "#FF00FF"), guide="none")+facet_wrap(~"sensitivity (theory)")+
+  xlab("specificity")+ylab("error")+ylim(c(-1,1))
+p5 = ggplot(tmp, aes(x=panel_spec, y=sens_est_diff.0.5, ymin=sens_est_diff.0.025, ymax=sens_est_diff.0.975,colour=sens_est_calib))+geom_point(size=0.25)+geom_errorbar(size=0.25,alpha=0.2)+geom_hline(yintercept=0, colour="red")+scale_color_manual(values = list("TRUE" = "#000000", "FALSE" = "#FF00FF"), guide="none")+facet_wrap(~"sensitivity (estimate)")+
+  xlab("specificity")+ylab("error")+ylim(c(-1,1))
+p6 = ggplot(tmp, aes(x=panel_spec, y=spec_diff.0.5, ymin=spec_diff.0.025, ymax=spec_diff.0.975,colour=spec_calib))+geom_point(size=0.25)+geom_errorbar(size=0.25,alpha=0.2)+geom_hline(yintercept=0, colour="red")+scale_color_manual(values = list("TRUE" = "#000000", "FALSE" = "#FF00FF"), guide="none")+facet_wrap(~"specificity")+
+  xlab("specificity")+ylab("error")+ylim(c(-1,1)*0.02)
+
+
+p7 = ggplot(tmp, aes(x=factor(n), y=sens_diff.0.5,colour=sens_calib))+ggbeeswarm::geom_beeswarm(size=0.25,corral = "random")+scale_color_manual(values = list("TRUE" = "#000000", "FALSE" = "#FF00FF"),guide="none")+geom_hline(yintercept=0, colour="red")+facet_wrap(~"sensitivity (theory)")+
+  xlab("components")+ylab("error")+ylim(c(-1,1))
+p8 = ggplot(tmp, aes(x=factor(n), y=sens_est_diff.0.5,colour=sens_est_calib))+ggbeeswarm::geom_beeswarm(size=0.25,corral = "random")+scale_color_manual(values = list("TRUE" = "#000000", "FALSE" = "#FF00FF"),guide="none")+geom_hline(yintercept=0, colour="red")+facet_wrap(~"sensitivity (estimate)")+ xlab("components")+ylab("error")+ylim(c(-1,1))
+p9 = ggplot(tmp, aes(x=factor(n), y=spec_diff.0.5,colour=spec_calib))+ggbeeswarm::geom_beeswarm(size=0.25,corral = "random")+scale_color_manual(values = list("TRUE" = "#000000", "FALSE" = "#FF00FF"),guide="none")+geom_hline(yintercept=0, colour="red")+facet_wrap(~"specificity")+
+  xlab("components")+ylab("error")+ylim(c(-1,1)*0.02)
+
+p = p1+no_x()+p4+no_x()+no_y()+p7+no_x()+no_y()+
+  p2+p5+no_y()+p8+no_y()+
+# p2+no_x()+p5+no_x()+no_y()+p8+no_x()+no_y()+
+# p3+p6+no_y()+p9+no_y()+
+patchwork::plot_layout(ncol=3)&scale_y_continuous(trans=scales::modulus_trans(-10),limits = c(-1,1), breaks=c(-0.5,-0.1,-0.05,-0.02,0,0.02,0.05,0.1,0.5))
+
+
+save_as(p, here::here("vignettes/latex/error-prediction-v-simulation"),size = std_size$half)
+
+# p1+p4+no_y()+p7+no_y()+patchwork::plot_layout(ncol=3)&scale_y_continuous(trans=scales::modulus_trans(-10),limits = c(-1,1), breaks=c(-0.5,-0.1,-0.05,-0.02,0,0.02,0.05,0.1,0.5))
+# p2+p5+no_y()+p8+no_y()+patchwork::plot_layout(ncol=3)&scale_y_continuous(trans=scales::modulus_trans(-10),limits = c(-1,1), breaks=c(-0.5,-0.1,-0.05,-0.02,0,0.02,0.05,0.1,0.5))
+# p3+p6+no_y()+p9+no_y()+patchwork::plot_layout(ncol=3)&scale_y_continuous(trans=scales::modulus_trans(-10),limits = c(-1,1), breaks=c(-0.5,-0.1,-0.05,-0.02,0,0.02,0.05,0.1,0.5))
+
+# serotype_prevalence_2 %>% group_by(group) %>% count() %>% group_by(n) %>% count()
+
+```
+
+```{r}
+
+
+p1 = ggplot(tmp, aes(x=panel_prevalence, y=1-sens_calib))+geom_smooth(method = "glm", formula = y ~ splines::ns(x,df=4), method.args=list(family="binomial"), colour="black", size=0.5)+facet_wrap(~"sensitivity (theory)")+
+  xlab("prevalence")+ylab("disagreement")+geom_hline(yintercept=0.05, colour="red")+coord_cartesian(ylim=c(0,0.2))
+p2 = ggplot(tmp, aes(x=panel_prevalence, y=1-sens_est_calib))+geom_smooth(method = "glm", formula = y ~ splines::ns(x,df=4), method.args=list(family="binomial"), colour="black", size=0.5)+facet_wrap(~"sensitivity (estimate)")+
+  xlab("prevalence")+ylab("disagreement")+geom_hline(yintercept=0.05, colour="red")+coord_cartesian(ylim=c(0,0.2))
+p3 = ggplot(tmp, aes(x=panel_prevalence, y=1-spec_calib))+geom_smooth(method = "glm", formula = y ~ splines::ns(x,df=4), method.args=list(family="binomial"), colour="black", size=0.5)+facet_wrap(~"specificity")+
+  xlab("prevalence")+ylab("disagreement")+geom_hline(yintercept=0.05, colour="red")+coord_cartesian(ylim=c(0,0.2))
+
+
+p4 = ggplot(tmp, aes(x=panel_spec, y=1-sens_calib))+geom_smooth(method = "glm", formula = y ~ splines::ns(x,df=4), method.args=list(family="binomial"), colour="black", size=0.5)+facet_wrap(~"sensitivity (theory)")+
+  xlab("specificity")+ylab("disagreement")+geom_hline(yintercept=0.05, colour="red")+coord_cartesian(ylim=c(0,0.2))
+p5 = ggplot(tmp, aes(x=panel_spec, y=1-sens_est_calib))+geom_smooth(method = "glm", formula = y ~ splines::ns(x,df=4), method.args=list(family="binomial"), colour="black", size=0.5)+facet_wrap(~"sensitivity (estimate)")+
+  xlab("specificity")+ylab("disagreement")+geom_hline(yintercept=0.05, colour="red")+coord_cartesian(ylim=c(0,0.2))
+p6 = ggplot(tmp, aes(x=panel_spec, y=1-spec_calib))+geom_smooth(method = "glm", formula = y ~ splines::ns(x,df=4), method.args=list(family="binomial"), colour="black", size=0.5)+facet_wrap(~"specificity")+
+  xlab("specificity")+ylab("disagreement")+geom_hline(yintercept=0.05, colour="red")+coord_cartesian(ylim=c(0,0.2))
+
+tmp2 = tmp %>% group_by(n) %>% summarise(
+  binom_ci_2(sum(sens_calib),n = n(),name = "sens_calib"),
+  binom_ci_2(sum(sens_est_calib),n = n(),name = "sens_est_calib"),
+  binom_ci_2(sum(spec_calib),n = n(),name = "spec_calib")
+) %>% glimpse()
+
+p7 = ggplot(tmp2, aes(x=factor(n), y=1-sens_calib.0.5, ymin=1-sens_calib.0.975, ymax=1-sens_calib.0.025))+geom_errorbar(width=0.6,colour="grey50")+geom_point()+facet_wrap(~"sensitivity (theory)")+
+  xlab("components")+ylab("disagreement")+geom_hline(yintercept=0.05, colour="red")+coord_cartesian(ylim=c(0,0.2))
+p8 = ggplot(tmp2, aes(x=factor(n), y=1-sens_est_calib.0.5, ymin=1-sens_est_calib.0.975, ymax=1-sens_est_calib.0.025)) + geom_errorbar(width=0.6,colour="grey50")+geom_point()+facet_wrap(~"sensitivity (estimate)")+
+  xlab("components")+ylab("disagreement")+geom_hline(yintercept=0.05, colour="red")+coord_cartesian(ylim=c(0,0.2))
+p9 = ggplot(tmp2, aes(x=factor(n), y=1-spec_calib.0.5, ymin=1-spec_calib.0.975, ymax=1-spec_calib.0.025)) + geom_errorbar(width=0.6,colour="grey50")+geom_point()+facet_wrap(~"specificity")+
+  xlab("components")+ylab("disagreement")+geom_hline(yintercept=0.05, colour="red")+coord_cartesian(ylim=c(0,0.2))
+
+#p1+p2+no_y()+p3+no_y()+p4+p5+no_y()+p6+no_y()+p7+p8+no_y()+p9+no_y()+patchwork::plot_layout(ncol=3)
+
+# p1+p4+no_y()+p7+no_y()+patchwork::plot_layout(ncol=3)
+# p2+p5+no_y()+p8+no_y()+patchwork::plot_layout(ncol=3)
+# p3+p6+no_y()+p9+no_y()+patchwork::plot_layout(ncol=3)
+
+# p = p1+no_x()+p4+no_y()+no_x()+p7+no_y()+no_x()+
+# p2+no_x()+p5+no_x()+no_y()+p8+no_x()+no_y()+
+# p3+p6+no_y()+p9+no_y()+
+
+p = p1+no_x()+p4+no_y()+no_x()+p7+no_y()+no_x()+
+p2+p5+no_y()+p8+no_y()+
+patchwork::plot_layout(ncol=3)
+
+
+save_as(p, here::here("vignettes/latex/calibration-prediction-v-simulation"),size = std_size$half)
+
+# serotype_prevalence_2 %>% group_by(group) %>% count() %>% group_by(n) %>% count()
+
+```

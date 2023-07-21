@@ -1,0 +1,41 @@
+---
+title: "Getting started"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+#library(testerror)
+library(tidyverse)
+here::i_am("vignettes/testerror.Rmd")
+source(here::here("vignettes/vignette-utils.R"))
+ggrrr::gg_pedantic(font = "Arial",fontSize = 8)
+```
+
+```{r}
+
+
+```
+
+```{r}
+apparent_prevalence_plot(ap=c(50/1000,100/1000), lim=c(0,0.2),sens=0.5,spec = 0.9975)
+apparent_prevalence_plot(ap=c(50/1000,100/1000), lim=c(0,0.2),sens=0.75,spec = 0.97)
+```
+
+```{r}
+apparent_prevalence_plot(ap=c(50/1000,100/1000), lim=c(0,0.2),sens=0.75,spec = 0.97)
+apparent_prevalence_plot(ap=c(50/1000,100/1000), lim=c(0,0.2),sens=0.5,spec = 0.97)
+```
+
+
+

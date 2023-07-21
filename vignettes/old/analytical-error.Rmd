@@ -1,0 +1,418 @@
+---
+title: "Test error analytical rates"
+output: html_document
+---
+
+
+```{r}
+library(tidyverse)
+devtools::load_all("~/Git/ggrrr")
+here::i_am("vignettes/analytical-error.Rmd")
+source(here::here("vignettes/vignette-utils.R"))
+```
+
+```{r}
+# doc = roogledocs::doc_by_name("Combined panel tests")
+
+# controls = 800
+# samples = 1000
+# prev = 0.1
+# calculate the false positive distribution
+fp_dist = function(prev, samples, control_pos = (1-spec)*controls, control_neg= spec*controls, controls=800, spec=798/800, ...) {
+  negatives = round((1-prev)*samples)
+  # fp = negatives*(1-sens)
+  x= negatives #min(c(fp*10,negatives))
+  # adj is done on positives (aka prev)
+  #TODO: positives as attribute (i.e. prevalence)
+  tibble(
+      count = 0:x,
+      adj = prev,
+      max = x,
+      p = extraDistr::dbbinom(0:x, negatives, control_pos, control_neg)
+  ) %>%
+  mutate(
+    p = p/sum(p)
+  )
+}
+
+empirical_bernoulli = function(dist, p) {
+  
+  # dist is a vector of probabilities associated with the count, starting at zero
+  # we are randomly excluding a proportion of these cases defined by p.
+  # when you exclude 1 from the 9 column you get more probabuility in the 8 column
+  # when you exclude 2 from the 9 column you get more probabuility in the 7 column
+  
+  #dist = dbinom(0:5,5,0.1)
+  #p=0.001
+  
+  # e.g. p0,p1,p2,p3,p4,p5
+  # think about this in terms of keeping
+  # to get 0
+  # (c(dbinom(0,0,0.9), dbinom(0,1,0.9), dbinom(0,2,0.9), dbinom(0,3,0.9), dbinom(0,4,0.9), dbinom(0,5,0.9))*dist) %>% sum()
+  # to get 1
+  # (c(dbinom(1,0,0.9), dbinom(1,1,0.9), dbinom(1,2,0.9), dbinom(1,3,0.9), dbinom(1,4,0.9), dbinom(1,5,0.9))*dist) %>% sum()
+  # to get 2
+  # (c(dbinom(2,0,0.9), dbinom(2,1,0.9), dbinom(2,2,0.9), dbinom(2,3,0.9), dbinom(3,4,0.9), dbinom(4,5,0.9))*dist) %>% sum()
+  n = length(dist)-1
+  if (length(dist)==0) return(numeric())
+  if (length(dist)==1) return(c(1))
+  apply(sapply(0:n, dbinom, 0:n, (1-p))*dist,MARGIN = 2,FUN=sum)
+  
+  
+}
+
+# fp_dist(0.001,1000)
+
+fn_dist = function(prev, samples, spec, disease_pos = sens*diseased, disease_neg= (1-sens)*diseased, diseased=260, sens=0.75,  ...) {
+  positives = round(prev*samples)
+  # we need the test positive rate
+  test_positive_rate = (1-prev)*(1-spec) + prev*sens
+  #TODO: positives? as attribute
+  # fn = positives*(1-sens)
+  x= positives # min(c(fn*10,positives))
+  tibble(
+      count = 0:x,
+      max = x,
+      adj = test_positive_rate,
+      p = extraDistr::dbbinom(0:x, positives, disease_neg, disease_pos)
+  ) %>%
+  mutate(
+    p = p/sum(p)
+  )
+}
+
+# TODO: think this through:
+# When combining FP or FN distributions we have to adjust for the fact that 
+# some FP on the LHS will be FN, TP (=condition positives) on the RHS and vice versa.
+# also some FP on the LHS will be FP on the RHS.
+# This essentially reduces the effective count on each side that we are combining.
+# sharpening the distribution and shifting the probability towards zero counts.
+# 
+# basically I'm trying to adjust for the situation where a false positive 
+# in one test is also an actual positive in another test. The true positive
+# trumping the false positive (or really the false positive becomes reinterpreted as a true positive)
+
+
+# e.g. p(count=1) = p(count=1) + p(count=2 and 1 collision) + p(count=3 and 2 collisions) etc.
+# p collision is just prevalence in other part of combination. If high lots of collisions if low not very many.
+
+# FP only are counted as a FP in the combination when combined with a TN or FP.
+# FP+FP=FP; FP+FN=TP (for the wrong reason); FP+TP=TP; FP+TN=FP
+# FP colliding with FN or TP need to be excluded completely (actual positives = prev)
+# FP colliding with FP need to be counted only once
+
+# This is almost the same for FN. They only remain a FN and are counted in combination when combined with a TN.
+# FN+FN = FN; FN+TP = TP; FN+TN = FN; FN+FP = TP (although true for the wrong reason)
+# FN colliding with FP or TP need to be excluded completely (test positives = prev*sens)
+# FN colliding with FN need to be counted only once
+
+# Both these scenarios are the same as exclude all collisions of LHS with not(TN) 
+# I.e. ((1-prev)*spec)
+# and add back in FP or FN although this is not particularly helpful I think.
+
+# therefore we need to check for collisions with TP and FP (i.e. test positives) and 
+# I.e. P(not FN or a TN) which is a P(test positive) = FP+TP = (1-prev)*(1-spec)+prev*sens
+
+dists_sum = function(a_data, b_data, samples = 1000) {
+  
+  a_frac = a_data %>% summarise(f = sum(count*p)) %>% pull(f)/samples
+  b_frac = b_data %>% summarise(f = sum(count*p)) %>% pull(f)/samples
+  # fraction from a & b that overlap (i.e. the FP rate on LHS and RHS)
+  a_b_adj = a_frac * b_frac
+  
+  # b_adj is the probability that a single observation in B is also in A as a 
+  # positive or a false positive (for false positives) or as 
+  # a test positive or false negative in B
+  b_adj = unique(a_data$adj) + a_frac
+  
+  # browser()
+  
+  b_data_2 = b_data %>% arrange(count) %>% mutate(
+    
+    # adjust the probability distribution based on the possibility of collision
+    # of the new FP and existing TP/FP by adjusting by b_adj
+    p = empirical_bernoulli(p, b_adj)
+      
+  )
+  
+  # having performed adjustment on b we can combine the new distributions as a sum assuming
+  # no collision.
+  a_data %>% 
+    #filter(p>0.0000001) %>%
+    # cross join
+    inner_join(
+      b_data_2, #%>% filter(p>0.0000001), 
+      by=character(), suffix = c(".lhs",".rhs")
+    ) %>%
+    mutate(
+      count = count.lhs + count.rhs,
+      p = p.lhs * p.rhs
+    ) %>%
+    group_by(count) %>%
+    summarise(p = sum(p),.groups = "drop") %>%
+    filter(count <= samples) %>%
+    mutate(
+      p = p/sum(p),
+      # the overlap / collision adjustment term. This is all positives for the FP
+      # distribution and all true positives for the FN distribution.
+      # The positives (FP) can be combined; the test positives (FN) can also be combined.
+      adj = 1-(1-unique(a_data$adj))*(1-unique(b_data$adj))) %>%
+    arrange(count)
+}
+
+dists_diff = function(a_data, b_data) {
+  a_data %>% 
+    # filter(p>0.0000001) %>%
+    # cross join
+    inner_join(b_data, # %>% filter(p>0.0000001), 
+               by=character(), suffix = c(".lhs",".rhs")) %>%
+    mutate(
+      count = count.lhs - count.rhs,
+      p = p.lhs * p.rhs
+    ) %>%
+    group_by(count) %>%
+    summarise(p = sum(p)) %>%
+    arrange(count)
+}
+
+# combined_fp = lapply(1:20, function(x) fp_dist(0.005,1000)) %>% reduce(dists_sum)
+# combined_fn = lapply(1:20, function(x) fn_dist(0.005,1000,0.9975)) %>% reduce(dists_sum)
+# 
+# lapply(1:2, function(x) fp_dist(0.2,1000,control_pos = 10,control_neg = 90)) %>% reduce(dists_sum)
+# 
+# sum(combined_fp$p)
+# sum(combined_fn$p)
+# 
+# example_plot(prevalence = combined_p, samples = 1000, fp=combined_fp, fn=combined_fn)
+
+```
+
+```{r}
+
+discrete_quantile = function(dist, q) {
+  x = dist %>% arrange(count) %>% mutate(c = cumsum(p))
+  tmp = sapply(q, function(q1) min(which(x$c > q1)))
+  tmp = x$count[tmp]
+  names(tmp) = q
+  return(tmp)
+}
+
+specificity_est = function(fp_dist, prevalence, samples, ci=NULL) {
+  n1 = (1-prevalence)*samples
+  if (is.null(ci)) {
+    fp1 = fp_dist %>% summarise(x = sum(count*p)) %>% pull(x)
+  } else {
+    fp1 = discrete_quantile(fp_dist, ci)
+  }
+  spec = rev(1-fp1/n1)
+  names(spec) = ci
+  return(spec)
+}
+
+sensitivity_est = function(fn_dist, prevalence, samples, ci=NULL) {
+  p1 = prevalence*samples
+  if (is.null(ci)) {
+    fn1 = fn_dist %>% summarise(x = sum(count*p)) %>% pull(x)
+  } else {
+    fn1 = discrete_quantile(fn_dist, ci)
+  }
+  sens = rev(1-fn1/p1)
+  names(sens) = ci
+  return(sens)
+}
+
+
+summary_test = function(
+    prevalence, samples, spec = 0.9975,
+    ...,
+    fp = fp_dist(prevalence, samples, ...),
+    fn = fn_dist(prevalence, samples, spec, ...)) 
+  {
+    p1 = prevalence*samples
+    spec = specificity_est(fp,prevalence,samples)
+    sens = sensitivity_est(fn,prevalence,samples)
+    fp1 = fp %>% summarise(f = sum(count*p)) %>% pull(f)
+    fn1 = fn %>% summarise(f = sum(count*p)) %>% pull(f)
+    
+    comb = dists_diff(fp, fn) 
+    comb_f = comb %>% summarise(f = sum(count*p)) %>% pull(f)
+    
+  tribble(
+    
+    
+    ~characteristic, ~value,
+    "N", sprintf("%d",samples),
+    "Prevalence", sprintf("%1.4g%%", prevalence*100),
+    # "Sensitivity", sprintf("%1.4f",sens),
+    # "Specificity", sprintf("%1.4f",spec),
+    "E(FP)",  sprintf("%1.2f [%d \u2014 %d]",
+                fp1,
+                discrete_quantile(fp, 0.025),
+                discrete_quantile(fp, 0.975)
+    ),
+    "E(FN)",  sprintf("%1.2f [%d \u2014 %d]",
+                fn1,
+                discrete_quantile(fn, 0.025),
+                discrete_quantile(fn, 0.975)
+    ),
+    "Condition pos", sprintf("%1.1f", p1),
+    "E(Test pos)", sprintf("%1.2f [%d \u2014 %d]",
+                p1+comb_f,
+                round(p1+discrete_quantile(comb, 0.025)),
+                round(p1+discrete_quantile(comb, 0.975))
+    )
+  )
+}
+
+
+example_plot = function(
+    prevalence = 0.1, 
+    samples = 1000,
+    spec = 0.9975,
+    ...,
+    fp = fp_dist(prevalence, samples, ...),
+    fn = fn_dist(prevalence, samples, spec, ...),
+    xlim = c(NA,NA)
+) {
+  
+  p1 = round(prevalence*samples)
+  fp1 = fp %>% summarise(f = sum(count*p)) %>% pull(f)
+  fn1 = fn %>% summarise(f = sum(count*p)) %>% pull(f)
+  
+  title = sprintf("p=%1.2g%%",prevalence*100)
+  
+  tmp3 = bind_rows(
+     fp %>% mutate(style = "fp", x=prevalence*samples+count),
+     fn %>% mutate(style = "fn", x=prevalence*samples-count, p = -p)
+    ) %>% 
+    mutate(prevalence = title) %>%
+    filter(abs(p) > 0.0001)
+  
+  ylims = c(-1,1)*max(abs(tmp3$p))
+  
+  comb = dists_diff(fp, fn) %>% 
+    mutate(prevalence = title) %>%
+    filter(abs(p) > 0.0001)
+  
+  comb_f = comb %>% summarise(f = sum(count*p)) %>% pull(f)
+  # comb_ylims = c(0,max(conb$p))
+  
+  list(
+    
+    ggplot(tmp3, aes(x=x, y=p, fill = style, colour = style))+geom_bar(stat="identity")+
+      geom_vline(xintercept = p1, colour="black")+
+      # geom_text(x=p1, y=Inf, label="real positives", vjust=1, hjust=1, angle=90 )+
+      geom_vline(xintercept = p1+fp1, colour="blue")+
+      geom_vline(xintercept = p1-fn1, colour="red")+
+      geom_hline(yintercept = 0,colour= "black")+
+      guides(fill=guide_none(), colour = guide_none())+
+      ylab("probability")+
+      xlab("count")+
+      facet_wrap(~prevalence) +
+      coord_cartesian(ylim=ylims, xlim=xlim),
+    
+    ggplot(comb, aes(x=count+p1, y=p))+geom_bar(stat="identity",fill="grey50",colour="grey50")+
+      geom_vline(xintercept = p1, colour="black")+
+      geom_vline(xintercept = p1+comb_f, colour="magenta")+
+      facet_wrap(~prevalence) +
+      ylab("probability")+
+      xlab("count")+
+      coord_cartesian(xlim=xlim),
+    
+    ggrrr::gg_simple_table(summary_test(prevalence = prevalence,samples = samples,fp=fp,fn=fn),pts = 5)
+  )
+}
+
+
+
+# patchwork::wrap_plots(example_plot(0.16), nrow=1) %>% ggrrr::gg_save_as(tempfile(fileext = ".png"), size = std_size$quarter)
+
+patchwork::wrap_plots(example_plot(0.16), nrow=1) #%>% plot_to_google("Combined panel tests",1, size = std_size$third)
+```
+
+
+```{r}
+p = patchwork::wrap_plots(example_plot(0.02), nrow=1) /
+patchwork::wrap_plots(example_plot(0.005), nrow=1) /
+# patchwork::wrap_plots(example_plot(0.002), nrow=1) /
+patchwork::wrap_plots(example_plot(0), nrow=1) +
+  patchwork::plot_annotation(tag_levels = "A")
+
+# p %>% ggrrr::gg_save_as(tempfile(fileext = ".png"), size = std_size$two_third)
+p #%>% plot_to_google("Combined panel tests",2, size = std_size$two_third)
+```
+
+
+
+
+```{r}
+
+combined_p = 1-(1-0.005)^20
+# this is an overestimate as it fails to account for false positves in one test
+# that are true positives in another test.
+
+combined_fp = lapply(1:20, function(x) fp_dist(0.005,1000)) %>% reduce(dists_sum)
+combined_fn = lapply(1:20, function(x) fn_dist(0.005,1000,0.9975)) %>% reduce(dists_sum)
+
+combined_fp %>% specificity_est(combined_p, 1000, ci = c(0.025,0.975))
+combined_fn %>% sensitivity_est(combined_p, 1000, ci = c(0.025,0.975))
+
+tmp = example_plot(prevalence = combined_p, samples = 1000, fp=combined_fp, fn=combined_fn)
+
+p = 
+  patchwork::wrap_plots(example_plot(0.005), nrow=1) /
+  patchwork::wrap_plots(tmp, nrow=1)+
+  patchwork::plot_annotation(tag_levels = "A")
+
+p
+# p %>% ggrrr::gg_save_as(tempfile(fileext = ".png"), size = std_size$half)
+# p %>% plot_to_google("Combined panel tests", 3, size = std_size$half)
+```
+
+
+```{r}
+
+t = bind_rows(
+  summary_test(prevalence = 0.16, samples = 1000) %>% mutate(configuration = "1 x 16%"),
+  # summary_test(prevalence = 0.005, samples = 1000) %>% mutate(configuration = "1 x 0.5%"),
+  summary_test(prevalence = combined_p, samples = 1000, fp = combined_fp, fn = combined_fn) %>% mutate(configuration = "20 x 0.5%")
+) %>% ggrrr::hux_tidy(rowGroupVars = vars(characteristic), colGroupVars = vars(configuration))
+
+t
+# t %>% table_to_google("Combined panel tests", 1)
+
+```
+
+```{r}
+
+# plot for combination of 4 groups as per the
+
+pv = c(0,0.001,0.0025,0.025) %>% lapply(rep,5) %>% unlist()
+
+combined_summary = function(pv, name, spec=0.9975) {
+  combined_p = 1-prod((1-pv))
+  combined_fp = lapply(pv, function(x) fp_dist(x,1000)) %>% reduce(dists_sum)
+  combined_fn = lapply(pv, function(x) fn_dist(x,1000,spec)) %>% reduce(dists_sum)
+  summary_test(prevalence = combined_p, samples = 1000, fp = combined_fp, fn = combined_fn) %>% mutate(configuration = name)
+}
+
+
+
+t2 = bind_rows(
+  combined_summary(rep(0,15), "15x0%"),
+  combined_summary(rep(0.03,5), "5x3%"),
+  combined_summary(c(rep(0,15),rep(0.03,5)), "15x0% + 5x3%")
+) %>% ggrrr::hux_tidy(rowGroupVars = vars(characteristic), colGroupVars = vars(configuration))
+t2 # %>% table_to_google("Combined panel tests", 2)
+
+t3 = bind_rows(
+  combined_summary(rep(0,13), "13x0%"),
+  combined_summary(rep(0.05,1), "1x5%"),
+  combined_summary(c(rep(0,13),rep(0.05,1)), "13x0% + 1x5%")
+) %>% ggrrr::hux_tidy(rowGroupVars = vars(characteristic), colGroupVars = vars(configuration))
+t3 # %>% table_to_google("Combined panel tests", 3)
+
+
+
+
+```
