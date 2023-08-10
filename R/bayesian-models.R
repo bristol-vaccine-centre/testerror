@@ -10,6 +10,11 @@
 #' @importFrom memoise memoise
 #' @importFrom digest digest
 #' @importFrom rappdirs user_cache_dir
+#' @import BH 
+#' @importFrom Rcpp getRcppVersion
+#' @import RcppEigen
+#' @import RcppParallel
+#' @import StanHeaders
 NULL
 
 .build_model = function(model, name, stan_version=rstan::stan_version()) {
