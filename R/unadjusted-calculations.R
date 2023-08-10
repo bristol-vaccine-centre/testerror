@@ -24,7 +24,7 @@ panel_spec = function(spec, na.rm=FALSE) {
 
 #' Expected test panel prevalence assuming independence
 #' 
-#' @param spec a vector of specificity of the component tests
+#' @param p a vector of prevalences of the component tests
 #' @param na.rm remove NA values?
 #'
 #' @return a single value for the effective specificity of the combination of 
@@ -32,7 +32,7 @@ panel_spec = function(spec, na.rm=FALSE) {
 #' @export
 #'
 #' @examples
-#' panel_prev(p = rep(0.01,24))
+#' panel_prevalence(p = rep(0.01,24))
 panel_prevalence = function(p, na.rm=FALSE) {
   return(1-prod(1-p, na.rm=na.rm))
 }
@@ -41,6 +41,7 @@ panel_prevalence = function(p, na.rm=FALSE) {
 #'
 #' @inheritParams uncertain_panel_rogan_gladen
 #' @param fit_beta return the result as a `beta_dist` object?
+#' @param na.rm remove missing values
 #'
 #' @return a vector of possible specificities for the panel or a fitted `beta_dist`
 #' @export
@@ -50,11 +51,14 @@ panel_prevalence = function(p, na.rm=FALSE) {
 uncertain_panel_spec = function(
     false_pos_controls = NA, n_controls = NA, 
     ..., 
-    spec = beta_dist(n_controls-false_pos_controls, false_pos_controls), 
+    spec = beta_dist(n_controls-false_pos_controls+1, false_pos_controls+1), 
     samples=1000, 
     na.rm=FALSE,
     fit_beta = FALSE) {
+  
+  if (inherits(spec,"beta_dist")) spec=list(spec)
   mat = sapply(1:length(spec), function(i) spec[[i]]$r(samples))
+  
   specs = apply(mat, MARGIN = 1, prod, na.rm=na.rm)
   
   specs[specs < 0] = 0
@@ -86,22 +90,7 @@ uncertain_panel_spec = function(
 #' @export
 #'
 #' @examples
-#' tibble::tibble(
-#'   test = 1:20,
-#'   sens = 0.75,
-#'   spec = 0.99
-#' ) %>% 
-#' tidyr::crossing(
-#'   tidyr::nesting(
-#'     sim = 1:1001,
-#'     prevalence = seq(0,1,length.out=1001)
-#'   )
-#' ) %>%
-#' group_by(sim) %>%
-#' summarise(
-#'   ap = first(test_positivity),
-#'   panel_sens = combined_sens(p = prevalence, sens = sens, spec = spec)
-#' )
+#' #TODO
 panel_sens = function(p, sens, spec, na.rm=FALSE) {
   
   if (length(sens) == 1) sens = rep(sens,length(p))
@@ -129,6 +118,7 @@ panel_sens = function(p, sens, spec, na.rm=FALSE) {
 #' @inheritParams uncertain_panel_rogan_gladen
 #' @param fit_beta return the result as a `beta_dist` object?
 #' 
+#' 
 #' @return a vector of possible sensitivity values
 #'
 #' @export
@@ -146,19 +136,20 @@ uncertain_panel_sens_estimator = function(
     false_neg_diseased = NA,
     n_diseased = NA,
     ...,
-    sens = beta_dist(n_diseased-false_neg_diseased, false_neg_diseased), 
-    spec = beta_dist(n_controls-false_pos_controls, false_pos_controls),
+    sens = beta_dist(n_diseased-false_neg_diseased+1, false_neg_diseased+1), 
+    spec = beta_dist(n_controls-false_pos_controls+1, false_pos_controls+1),
     samples = 1000,
-    confint = 0.95,
-    fmt = "%1.2f%% [%1.2f%% \u2014 %1.2f%%]",
-    seed = NA,
-    na.rm=FALSE,
-    fit_beta = FALSE) {
+    fit_beta = FALSE
+  ) {
   
   if (length(n_obs) == 1) n_obs = rep(n_obs,length(pos_obs))
   if (length(pos_obs) != length(sens) || length(pos_obs) != length(sens) || length(pos_obs) != length(n_obs)) stop("all provided parameters should be the same length") 
   ap = rep(pos_obs/n_obs,samples)
   ap = matrix(ap,nrow = samples,byrow = TRUE)
+  
+  if (inherits(spec,"beta_dist")) spec=list(spec)
+  if (inherits(sens,"beta_dist")) sens=list(sens)
+  
   spec_mat = sapply(1:length(spec), function(i) spec[[i]]$r(samples))
   sens_mat = sapply(1:length(sens), function(i) sens[[i]]$r(samples))
   
@@ -201,22 +192,7 @@ uncertain_panel_sens_estimator = function(
 #' @export
 #'
 #' @examples
-#' tibble::tibble(
-#'   test = 1:20,
-#'   sens = 0.75,
-#'   spec = 0.99
-#' ) %>% 
-#' tidyr::crossing(
-#'   tidyr::nesting(
-#'     sim = 1:1001,
-#'     test_positivity = seq(0,1,length.out=1001)
-#'   )
-#' ) %>%
-#' group_by(sim) %>%
-#' summarise(
-#'   ap = first(test_positivity),
-#'   panel_sens = combined_sens(ap = test_positivity, sens = sens, spec = spec)
-#' )
+#' #TODO
 panel_sens_estimator = function(ap, sens, spec, na.rm=FALSE) {
   
   if (length(sens) == 1) sens = rep(sens,length(ap))

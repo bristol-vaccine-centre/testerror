@@ -18,6 +18,6 @@ a \code{beta_dist} S3 object fitted to the data.
 Fit a beta distribution to data using method of moments
 }
 \examples{
-beta_fit(rbeta(10000,40,60))
-beta_fit(rbeta(10000,1,99))
+beta_fit(stats::rbeta(10000,40,60))
+beta_fit(stats::rbeta(10000,1,99))
 }

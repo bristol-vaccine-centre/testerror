@@ -28,7 +28,7 @@
 #' 
 odds_ratio_ve = function(vaccinatedCase, unvaccinatedCase, vaccinatedControl, unvaccinatedControl, confint=c(0.025,0.975)) {
   p = confint
-  oddsR = case_when(
+  oddsR = dplyr::case_when(
     vaccinatedCase == 0 | unvaccinatedCase == 0 | unvaccinatedControl == 0 | vaccinatedControl == 0 ~ NA_real_,
     TRUE ~ (vaccinatedCase/vaccinatedControl) / (unvaccinatedCase/unvaccinatedControl)
   )
@@ -68,17 +68,17 @@ odds_ratio_ve = function(vaccinatedCase, unvaccinatedCase, vaccinatedControl, un
 #'   relative_risk_ve(N_vacc_pn_pos, N_unvacc_pn_pos, N_vacc-N_vacc_pn_pos, N_unvacc-N_unvacc_pn_pos)
 #' )
 #' 
-#' bind_rows(lapply(
-#' c("katz.log", "adj.log", "bailey", "koopman", "noether",  "sinh-1", "boot"),
-#' function(m) {as_tibble(
-#'   1-DescTools::BinomRatioCI(N_vacc_pn_pos, N_vacc, N_unvacc_pn_pos, N_unvacc, method = m)
-#' ) %>% mutate(
-#'   method = m
-#' )}
-#' ))
+#' # dplyr::bind_rows(lapply(
+#' #   c("katz.log", "adj.log", "bailey", "koopman", "noether",  "sinh-1", "boot"),
+#' #   function(m) {tibble::as_tibble(
+#' #     1-DescTools::BinomRatioCI(N_vacc_pn_pos, N_vacc, N_unvacc_pn_pos, N_unvacc, method = m)
+#' #   ) %>% dplyr::mutate(
+#' #     method = m
+#' #   )}
+#' # ))
 relative_risk_ve = function(vaccinatedCase, unvaccinatedCase, vaccinatedControl, unvaccinatedControl, confint=c(0.025,0.975)) {
   p = confint
-  RR = case_when(
+  RR = dplyr::case_when(
     vaccinatedCase == 0 | unvaccinatedCase == 0 | unvaccinatedControl == 0 | vaccinatedControl == 0 ~ NA_real_,
     TRUE ~ (vaccinatedCase/(vaccinatedCase+vaccinatedControl)) / (unvaccinatedCase/(unvaccinatedCase+unvaccinatedControl))
   )
@@ -92,11 +92,11 @@ relative_risk_ve = function(vaccinatedCase, unvaccinatedCase, vaccinatedControl,
 }
 
 # This gives the same answer as the relative risk ve via a number of different CI methods
-# bind_rows(lapply(
+# dplyr::bind_rows(lapply(
 #   c("katz.log", "adj.log", "bailey", "koopman", "noether",  "sinh-1"),
-#   function(m) {as_tibble(
+#   function(m) {tibble::as_tibble(
 #     1-DescTools::BinomRatioCI(N_vacc_pn_pos, N_vacc, N_unvacc_pn_pos, N_unvacc, method = m)
-#   ) %>% mutate(
+#   ) %>% dplyr::mutate(
 #     method = m
 #   )}
 # ))

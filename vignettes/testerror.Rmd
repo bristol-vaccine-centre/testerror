@@ -1,0 +1,62 @@
+---
+title: "Getting started"
+output: html_document
+vignette: >
+  %\VignetteIndexEntry{Getting started}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+
+library(tidyverse)
+library(testerror)
+
+options(mc.cores = 2) # parallel::detectCores())
+rstan::rstan_options(auto_write = FALSE)
+
+here::i_am("vignettes/testerror.Rmd")
+source(here::here("vignettes/formatting.R"))
+
+```
+
+# Correcting panel tests for test error
+
+We define panel testing as testing for multiple subtypes of disease, where any
+positive result for a subtype is regarded as a positive for the disease. As we
+describe in our paper this leads to compound error, which is particularly
+significant when the individual components are present at low prevalence and the
+number of components involved is large.
+
+In the following example a simulation a population with true prevalence of 15%,
+is tested for using a panel of 15 tests each with sensitivity of 0.99 and
+specificity of 0.8. The individual components in the panel each generate small
+amounts of error which compound to test positivity (red) being a serious
+overestimate of panel prevalence (blue).
+
+This package provides modelled estimates of prevalence from test and panel test
+positivity.
+
+```{r}
+tmp = testerror:::panel_example(panel_prev = 0.15, comp_spec = 0.99, comp_sens = 0.8, n_comp = 15, n_samples = 2000, n_controls = 800)
+
+corr2 = true_panel_prevalence(
+   test_results = tmp$samples %>% dplyr::select(id,test,result = observed),
+   false_pos_controls = tmp$performance$false_pos_controls,
+   n_controls = tmp$performance$n_controls,
+   false_neg_diseased = tmp$performance$false_neg_diseased,
+   n_diseased = tmp$performance$n_diseased,
+   method = "lang-reiczigel"
+)
+
+testerror:::demo_bar_plot(tmp$summary %>% dplyr::inner_join(bind_rows(corr2),by="test"))
+```
+
+These functions are elaborated in the other vignettes.

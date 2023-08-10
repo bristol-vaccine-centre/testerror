@@ -2,19 +2,20 @@
 % Please edit documentation in R/test-error-adjustment.R
 \name{true_prevalence}
 \alias{true_prevalence}
-\title{Calculate an estimate of true prevalence from apparent prevalence, and uncertain
-estimates of test sensitivity and test specificity}
+\title{Vectorised true prevalence estimates}
 \usage{
 true_prevalence(
   pos_obs,
   n_obs,
-  false_pos_controls,
-  n_controls,
-  false_neg_diseased,
-  n_diseased,
+  false_pos_controls = NULL,
+  n_controls = NULL,
+  false_neg_diseased = NULL,
+  n_diseased = NULL,
   confint = 0.95,
-  method = c("lang-reiczigel", "rogan-gladen", "gelman"),
-  prefix = "prevalence"
+  method = c("lang-reiczigel", "rogan-gladen", "bayes"),
+  ...,
+  sens = NULL,
+  spec = NULL
 )
 }
 \arguments{
@@ -24,14 +25,14 @@ true_prevalence(
 
 \item{false_pos_controls}{the number of positives that appeared in the specificity
 disease-free control group. These are by definition false positives. This
-is (1-specificity)*n_controls}
+is (1-specificity)*n_controls (ignored if \code{spec} given)}
 
 \item{n_controls}{the number of controls in the specificity
 disease-free control group.}
 
 \item{false_neg_diseased}{the number of negatives that appeared in the sensitivity
 confirmed disease group. These are by definition false negatives. This
-is (1-sensitivity)*n_diseased}
+is (1-sensitivity)*n_diseased (ignored if \code{sens} given)}
 
 \item{n_diseased}{the number of confirmed disease cases in the sensitivity
 control group.}
@@ -41,15 +42,31 @@ control group.}
 \item{method}{one of:
 \itemize{
 \item "lang-reiczigel": Frequentist confidence limits
-\item "gelman": Bayesian analysis
+\item "rogan-gladen": Rogan gladen incorporating uncertainty with resampling
+\item "bayes": Bayesian analysis
 }}
+
+\item{...}{passed onto methods}
+
+\item{sens}{the sensitivity of the test as a \code{beta_dist} (optional)}
+
+\item{spec}{the specificity of the test as a \code{beta_dist} (optional)}
 }
 \value{
-a dataframe with prevalence.lower, prevalence.median and prevalence.upper columns
+A dataframe containing the following columns:
+\itemize{
+\item prevalence.label (character) - a fomatted label of the true prevalence estimate with CI
+\item prevalence.lower (numeric) - the lower estimate
+\item prevalence.median (numeric) - the median estimate
+\item prevalence.method (character) - the method of estimation
+\item prevalence.upper (numeric) - the upper estimate
+\item test (character) - the name of the test or panel
+Grouped by: \if{html}{\out{<none>}}
+}
 }
 \description{
 Calculate an estimate of true prevalence from apparent prevalence, and uncertain
-estimates of test sensitivity and test specificity
+estimates of test sensitivity and test specificity, using one of 3 methods.
 }
 \examples{
 true_prevalence(c(1:50), 200, 2, 800, 25, 75)

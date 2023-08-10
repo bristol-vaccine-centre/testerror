@@ -4,7 +4,7 @@
 \alias{beta_dist}
 \title{Generate a beta distribution out of probabilities, or positive and negative counts}
 \usage{
-beta_dist(p = n - q, q = n - p, n = p + q, ...)
+beta_dist(p, q = NULL, n = NULL, ...)
 }
 \arguments{
 \item{p}{the first shape / the probability or count of success}
@@ -13,7 +13,7 @@ beta_dist(p = n - q, q = n - p, n = p + q, ...)
 
 \item{n}{(optional) the number of trials.}
 
-\item{...}{}
+\item{...}{not used}
 }
 \value{
 either a single \code{beta_dist} object or a list of \code{beta_dist}s

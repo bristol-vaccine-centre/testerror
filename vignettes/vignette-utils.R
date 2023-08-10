@@ -1,18 +1,17 @@
+
 ## Simulation ----
-
-
 
 ipd_distribution = function(pcv_groups = c("PCV7","PCV13","PCV15","PCV20")) {
   ipd = readRDS(here::here("vignettes/ipd-serotype-distribution.rds"))
-  tmp = avoncap::serotype_data$map %>% pivot_longer(cols = -serotype, names_to = "pneumo.group") %>%
-    filter(pneumo.group %in% pcv_groups & value==TRUE) %>% 
-    select(-value) %>%
-    rename(panel_id = pneumo.group) %>%
-    nest(pcv_group = panel_id) %>%
-    rename(pneumo.phe_serotype = serotype) %>%
-    left_join(ipd$by_serotype %>% select(pneumo.phe_serotype, x) %>% dtrackr::untrack(), by = join_by(pneumo.phe_serotype)) %>% 
-    mutate(
-      x= ifelse(is.na(x),0,x),
+  tmp = avoncap::serotype_data$map %>% tidyr::pivot_longer(cols = -serotype, names_to = "pneumo.group") %>%
+    dplyr::filter(pneumo.group %in% pcv_groups & value==TRUE) %>% 
+    dplyr::select(-value) %>%
+    dplyr::rename(panel_id = pneumo.group) %>%
+    tidyr::nest(pcv_group = panel_id) %>%
+    dplyr::rename(pneumo.phe_serotype = serotype) %>%
+    dplyr::left_join(ipd$by_serotype %>% dplyr::select(pneumo.phe_serotype, x) %>% dtrackr::untrack(), by = dplyr::join_by(pneumo.phe_serotype)) %>% 
+    dplyr::mutate(
+      x= dplyr::if_else(is.na(x),0,x),
       n= sum(x),
       distribution = x/n
     )
@@ -21,50 +20,36 @@ ipd_distribution = function(pcv_groups = c("PCV7","PCV13","PCV15","PCV20")) {
 
 
   
-  # tmp_ipd = avoncap::serotype_data$xr %>% filter(order==1) %>% 
-  #   select() %>% 
-  #   left_join(ipd$by_serotype %>% dtrackr::untrack()) %>% 
-  #   transmute(
+  # tmp_ipd = avoncap::serotype_data$xr %>% dplyr::filter(order==1) %>% 
+  #   dplyr::select() %>% 
+  #   dplyr::left_join(ipd$by_serotype %>% dtrackr::untrack()) %>% 
+  #   dplyr::transmute(
   #     pneumo.phe_serotype=factor(pneumo.phe_serotype),
-  #     pneumo.group = ifelse(is.na(pneumo.group),"PCV13-7",as.character(pneumo.group)),
-  #     x= ifelse(is.na(x),0,x)
+  #     pneumo.group = dplyr::if_else(is.na(pneumo.group),"PCV13-7",as.character(pneumo.group)),
+  #     x= dplyr::if_else(is.na(x),0,x)
   #   )
   # 
   # serotype_prevalence = tmp_ipd %>% 
   #   # pick out only the relevant test results for the serotypes in the scenario from the count data.
-  #   filter(pneumo.group %in% pcv_group$pneumo.group) %>%
-  #   nest_join(pcv_group, by = "pneumo.group", name="pcv_group", unmatched = "drop") %>% 
+  #   dplyr::filter(pneumo.group %in% pcv_group$pneumo.group) %>%
+  #   dplyr::nest_join(pcv_group, by = "pneumo.group", name="pcv_group", unmatched = "drop") %>% 
   #   # normalise the distribution
-  #   mutate(n= sum(x)) %>%
-  #   mutate(binom::binom.confint(x,n,methods="wilson")) %>%
-  #   transmute(
+  #   dplyr::mutate(n= sum(x)) %>%
+  #   dplyr::mutate(binom::binom.confint(x,n,methods="wilson")) %>%
+  #   dplyr::transmute(
   #     test_id = pneumo.phe_serotype,
   #     pcv_id = pneumo.group,
   #     pcv_group = pcv_group,
   #     distribution = mean,
-  #     false_neg_rate = 1-sens, # + rlnorm(n(), log(0.01), 0.5),
+  #     false_neg_rate = 1-sens, # + stats::rlnorm(dplyr::n(), log(0.01), 0.5),
   #     n_diseased = n_diseased,
-  #     false_pos_rate = 1-spec, # + rlnorm(n(), log(0.005), 0.5),
+  #     false_pos_rate = 1-spec, # + stats::rlnorm(dplyr::n(), log(0.005), 0.5),
   #     n_controls = n_controls
   #   )
     
 
 
-# Create a sample with exactly n*prev positives.
-rfixed = function(boots, n, prev) {
-  pos = round(n*prev)
-  neg = n-pos
-  s = c(rep(0,neg),rep(1,pos))
-  lapply(1:boots,  function(...) sample(s)) %>% unlist()
-}
 
-rfixed_mnom = function(boots, n, dist, prev) {
-  dist = dist/sum(dist)
-  dist = dist*prev
-  tmp = unlist(sapply(1:length(dist), function(x) rep(x,round(dist[x]*n))))
-  tmp = c(tmp, rep(0,n-length(tmp)))
-  lapply(1:boots,  function(...) sample(tmp)) %>% unlist()
-}
 
 # group modify helper function
 # g must contain grouping info only - group identifier and group_prevalence
@@ -73,36 +58,36 @@ rfixed_mnom = function(boots, n, dist, prev) {
 sim_dist = function(d, g, ..., n= 1000, boots = 1, exact=TRUE) {
   if (!"group_prevalence" %in% colnames(g)) stop("data must be grouped by at least the group_prevalence column")
   if (!"distribution" %in% colnames(d)) stop("the test data must define a distribution column")
-  if (!"test_id" %in% colnames(d)) d = d %>% mutate(test_id = row_number())
+  if (!"test_id" %in% colnames(d)) d = d %>% dplyr::mutate(test_id = dplyr::row_number())
   if (anyDuplicated(d$test_id)) stop("test_id must be unique (in each group)")
   n_tests = length(d$distribution)
-  d = d %>% mutate(prevalence = g$group_prevalence*distribution/sum(distribution))
+  d = d %>% dplyr::mutate(prevalence = g$group_prevalence*distribution/sum(distribution))
   
   # browser()
-  # uniq = d %>% select(-distribution) %>% summarise(across(everything(), ~ n_distinct(.x,test_id)),.groups = "keep") %>% pivot_longer(cols = -test_id, names_to = "col", values_to = "uniqueness") %>% group_by(col) %>% filter(test_id == uniqueness) %>% pull(col) %>% unique()
-  # pres = d %>% select(test_id, all_of(uniq))
+  # uniq = d %>% dplyr::select(-distribution) %>% dplyr::summarise(across(tidyselect::everything(), ~ dplyr::n_distinct(.x,test_id)),.groups = "keep") %>% tidyr::pivot_longer(cols = -test_id, names_to = "col", values_to = "uniqueness") %>% dplyr::group_by(col) %>% dplyr::filter(test_id == uniqueness) %>% dplyr::pull(col) %>% unique()
+  # pres = d %>% dplyr::select(test_id, tidyselect::all_of(uniq))
   
   if (exact) {
     tmp = rfixed_mnom(boots, n, dist = d$distribution, g$group_prevalence)
   } else {
     td = c(1-g$group_prevalence, d$prevalence)
     tmp = lapply(1:boots, function(...) {
-      (rmultinom(n, 1, td) %>% apply(MARGIN = 2, function(x) which(x==1)))-1
+      (stats::rmultinom(n, 1, td) %>% apply(MARGIN = 2, function(x) which(x==1)))-1
     }) %>% unlist()
   }
-  tmp2 = tibble(
+  tmp2 = tibble::tibble(
       boot = unlist(lapply(1:boots, rep, n*n_tests)),
       id = rep(rep(1:n, boots), n_tests),
       test_id = unlist(lapply(d$test_id, rep, n*boots)),
       actual = lapply(1:n_tests, function(x) tmp==x) %>% unlist() %>% as.integer()
     ) %>% 
-    left_join(d %>% rename_with(~paste0("test_",.x), .cols=-test_id), by="test_id",suffix = c("",".old")) %>% 
-    select(-ends_with(".old")) 
-  return(tmp2 %>% group_by(across(starts_with("test"))))
+    dplyr::left_join(d %>% dplyr::rename_with(~paste0("test_",.x), .cols=-test_id), by="test_id",suffix = c("",".old")) %>% 
+    dplyr::select(-tidyselect::ends_with(".old")) 
+  return(tmp2 %>% dplyr::group_by(across(tidyselect::starts_with("test"))))
 }
 # e.g.
-# tmp = tibble(group_prevalence = 0.5, distribution = c(1,2,3,4), name = c("a","b","c","d"), note = c("x","x","y","y")) %>% group_by(group_prevalence) %>% group_modify(sim_dist, n=500, boots=1)
-# tmp %>% group_by(boot,test_id) %>% summarise(pos = sum(actual))
+# tmp = tibble::tibble(group_prevalence = 0.5, distribution = c(1,2,3,4), name = c("a","b","c","d"), note = c("x","x","y","y")) %>% dplyr::group_by(group_prevalence) %>% dplyr::group_modify(sim_dist, n=500, boots=1)
+# tmp %>% dplyr::group_by(boot,test_id) %>% dplyr::summarise(pos = sum(actual))
 
 # group_modify helper function
 # Create a simulated population from a grouped dataframe which has a 
@@ -112,7 +97,7 @@ sim_dist = function(d, g, ..., n= 1000, boots = 1, exact=TRUE) {
 # id (of sample), boot (id of replicate) and actual (test positivity)
 sim_pop = function(d, g, ..., n=1000, boots=100, exact=FALSE) {
   if (!"prevalence" %in% colnames(g)) stop("data must be grouped by at least the prevalence column")
-  return(tibble(
+  return(tibble::tibble(
     boot = unlist(lapply(1:boots, rep, n)),
     id = rep(1:n, boots),
     actual = if(!exact) {
@@ -143,14 +128,14 @@ sim_pop = function(d, g, ..., n=1000, boots=100, exact=FALSE) {
 # condition positive status (e.g. 1: diseased, 0: disease-free)
 sim_test = function(d, g, ...) {
   
-  g = g %>% mutate(
+  g = g %>% dplyr::mutate(
     sens_pos = n_diseased-false_neg_diseased,
     sens_neg = false_neg_diseased,
     control_pos = false_pos_controls,
     control_neg = n_controls-false_pos_controls
   )
   
-  return(d %>% mutate(
+  return(d %>% dplyr::mutate(
     # unknown specificity defined by control test results. This creates the Beta-binomial
     test = 
       # actual positives * sensitivity gives 
@@ -176,7 +161,7 @@ sim_test = function(d, g, ...) {
 # condition positive status (e.g. 1: diseased, 0: disease-free)
 sim_test_2 = function(d, g, ..., exact = TRUE) {
   
-  g = g %>% mutate(
+  g = g %>% dplyr::mutate(
     sens_pos = test_n_diseased-test_false_neg_diseased,
     sens_neg = test_false_neg_diseased,
     control_pos = test_false_pos_controls,
@@ -193,10 +178,10 @@ sim_test_2 = function(d, g, ..., exact = TRUE) {
     fn_tn = rfixed(1, neg_count, 1-g$test_spec)
     pos_idx = cumsum(d$actual == 1)
     neg_idx = cumsum(d$actual == 0)
-    test = ifelse(d$actual == 1, fp_tp[pos_idx], fn_tn[neg_idx])
-    tmp = d %>% mutate(test = test)
+    test = dplyr::if_else(d$actual == 1, fp_tp[pos_idx], fn_tn[neg_idx])
+    tmp = d %>% dplyr::mutate(test = test)
   } else {
-    tmp = d %>% mutate(
+    tmp = d %>% dplyr::mutate(
       test = as.integer(
           actual * extraDistr::rbbinom(nrow(.), 1, alpha = g$sens_pos, beta=g$sens_neg) +
             (1-actual) * extraDistr::rbbinom(nrow(.), 1, alpha = g$control_pos, beta=g$control_neg)
@@ -204,7 +189,7 @@ sim_test_2 = function(d, g, ..., exact = TRUE) {
     )
   }
     
-  return(tmp %>% mutate(
+  return(tmp %>% dplyr::mutate(
     test_sens = g$test_sens, #TPR
     test_spec = g$test_spec #TNR
   ))
@@ -235,33 +220,33 @@ do_scenario_2 = function(
     group = sprintf("panel prev: %1.3f", group_prevalence),
     samples = TRUE
 ) {
-  group = enexpr(group)
+  group = rlang::enexpr(group)
   serotype_prevalence = ipd_distribution(pcv_group) %>%
-    transmute(
+    dplyr::transmute(
       test_id = pneumo.phe_serotype,
       pcv_group = pcv_group,
       distribution = distribution
     ) %>%
-    cross_join(
+    dplyr::cross_join(
       tidyr::crossing(
-        false_neg_rate = 1-sens, # + rlnorm(n(), log(0.01), 0.5),
+        false_neg_rate = 1-sens, # + stats::rlnorm(dplyr::n(), log(0.01), 0.5),
         n_diseased = n_diseased,
-        false_pos_rate = 1-spec, # + rlnorm(n(), log(0.005), 0.5),
+        false_pos_rate = 1-spec, # + stats::rlnorm(dplyr::n(), log(0.005), 0.5),
         n_controls = n_controls,
         group_prevalence = group_prevalence,
-      ) %>% mutate(
+      ) %>% dplyr::mutate(
         group = !!group
       )
     ) %>%
-    mutate( 
+    dplyr::mutate( 
       false_neg_diseased = false_neg_rate * n_diseased, 
       false_pos_controls = false_pos_rate * n_controls, 
       # group = factor(sprintf("group %d",group))
     ) %>%
-    group_by(group, group_prevalence, false_neg_rate, n_diseased, false_pos_rate, n_controls) %>%
-    group_modify(function(d,g,...) {
-      d %>% mutate(
-        group_size = n(),
+    dplyr::group_by(group, group_prevalence, false_neg_rate, n_diseased, false_pos_rate, n_controls) %>%
+    dplyr::group_modify(function(d,g,...) {
+      d %>% dplyr::mutate(
+        group_size = dplyr::n(),
         prevalence = distribute(distribution, g$group_prevalence),
         expected_apparent_prevalence = prevalence * (1-g$false_neg_rate) + (1-prevalence) * g$false_pos_rate
       )
@@ -272,13 +257,13 @@ do_scenario_2 = function(
   # browser()
   set.seed(1001)
   serotype_tests = serotype_prevalence %>%
-    group_by(across(c(starts_with("group")))) %>%
+    dplyr::group_by(across(c(tidyselect::starts_with("group")))) %>%
     # , false_neg_rate, n_diseased, false_pos_rate, n_controls
-    group_modify(sim_dist, n=1000, boots=1, exact=TRUE) %>%
-    group_by(across(c(starts_with("group"),starts_with("test")))) %>%
-    group_modify(sim_test_2) 
+    dplyr::group_modify(sim_dist, n=1000, boots=1, exact=TRUE) %>%
+    dplyr::group_by(across(c(tidyselect::starts_with("group"),tidyselect::starts_with("test")))) %>%
+    dplyr::group_modify(sim_test_2) 
   
-  return(serotype_tests %>% group_by(group))
+  return(serotype_tests %>% dplyr::group_by(group))
 }
 
 do_scenario = memoise::memoise(do_scenario_2,cache = cd)
@@ -287,28 +272,28 @@ do_scenario = memoise::memoise(do_scenario_2,cache = cd)
 
 estimate_panel_performance = function(serotype_tests, test_id_col) {
   test_id_col = ensym(test_id_col)
-  grps = serotype_tests %>% groups()
+  grps = serotype_tests %>% dplyr::groups()
   # calculate the group sens and spec based on observed apparent prevalence
   tmp2 = serotype_tests %>% 
-    group_by(boot, !!!grps, !!test_id_col, sens, spec) %>%
-    summarise(
-      component_ap = sum(test)/n()
+    dplyr::group_by(boot, !!!grps, !!test_id_col, sens, spec) %>%
+    dplyr::summarise(
+      component_ap = sum(test)/dplyr::n()
     ) %>% 
-    group_by(boot, !!!grps) %>% 
-    summarise(
+    dplyr::group_by(boot, !!!grps) %>% 
+    dplyr::summarise(
       panel_sens_est = testerror::panel_sens_estimator(component_ap, sens = sens, spec = spec)
     )
   # calculate the group sens and spec based on true panel prevalence
   tmp3 = serotype_tests %>%
-    group_by(across(c(boot, !!!grps, !!test_id_col, sens, spec, prevalence, starts_with("test"), -test))) %>%#
-    summarise(
+    dplyr::group_by(across(c(boot, !!!grps, !!test_id_col, sens, spec, prevalence, tidyselect::starts_with("test"), -test))) %>%#
+    dplyr::summarise(
       # combine single test counts
       actual = sum(actual),
       test = sum(test),
-      total = n()
+      total = dplyr::n()
     ) %>%
-    group_by(boot, !!!grps) %>%
-    summarise(
+    dplyr::group_by(boot, !!!grps) %>%
+    dplyr::summarise(
       panel_prevalence = 1-prod(1-prevalence),
       panel_sens = testerror::panel_sens(prevalence, sens = sens, spec = spec),
       panel_spec = testerror::panel_spec(spec),
@@ -316,18 +301,18 @@ estimate_panel_performance = function(serotype_tests, test_id_col) {
     )
   
   tmp = serotype_tests %>%
-    group_by(boot, !!!grps, id) %>%
-    summarise(
+    dplyr::group_by(boot, !!!grps, id) %>%
+    dplyr::summarise(
       # combine tests per person
       actual = any(actual == 1),
       test = any(test == 1)
     ) 
   tmp = tmp %>%
-    group_by(boot, !!!grps) %>%
-    summarise(
+    dplyr::group_by(boot, !!!grps) %>%
+    dplyr::summarise(
       # summarise tests for all people
       # actual is the real ground truth / test is the test result including error
-      total = n(),
+      total = dplyr::n(),
       TP = sum(test == 1 & actual == 1),
       TN = sum(test == 0 & actual == 0),
       FP = sum(test == 1 & actual == 0),
@@ -338,15 +323,15 @@ estimate_panel_performance = function(serotype_tests, test_id_col) {
       .groups="drop_last"
     ) 
   tmp = tmp %>%
-    mutate(
+    dplyr::mutate(
       # TODO: confidence intervals?
-      # sens_est = ifelse(TP+FN==0, NA, TP/(TP+FN)),
-      # spec_est = ifelse(TN+FP==0, NA, TN/(TN+FP))
+      # sens_est = dplyr::if_else(TP+FN==0, NA, TP/(TP+FN)),
+      # spec_est = dplyr::if_else(TN+FP==0, NA, TN/(TN+FP))
       binom_ci_2(TP, TP+FN, "sens_est"),
       binom_ci_2(TN, TN+FP, "spec_est")
     )
-  tmp4 = tmp %>% inner_join(tmp2, by=join_by(boot, !!!grps)) %>% inner_join(tmp3, by=join_by(boot, !!!grps))
-  tmp4 = tmp4 %>% mutate(
+  tmp4 = tmp %>% dplyr::inner_join(tmp2, by=dplyr::join_by(boot, !!!grps)) %>% dplyr::inner_join(tmp3, by=dplyr::join_by(boot, !!!grps))
+  tmp4 = tmp4 %>% dplyr::mutate(
     rogan_gladen = rogan_gladen(panel_apparent_prevalence, sens =  panel_sens,spec = panel_spec)
   )
   return(tmp4)  
@@ -355,28 +340,28 @@ estimate_panel_performance = function(serotype_tests, test_id_col) {
 
 estimate_panel_performance_uncertain = function(serotype_tests, test_id_col) {
   test_id_col = ensym(test_id_col)
-  grps = serotype_tests %>% groups()
+  grps = serotype_tests %>% dplyr::groups()
   # calculate the group sens and spec based on observed apparent prevalence
   tmp2 = serotype_tests %>% 
-    group_by(boot, !!!grps, !!test_id_col, prior_sens, prior_spec) %>%
-    summarise(
-      component_ap = sum(test)/n()
+    dplyr::group_by(boot, !!!grps, !!test_id_col, prior_sens, prior_spec) %>%
+    dplyr::summarise(
+      component_ap = sum(test)/dplyr::n()
     ) %>% 
-    group_by(boot, !!!grps) %>% 
-    summarise(
+    dplyr::group_by(boot, !!!grps) %>% 
+    dplyr::summarise(
       panel_sens_est = testerror::panel_sens_estimator(component_ap, sens = prior_sens, spec = prior_spec)
     )
   # calculate the group sens and spec based on true panel prevalence
   tmp3 = serotype_tests %>%
-    group_by(across(c(boot, !!!grps, !!test_id_col, starts_with("prior"), starts_with("test"), -test))) %>%#
-    summarise(
+    dplyr::group_by(across(c(boot, !!!grps, !!test_id_col, tidyselect::starts_with("prior"), tidyselect::starts_with("test"), -test))) %>%#
+    dplyr::summarise(
       # combine single test counts
       actual = sum(actual),
       test = sum(test),
-      total = n()
+      total = dplyr::n()
     ) %>%
-    group_by(boot, !!!grps) %>%
-    summarise(
+    dplyr::group_by(boot, !!!grps) %>%
+    dplyr::summarise(
       panel_prevalence = 1-prod(1-actual/total),
       panel_sens = testerror::panel_sens(actual/total, sens = prior_sens, spec = prior_spec),
       panel_spec = testerror::panel_spec(prior_spec),
@@ -389,26 +374,26 @@ estimate_panel_performance_uncertain = function(serotype_tests, test_id_col) {
         false_pos_controls = prior_false_pos_controls, n_controls = prior_n_controls
       ))
     ) %>%
-    group_by(across(c(starts_with("group"),starts_with("panel")))) %>%
-    mutate(
-      panel_sens_beta = purrr::map(panel_sens_samples, ~ as_tibble(beta_fit(.x))),
-      panel_spec_beta = purrr::map(panel_spec_samples, ~ as_tibble(beta_fit(.x))),
+    dplyr::group_by(across(c(tidyselect::starts_with("group"),tidyselect::starts_with("panel")))) %>%
+    dplyr::mutate(
+      panel_sens_beta = purrr::map(panel_sens_samples, ~ tibble::as_tibble(beta_fit(.x))),
+      panel_spec_beta = purrr::map(panel_spec_samples, ~ tibble::as_tibble(beta_fit(.x))),
     ) %>%
-    unnest(cols = c(panel_sens_beta, panel_spec_beta),names_sep = ".")
+    tidyr::unnest(cols = c(panel_sens_beta, panel_spec_beta),names_sep = ".")
   
   tmp = serotype_tests %>%
-    group_by(boot, !!!grps, id) %>%
-    summarise(
+    dplyr::group_by(boot, !!!grps, id) %>%
+    dplyr::summarise(
       # combine tests per person
       actual = any(actual == 1),
       test = any(test == 1)
     ) 
   tmp = tmp %>%
-    group_by(boot, !!!grps) %>%
-    summarise(
+    dplyr::group_by(boot, !!!grps) %>%
+    dplyr::summarise(
       # summarise tests for all people
       # actual is the real ground truth / test is the test result including error
-      total = n(),
+      total = dplyr::n(),
       TP = sum(test == 1 & actual == 1),
       TN = sum(test == 0 & actual == 0),
       FP = sum(test == 1 & actual == 0),
@@ -419,17 +404,17 @@ estimate_panel_performance_uncertain = function(serotype_tests, test_id_col) {
       .groups="drop_last"
     ) 
   tmp = tmp %>%
-    mutate(
+    dplyr::mutate(
       # TODO: confidence intervals?
-      # sens_est = ifelse(TP+FN==0, NA, TP/(TP+FN)),
-      # spec_est = ifelse(TN+FP==0, NA, TN/(TN+FP))
+      # sens_est = dplyr::if_else(TP+FN==0, NA, TP/(TP+FN)),
+      # spec_est = dplyr::if_else(TN+FP==0, NA, TN/(TN+FP))
       binom_ci_2(TP, TP+FN, "sens_est"),
       binom_ci_2(TN, TN+FP, "spec_est")
     )
-  tmp4 = tmp %>% inner_join(tmp2, by=join_by(boot, !!!grps)) %>% inner_join(tmp3, by=join_by(boot, !!!grps))
+  tmp4 = tmp %>% dplyr::inner_join(tmp2, by=dplyr::join_by(boot, !!!grps)) %>% dplyr::inner_join(tmp3, by=dplyr::join_by(boot, !!!grps))
   tmp4 = tmp4 %>% 
-    group_by(boot,!!!grps) %>%
-    mutate(
+    dplyr::group_by(boot,!!!grps) %>%
+    dplyr::mutate(
     rogan_gladen = rogan_gladen(panel_apparent_prevalence, sens =  panel_sens,spec = panel_spec),
     testerror::true_prevalence(
       pos_obs = test, n_obs = total,
@@ -454,10 +439,10 @@ estimate_panel_performance_uncertain = function(serotype_tests, test_id_col) {
 # positive result is the result of the logical OR of the tests, calculating
 # ground truth error
 combine_as_panel = function(serotype_tests) {
-  grps = serotype_tests %>% groups()
+  grps = serotype_tests %>% dplyr::groups()
   serotype_tests %>% 
-    group_by(!!!grps, boot, id) %>%
-    summarise(
+    dplyr::group_by(!!!grps, boot, id) %>%
+    dplyr::summarise(
       # actual is the real ground truth / test is the test result including error
       actual = any(actual == 1),
       test = any(test == 1),
@@ -466,8 +451,8 @@ combine_as_panel = function(serotype_tests) {
     ) %>%
     # this is only grouped by boot at this stage as we are mutating within groups to get
     # p.actual and p.test on a boot by boot basis.
-    group_by(boot) %>%
-    mutate(
+    dplyr::group_by(boot) %>%
+    dplyr::mutate(
       total = 1,
       TP = test == actual & actual == 1,
       TN = test == actual & actual == 0,
@@ -476,21 +461,21 @@ combine_as_panel = function(serotype_tests) {
       p.actual = actual/sum(actual),
       p.test = test/sum(test)
     ) %>%
-    group_by(!!!grps, boot) %>%
-    summarise(
-      across(-c(id), sum), 
+    dplyr::group_by(!!!grps, boot) %>%
+    dplyr::summarise(
+      dplyr::across(-c(id), sum), 
       .groups="drop_last") %>%
-    mutate(
+    dplyr::mutate(
       apparent_prevalence = test/total*100,
       prevalence_error = (test-actual)/total*100,
       prevalence_rel_error = (test/actual-1)*100,
       proportional_error = (p.test-p.actual)*100,
-      sens_est = ifelse(TP+FN==0, NA, TP/(TP+FN)),
-      spec_est = ifelse(TN+FP==0, NA, TN/(TN+FP)),
-      ppv = ifelse(TP+FP==0, NA,  TP/(TP+FP)),
+      sens_est = dplyr::if_else(TP+FN==0, NA, TP/(TP+FN)),
+      spec_est = dplyr::if_else(TN+FP==0, NA, TN/(TN+FP)),
+      ppv = dplyr::if_else(TP+FP==0, NA,  TP/(TP+FP)),
       acc = (TP + TN) / (TP+FP+FN+TN)
     ) %>%
-    group_by(!!!grps)
+    dplyr::group_by(!!!grps)
 } 
 
 # pretty print a summary mean +/- 95% quantiles
@@ -501,16 +486,16 @@ mean_sd = function(x, ...) {
 # binom_ci(c(1,0,3),c(2,0,7))
 binom_ci = function(x, n) {
   tmp = binom::binom.confint(x,n,methods = "wilson")
-  ifelse(n==0, "\u2014", sprintf("%1.2f [%1.2f\u2013%1.2f]", tmp$mean, tmp$lower, tmp$upper))
+  dplyr::if_else(n==0, "\u2014", sprintf("%1.2f [%1.2f\u2013%1.2f]", tmp$mean, tmp$lower, tmp$upper))
 }
 
 # binom_ci_2(c(1,0,3),c(2,0,7))
 binom_ci_2 = function(x, n, name="proportion") {
   tmp = binom::binom.confint(x,n,methods = "wilson")
   return(tibble::tibble(
-    !!(sprintf("%s.0.5",name)) := ifelse(is.finite(tmp$mean), tmp$mean, NA_real_),
-    !!(sprintf("%s.0.025",name)) := ifelse(is.finite(tmp$lower), tmp$lower, NA_real_),
-    !!(sprintf("%s.0.975",name)) := ifelse(is.finite(tmp$upper), tmp$upper, NA_real_)
+    !!(sprintf("%s.0.5",name)) := dplyr::if_else(is.finite(tmp$mean), tmp$mean, NA_real_),
+    !!(sprintf("%s.0.025",name)) := dplyr::if_else(is.finite(tmp$lower), tmp$lower, NA_real_),
+    !!(sprintf("%s.0.975",name)) := dplyr::if_else(is.finite(tmp$upper), tmp$upper, NA_real_)
   ))
 }
 
@@ -518,11 +503,11 @@ binom_ci_2 = function(x, n, name="proportion") {
 # from 
 # TODO: 
 summarise_boots = function(panel) {
-  grps = panel %>% groups()
+  grps = panel %>% dplyr::groups()
   panel %>% 
-    group_by(!!!grps, total, expected) %>%
-    summarise(across(-boot, ~ mean_sd(.x, na.rm=TRUE)), .groups="drop") %>%
-    mutate(true_prevalence = expected/total*100)
+    dplyr::group_by(!!!grps, total, expected) %>%
+    dplyr::summarise(across(-boot, ~ mean_sd(.x, na.rm=TRUE)), .groups="drop") %>%
+    dplyr::mutate(true_prevalence = expected/total*100)
 }
 
 # For a panel of tests with a relative proportion of prevalence (rel_prop) solve the
@@ -531,11 +516,11 @@ summarise_boots = function(panel) {
 # if not global). This expects one row per test but can be used in a group modify
 update_prevalence = function(d, g, ..., prevalence, global=TRUE) {
   if (!global) {
-    d %>% mutate(
+    d %>% dplyr::mutate(
       prevalence = (rel_prop / sum(rel_prop))*prevalence
     )
   } else {
-    d %>% mutate(
+    d %>% dplyr::mutate(
       prevalence = distibute(rel_prop, prevalence)
     )
   }
@@ -578,7 +563,7 @@ apparent_prevalence_plot = function(
   px = (1-spec) / (1-sens+1-spec)
   pzero =  rep(lim[[1]], length(p))
   
-  segments = tibble(
+  segments = tibble::tibble(
     x = c(lim[1], p, p ), 
     y = c(ap(lim[1]), pzero, ap(p) ), 
     xend = c(lim[2], p, pzero ), 
@@ -595,7 +580,7 @@ apparent_prevalence_plot = function(
     top_left = c(n,f,0,1)
   )
   
-  labels = tibble(
+  labels = tibble::tibble(
     label = c("(1-spec)","sens",sprintf("(%1.2g,%1.2g)",px,px),sprintf("%1.2g",p), sprintf("%1.2g",ap(p))),
     x = c(lim, px, p, pzero),
     y = c(ap(lim), ap(px), pzero, ap(p)),
@@ -604,8 +589,8 @@ apparent_prevalence_plot = function(
     angle=c(0,0,0, rep(90,length(p)), rep(0,length(p))),
     col =c("black","black","black",cols, cols),
     size = c(6,6,6,rep(6,length(p)*2)),
-  ) %>% bind_rows(
-    tibble(
+  ) %>% dplyr::bind_rows(
+    tibble::tibble(
       label = unlist(annotate),
       x = sapply(names(annotate), function(x) ann_pos[[x]][1]),
       y = sapply(names(annotate), function(x) ann_pos[[x]][2]),
@@ -617,38 +602,38 @@ apparent_prevalence_plot = function(
     )
   )
   
-  points = tibble(
+  points = tibble::tibble(
     x = c(px, p),
     y = c(ap(px), ap(p)),
     col = c("black", cols)
   )
   
-  ggplot()+
-    coord_fixed(xlim=lim, ylim=lim, clip="off")+
-    xlab("True prevalence")+
-    ylab("E(Apparent prevalence)")+
-    geom_abline(colour="grey80")+
-    geom_segment(aes(x=x,y=y,xend=xend,yend=yend,col=col,linetype=linetype), segments)+
-    geom_text(mapping=aes(x=x,y=y,label=label,vjust=vjust,hjust=hjust,angle=angle, colour=col, size = size/ggplot2:::.pt), labels %>% filter(angle==0), direction="y")+
-    geom_text(mapping=aes(x=x,y=y,label=label,vjust=vjust,hjust=hjust,angle=angle, colour=col, size = size/ggplot2:::.pt), labels %>% filter(angle==90), direction="x")+
-    geom_point(aes(x=x,y=y,colour = col),points, size=0.5)+
-    scale_x_continuous(breaks = lim,expand = c(0, 0))+
-    scale_y_continuous(breaks = lim,expand = c(0, 0))+
-    scale_colour_identity( aesthetics = c("color","linetype"),guide = "none")+
-    scale_size_identity()+
-    theme(
+  ggplot2::ggplot()+
+    ggplot2::coord_fixed(xlim=lim, ylim=lim, clip="off")+
+    ggplot2::xlab("True prevalence")+
+    ggplot2::ylab("E(Apparent prevalence)")+
+    ggplot2::geom_abline(colour="grey80")+
+    ggplot2::geom_segment(aes(x=x,y=y,xend=xend,yend=yend,col=col,linetype=linetype), segments)+
+    ggplot2::geom_text(mapping=ggplot2::aes(x=x,y=y,label=label,vjust=vjust,hjust=hjust,angle=angle, colour=col, size = size/ggplot2:::.pt), labels %>% dplyr::filter(angle==0), direction="y")+
+    ggplot2::geom_text(mapping=ggplot2::aes(x=x,y=y,label=label,vjust=vjust,hjust=hjust,angle=angle, colour=col, size = size/ggplot2:::.pt), labels %>% dplyr::filter(angle==90), direction="x")+
+    ggplot2::geom_point(aes(x=x,y=y,colour = col),points, size=0.5)+
+    ggplot2::scale_x_continuous(breaks = lim,expand = c(0, 0))+
+    ggplot2::scale_y_continuous(breaks = lim,expand = c(0, 0))+
+    ggplot2::scale_colour_identity( aesthetics = c("color","linetype"),guide = "none")+
+    ggplot2::scale_size_identity()+
+    ggplot2::theme(
       plot.margin = unit(c(1,1,1,1), "lines"),
-      #axis.title.x = element_text(margin=margin(t=2, unit="lines")),
-      #axis.title.y = element_text(margin=margin(r=2, unit="lines"))
-      axis.title.x = element_text(hjust = 1),
-      axis.title.y = element_text(hjust = 1)
+      #axis.title.x = ggplot2::element_text(margin=ggplot2::margin(t=2, unit="lines")),
+      #axis.title.y = ggplot2::element_text(margin=ggplot2::margin(r=2, unit="lines"))
+      axis.title.x = ggplot2::element_text(hjust = 1),
+      axis.title.y = ggplot2::element_text(hjust = 1)
     ) 
   
 }
 
-no_y = function() {theme(axis.text.y = element_blank(), axis.title.y = element_blank())}
-no_x = function() {theme(axis.text.x.bottom = element_blank(), axis.title.x = element_blank())}
-horiz = function() {theme(legend.position = "bottom", legend.direction = "horizontal", 
+no_y = function() {ggplot2::theme(axis.text.y = ggplot2::element_blank(), axis.title.y = ggplot2::element_blank())}
+no_x = function() {ggplot2::theme(axis.text.x.bottom = ggplot2::element_blank(), axis.title.x = ggplot2::element_blank())}
+horiz = function() {ggplot2::theme(legend.position = "bottom", legend.direction = "horizontal", 
                                        legend.box = "vertical", legend.justification = "center")}
 
 std_size = list(

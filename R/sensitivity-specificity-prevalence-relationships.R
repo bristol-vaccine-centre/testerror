@@ -28,7 +28,7 @@ rogan_gladen = function(ap, sens, spec) { scales::squish((ap-1+spec) / (sens-1+s
 
 #' Test underestimation limit
 #'
-#' For a given sensitivity and specificity this give the critical chreshold after which 
+#' For a given sensitivity and specificity this give the critical threshold after which 
 #' test error introduces underestimation rather than over estimation
 #'
 #' @param sens the sensitivity of the test
@@ -44,6 +44,36 @@ rogan_gladen = function(ap, sens, spec) { scales::squish((ap-1+spec) / (sens-1+s
 #' 
 underestimation_threshold = function(sens, spec) {
   return((1-spec) / (1-sens+1-spec))
+}
+
+#' Test underestimation critical limit
+#'
+#' For a given combination of prevalence, sensitivity and specificity this gives 
+#' the critical threshold at which true prevalence equals apparent prevalence
+#'
+#' @param p the prevalence or apparent prevalence
+#' @param sens the sensitivity of the test
+#' @param spec the specificity of the test
+#'
+#' @return the combination of sensitivity and specificity where apparent prevalence equals true prevalence
+#' @export
+#'
+#' @examples
+#' optimal_performance(p=0.1, sens=0.75)
+#' optimal_performance(p=0.005, spec=0.9975)
+optimal_performance = function(p=NULL, sens=NULL, spec=NULL) {
+  if (is.null(p)+is.null(sens)+is.null(spec) != 1) stop("exactly two of p, sens and spec must be given")
+  if (length(p) > 1 || length(sens) > 1 || length(spec) > 1) stop("this is not vectorised. please use sapply.")
+  if (is.null(sens)) {
+    f = function(s) p-underestimation_threshold(s, spec)
+    sens = stats::uniroot(f, interval = c(0,1))$root
+  } else if (is.null(spec)) {
+    f = function(s) p-underestimation_threshold(sens, s)
+    spec = stats::uniroot(f, interval = c(0,1))$root
+  } else {
+    p = underestimation_threshold(sens, spec)
+  }
+  return(list(p=p,sens=sens,spec=spec))
 }
 
 #' Apparent prevalence from known prevalence

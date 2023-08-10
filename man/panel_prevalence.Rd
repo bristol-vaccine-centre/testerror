@@ -7,9 +7,9 @@
 panel_prevalence(p, na.rm = FALSE)
 }
 \arguments{
-\item{na.rm}{remove NA values?}
+\item{p}{a vector of prevalences of the component tests}
 
-\item{spec}{a vector of specificity of the component tests}
+\item{na.rm}{remove NA values?}
 }
 \value{
 a single value for the effective specificity of the combination of
@@ -19,5 +19,5 @@ the tests
 Expected test panel prevalence assuming independence
 }
 \examples{
-panel_prev(p = rep(0.01,24))
+panel_prevalence(p = rep(0.01,24))
 }

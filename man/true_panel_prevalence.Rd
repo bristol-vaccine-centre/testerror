@@ -5,19 +5,18 @@
 \title{Calculate an estimate of true prevalence for a single panel and components}
 \usage{
 true_panel_prevalence(
-  test_results = interfacer::iface(id = character ~ "the patient identifier", test =
-    factor ~ "the test type", result = logical ~ "the test result", .groups = FALSE),
-  false_pos_controls = NA,
-  n_controls = NA,
-  false_neg_diseased = NA,
-  n_diseased = NA,
+  test_results = testerror:::.input_data,
+  false_pos_controls = NULL,
+  n_controls = NULL,
+  false_neg_diseased = NULL,
+  n_diseased = NULL,
   ...,
-  sens = beta_dist(n_diseased - false_neg_diseased, false_neg_diseased),
-  spec = beta_dist(n_controls - false_pos_controls, false_pos_controls),
-  test_names = levels(test_results$test),
+  sens = NULL,
+  spec = NULL,
   panel_name = "Panel",
   confint = 0.95,
-  method = c("rogan-gladen", "lang-reiczigel", "bayes")
+  method = c("rogan-gladen", "lang-reiczigel", "bayes"),
+  na.rm = TRUE
 )
 }
 \arguments{
@@ -31,25 +30,25 @@ Grouped by: \if{html}{\out{<none>}}
 
 \item{false_pos_controls}{the number of positives that appeared in the specificity
 disease-free control group. These are by definition false positives. This
-is (1-specificity)*n_controls}
+is (1-specificity)*n_controls (optional if \code{spec} is given)}
 
 \item{n_controls}{the number of controls in the specificity
-disease-free control group.}
+disease-free control group. (optional if \code{spec} is given)}
 
 \item{false_neg_diseased}{the number of negatives that appeared in the sensitivity
 confirmed disease group. These are by definition false negatives. This
-is (1-sensitivity)*n_diseased}
+is (1-sensitivity)*n_diseased  (optional if \code{sens} is given)}
 
 \item{n_diseased}{the number of confirmed disease cases in the sensitivity
-control group.}
+control group.  (optional if \code{sens} is given)}
 
 \item{...}{passed onto methods}
 
-\item{sens}{the sensitivity of the component tests of test as a \code{beta_dist_list}}
+\item{sens}{the sensitivity of the component tests of test as a \code{beta_dist_list}.
+(optional if \code{false_pos_controls} and \code{n_controls} is given)}
 
-\item{spec}{the specificity of the test as a \code{beta_dist_list}}
-
-\item{test_names}{a vector of the component test names in desired order (optional)}
+\item{spec}{the specificity of the test as a \code{beta_dist_list}
+(optional if \code{false_neg_diseased} and \code{n_diseased} is given)}
 
 \item{panel_name}{the name of the panel for combined result}
 
@@ -61,21 +60,32 @@ control group.}
 \item "bayes": Bayesian analysis
 \item "rogan-gladen": Rogan gladen with uncertainty
 }}
+
+\item{na.rm}{exclude patients with missing results}
 }
 \value{
-a dataframe with prevalence.lower, prevalence.median and prevalence.upper columns
+A dataframe containing the following columns:
+\itemize{
+\item prevalence.label (character) - a fomatted label of the true prevalence estimate with CI
+\item prevalence.lower (numeric) - the lower estimate
+\item prevalence.median (numeric) - the median estimate
+\item prevalence.method (character) - the method of estimation
+\item prevalence.upper (numeric) - the upper estimate
+\item test (character) - the name of the test or panel
+Grouped by: \if{html}{\out{<none>}}
+}
 }
 \description{
 Uses apparent prevalence, and uncertain
 estimates of test sensitivity and test specificity for the 3 methods
 described in Supplementary 2. This function works for a single panel per
-dataframe, mulitple panels will need to call this function multiple times
+dataframe, multiple panels will need to call this function multiple times
 in a \code{group_modify}.
 }
 \examples{
-tmp = random_example()
+tmp = testerror:::panel_example()
 true_panel_prevalence(
-  test_results = tmp$samples \%>\% select(id,test,result = observed),
+  test_results = tmp$samples \%>\% dplyr::select(id,test,result = observed),
   false_pos_controls = tmp$performance$false_pos_controls,
   n_controls = tmp$performance$n_controls,
   false_neg_diseased = tmp$performance$false_neg_diseased,

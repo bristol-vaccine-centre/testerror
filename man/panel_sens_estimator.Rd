@@ -30,20 +30,5 @@ individual components (and hence the true negative rate a.k.a specificity is
 lower).
 }
 \examples{
-tibble::tibble(
-  test = 1:20,
-  sens = 0.75,
-  spec = 0.99
-) \%>\% 
-tidyr::crossing(
-  tidyr::nesting(
-    sim = 1:1001,
-    test_positivity = seq(0,1,length.out=1001)
-  )
-) \%>\%
-group_by(sim) \%>\%
-summarise(
-  ap = first(test_positivity),
-  panel_sens = combined_sens(ap = test_positivity, sens = sens, spec = spec)
-)
+#TODO
 }

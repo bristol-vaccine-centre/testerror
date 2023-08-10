@@ -79,6 +79,31 @@ fp_signif_level = function(n_obs, false_pos_controls, n_controls, bonferroni = N
     stop(deparse(substitute(x))," is incompatible length to ",deparse(substitute(y)))
 }
 
+.recycle = function(..., .min=1) {
+  names = sapply(rlang::ensyms(...), rlang::as_label)
+  dots = rlang::list2(...)
+  lengths = sapply(dots, length)
+  ml = max(c(lengths,.min))
+  
+  
+  if (!all(lengths %in% c(0,1,ml))) {
+    names = names[lengths != 1 & lengths != ml]
+    stop(sprintf("%s is/are the wrong lengths. They should be 1 or %d",paste0(names,collapse=",") ,ml))
+  }
+  
+  env = rlang::caller_env()
+  
+  for (i in seq_along(dots)) {
+    x = dots[[i]]
+    name = names[[i]]
+    if (length(x) == 1) 
+      env[[name]] = rep(x,ml)
+  }
+  
+  return(ml)
+  
+}
+
 #' Significance of an uncertain test result
 #'
 #' Calculates a p-value for a count of positive test results based
@@ -96,6 +121,9 @@ fp_signif_level = function(n_obs, false_pos_controls, n_controls, bonferroni = N
 #'   is `(1-specificity)*n_controls`
 #' @param n_controls the number of controls in the specificity
 #'   disease-free control group.
+#' @param format a sprintf fmt string for the p-value
+#' @param lim a lower value to display
+#' @param bonferroni the number of simultaneous hypotheses that are being tested
 #' @param ... not used
 #' 
 #' @return a vector of p-values for the count
@@ -109,44 +137,165 @@ fp_signif_level = function(n_obs, false_pos_controls, n_controls, bonferroni = N
 #' 
 #' # if the same observations are made against a smaller group then we get 
 #' # a positive result for 10
-#' sprintf("%1.3f", fp_p_value(c(10,2,4,3,10,20), 1000, c(2,2,4,2,4,2), 800))
+#' fp_p_value( c(10,2,4,3,10,20), 1000, c(2,2,4,2,4,2), 800)
 #' 
-#' tmp = tibble(
+#' tibble::tibble(
 #'   x = c(1,2,5,10,20,40,20,20,20,20,20),
 #'   n = 1000,
 #'   fp_controls = c(0,0,0,0,0,0,0,1,2,3,4)+2,
 #'   n_controls = 800
-#' ) %>% mutate(
+#' ) %>% dplyr::mutate(
 #'   p_value = fp_p_value(x, n, fp_controls, n_controls)
-#' )
-#' 
-#' print_fp_p_value(tmp$p_value)
-fp_p_value = function(pos_obs, n_obs, false_pos_controls, n_controls, ...) {
+#' ) %>% dplyr::glimpse()
+fp_p_value = function(pos_obs, n_obs, false_pos_controls, n_controls, format = "%1.3g", lim = 0.0001, bonferroni = NULL, ...) {
   # probabilities = extraDistr::pbbinom(q=1:80, samples, alpha = x, beta=800-x, lower.tail = FALSE)
   
-  .check_length(false_pos_controls,n_controls)
+  n = .recycle(pos_obs, n_obs, false_pos_controls, n_controls)
+  if (is.null(bonferroni)) bonferroni = n
   true_neg_controls = n_controls - false_pos_controls
-  .check_length(pos_obs,n_obs)
   neg_obs = n_obs - pos_obs
-  .check_length(false_pos_controls,pos_obs)
   
   if (length(false_pos_controls) == 1) false_pos_controls = rep(false_pos_controls, length(pos_obs))
   if (length(true_neg_controls) == 1) true_neg_controls = rep(true_neg_controls, length(pos_obs))
   
-  extraDistr::pbbinom(q=pos_obs, pos_obs+neg_obs, alpha = false_pos_controls+0.0001, beta = true_neg_controls+0.0001, lower.tail = FALSE)
+  x = extraDistr::pbbinom(q=pos_obs, pos_obs+neg_obs, alpha = false_pos_controls+1, beta = true_neg_controls+1, lower.tail = FALSE)
+  
+  tmp = dplyr::if_else(x<lim, sprintf(paste0("<",format),lim), sprintf(format, x))
+  dplyr::if_else(x<0.05/bonferroni, sprintf("%s \u2020",tmp), tmp)
   
 }
 
-print_fp_p_value = function(x, ...) cat(format_fp_p_value(x, ...), "\n")
+#' Vectorised true prevalence estimates
+#' 
+#' Calculate an estimate of true prevalence from apparent prevalence, and uncertain
+#' estimates of test sensitivity and test specificity, using one of 3 methods.
+#'
+#' @param pos_obs the number of positive observations for a given test
+#' @param n_obs the number of observations for a given test
+#' @param false_pos_controls the number of positives that appeared in the specificity
+#'   disease-free control group. These are by definition false positives. This
+#'   is (1-specificity)*n_controls (ignored if `spec` given)
+#' @param n_controls the number of controls in the specificity
+#'   disease-free control group. 
+#' @param false_neg_diseased the number of negatives that appeared in the sensitivity
+#'   confirmed disease group. These are by definition false negatives. This
+#'   is (1-sensitivity)*n_diseased (ignored if `sens` given)
+#' @param n_diseased the number of confirmed disease cases in the sensitivity
+#'   control group.
+#' @param confint confidence limit width
+#' @param method one of:
+#' * "lang-reiczigel": Frequentist confidence limits
+#' * "rogan-gladen": Rogan gladen incorporating uncertainty with resampling
+#' * "bayes": Bayesian analysis
+#' @param ... passed onto methods
+#' @param sens the sensitivity of the test as a `beta_dist` (optional)
+#' @param spec the specificity of the test as a `beta_dist` (optional)
+#'
+#' @return `r format(testerror:::.output_data)`
+#' @export
+#'
+#' @examples
+#' true_prevalence(c(1:50), 200, 2, 800, 25, 75)
+#' true_prevalence(c(1:10)*2, 200, 25, 800, 4.5, 5.5)
+true_prevalence = function(
+    pos_obs,
+    n_obs,
+    false_pos_controls = NULL,
+    n_controls = NULL,
+    false_neg_diseased = NULL,
+    n_diseased = NULL,
+    confint=.95,
+    method = c("lang-reiczigel", "rogan-gladen", "bayes"),
+    ...,
+    sens = NULL,
+    spec = NULL
+) {
+  
+  if (inherits(sens, "beta_dist")) sens = rep(sens,1)
+  if (inherits(spec, "beta_dist")) spec = rep(spec,1)
+  
+  n = .recycle(pos_obs,n_obs,false_pos_controls,n_controls,
+               false_neg_diseased, n_diseased, sens, spec)
+  
+  method = match.arg(method)
+  if (!stringr::str_starts(method,"b")) {
+    
+    # Make sure false_pos_controls etc populated  
+    if (is.null(false_pos_controls)) {
+      if (is.null(spec)) stop("one of `false_pos_controls` or `spec` must be given")
+      false_pos_controls = purrr::map_dbl(spec, ~ .x$shape2)
+      n_controls = purrr::map_dbl(spec, ~ .x$conc)
+    }
+    
+    if (is.null(false_neg_diseased)) {
+      if(is.null(sens)) stop("one of `false_neg_diseased` or `sens` must be given")
+      false_neg_diseased = purrr::map_dbl(sens, ~ .x$shape2)
+      n_diseased = purrr::map_dbl(sens, ~ .x$conc)
+    }
+    
+    if (stringr::str_starts(method,"l")) {  
+      # Lang-Reiczigel (frequentist)
+      return(prevalence_lang_reiczigel(
+        pos_obs,n_obs,
+        false_pos_controls,n_controls,
+        false_neg_diseased,n_diseased,
+        confint = confint, ...) %>%
+        dplyr::bind_cols(
+          .beta_label_2(n_controls-false_pos_controls+1, false_pos_controls+1, "spec"),
+          .beta_label_2(n_diseased-false_neg_diseased+1, false_neg_diseased+1, "sens")
+        ) %>% dplyr::mutate(
+          pos_obs = pos_obs,
+          n_obs = n_obs
+        ))
+    
+    } else if (stringr::str_starts(method,"r")) {
+      
+      return(uncertain_rogan_gladen(
+        pos_obs,n_obs,
+        false_pos_controls,n_controls,
+        false_neg_diseased,n_diseased,
+        confint=confint, ...) %>%
+        dplyr::bind_cols(
+          .beta_label_2(n_controls-false_pos_controls+1, false_pos_controls+1, "spec"),
+          .beta_label_2(n_diseased-false_neg_diseased+1, false_neg_diseased+1, "sens")
+        ) %>% dplyr::mutate(
+          pos_obs = pos_obs,
+          n_obs = n_obs
+        ))
+    }
+      
+  } else {
+    
+    tmp = bayesian_component_simpler_model(
+      pos_obs,n_obs,
+      false_pos_controls,n_controls,
+      false_neg_diseased,n_diseased,
+      sens = sens,
+      spec = spec,
+      confint = confint, ...)
+    return(
+      tmp$summary %>% dplyr::mutate(
+        pos_obs = pos_obs,
+        n_obs = n_obs
+      )
+    )
+  }
 
-format_fp_p_value = function(x, format = "%1.3g", lim = 0.0001, bonferroni = 24, ...) {
-  tmp = ifelse(x<lim, sprintf(paste0("<",format),lim), sprintf(format, x))
-  ifelse(x<0.05/bonferroni, sprintf("%s*",tmp), tmp)
 }
 
-#' Calculate an estimate of true prevalence from apparent prevalence, and uncertain
-#' estimates of test sensitivity and test specificity
-#'
+#' True prevalence from apparent prevalence with uncertainty
+#' 
+#' Uses lang-reiczigel estimators to incorporate uncertainty of sensitivity and specificity into
+#' an estimate of true prevalence from a given value of apparent prevalence.
+#' 
+# Reference: Lang Zs, Reiczigel J (2014) Confidence limits for prevalence of disease 
+#            adjusted for estimated sensitivity and specificity, Preventive Veterinary 
+#            Medicine 113, 13-22.
+# 
+# Function adapted by Robert Challen from script at
+# Function adapted by Matthias Flor from script at
+# http://www2.univet.hu/users/jreiczig/CI4prevSeSp/CI4TruePrevalence_15_03_2013.r
+#' 
 #' @param pos_obs the number of positive observations for a given test
 #' @param n_obs the number of observations for a given test
 #' @param false_pos_controls the number of positives that appeared in the specificity
@@ -159,67 +308,13 @@ format_fp_p_value = function(x, format = "%1.3g", lim = 0.0001, bonferroni = 24,
 #'   is (1-sensitivity)*n_diseased
 #' @param n_diseased the number of confirmed disease cases in the sensitivity
 #'   control group.
-#' @param confint confidence limit width
-#' @param method one of:
-#' * "lang-reiczigel": Frequentist confidence limits
-#' * "gelman": Bayesian analysis
-#'
-#' @return a dataframe with prevalence.lower, prevalence.median and prevalence.upper columns
+#' @param ... not used
+#' @param confint confidence interval limits
+#' @param fmt a `sprintf` formatting string accepting 3 numbers
+#' @param prefix column name prefix
+#' 
+#' @return the expected value of apparent prevalence
 #' @export
-#'
-#' @examples
-#' true_prevalence(c(1:50), 200, 2, 800, 25, 75)
-#' true_prevalence(c(1:10)*2, 200, 25, 800, 4.5, 5.5)
-true_prevalence = function(
-    pos_obs,
-    n_obs,
-    false_pos_controls,
-    n_controls,
-    false_neg_diseased,
-    n_diseased,
-    confint=.95,
-    method = c("lang-reiczigel", "rogan-gladen", "gelman"),
-    prefix = "prevalence"
-) {
-  
-  .check_length(pos_obs,n_obs)
-  .check_length(false_pos_controls,n_controls)
-  .check_length(false_pos_controls,pos_obs)
-  
-  .check_length(false_neg_diseased,n_diseased)
-  .check_length(false_neg_diseased,pos_obs)
-  
-  if (length(false_pos_controls) == 1) false_pos_controls = rep(false_pos_controls, length(pos_obs))
-  if (length(n_controls) == 1) n_controls = rep(n_controls, length(pos_obs))
-  if (length(false_neg_diseased) == 1) false_neg_diseased = rep(false_neg_diseased, length(pos_obs))
-  if (length(n_diseased) == 1) n_diseased = rep(n_diseased, length(pos_obs))
-  
-  method = match.arg(method)
-  if (stringr::str_starts(method,"l")) {
-    # Lang-Reiczigel (frequentist)
-    prevalence_lang_reiczigel(pos_obs,n_obs,false_pos_controls,n_controls,false_neg_diseased,n_diseased,ci = confint,prefix = prefix)
-  } else if (stringr::str_starts(method,"g")) {
-    # Gelman (bayesian)
-    stop("not yet implemented")
-  } else if (stringr::str_starts(method,"r")) {
-    uncertain_rogan_gladen(pos_obs,n_obs,false_pos_controls,n_controls,false_neg_diseased,n_diseased,confint=confint,prefix = prefix)
-  }
-
-}
-
-
-#*******************************************************************************************
-# # Adjusted Confidence Limits
-# 
-# Reference: Lang Zs, Reiczigel J (2014) Confidence limits for prevalence of disease 
-#            adjusted for estimated sensitivity and specificity, Preventive Veterinary 
-#            Medicine 113, 13-22.
-# 
-# Function adapted by Robert Challen from script at
-# Function adapted by Matthias Flor from script at
-# http://www2.univet.hu/users/jreiczig/CI4prevSeSp/CI4TruePrevalence_15_03_2013.r
-# Point and confidence interval estimates of true prevalence
-# from independent binomial samples for the target population, sensitivity and specificity
 prevalence_lang_reiczigel = function(
     pos_obs,
     n_obs,
@@ -227,7 +322,8 @@ prevalence_lang_reiczigel = function(
     n_controls,
     false_neg_diseased,
     n_diseased,
-    ci=0.95,
+    ...,
+    confint=0.95,
     prefix = "prevalence",
     fmt = "%1.2f%% [%1.2f%% \u2014 %1.2f%%]"
     ) # Confidence level
@@ -240,9 +336,9 @@ prevalence_lang_reiczigel = function(
   nsens = n_diseased                          # Sample size for sensitivity
   ksens = n_diseased-false_neg_diseased       # Frequency of positive diagnoses in sample of size nsens
   
-  nprev = ifelse(nprev==0, 1, nprev)
-  nsens = ifelse(nsens==0, 1, nsens)
-  nspec = ifelse(nspec==0, 1, nspec)
+  nprev = dplyr::if_else(nprev==0, 1, nprev)
+  nsens = dplyr::if_else(nsens==0, 1, nsens)
+  nspec = dplyr::if_else(nspec==0, 1, nspec)
   
   # Observed relative frequencies
   obs.prev = kprev/nprev
@@ -250,14 +346,14 @@ prevalence_lang_reiczigel = function(
   obs.spec = kspec/nspec
   
   # MF inserted the following line:
-  # if (obs.sens + obs.spec <= 1) return(tibble(lower=NA_real_,median=NA_real_, upper=NA_real_))
+  # if (obs.sens + obs.spec <= 1) return(tibble::tibble(lower=NA_real_,median=NA_real_, upper=NA_real_))
   
   # Rogan-Gladen point estimate of true prevalence
   est.prev = (obs.prev+obs.spec-1)/(obs.sens+obs.spec-1)
   est.prev = scales::squish(est.prev)
   
   # Adjustments
-  zcrit = stats::qnorm((1+ci)/2)
+  zcrit = stats::qnorm((1+confint)/2)
   plus  = 2
   
   nprev. = nprev+zcrit^2
@@ -308,11 +404,11 @@ prevalence_lang_reiczigel = function(
     median = est.prev,
     upper = UCL,
     method = "lang-reiczigel"
-  ) %>% mutate(
+  ) %>% dplyr::mutate(
     label = sprintf(fmt, median*100,lower*100,upper*100)
   )
   
-  if (!is.null(prefix)) tmp = tmp %>% rename_with(~ sprintf("%s.%s",prefix,.x))
+  if (!is.null(prefix)) tmp = tmp %>% dplyr::rename_with(~ sprintf("%s.%s",prefix,.x))
   
   return(tmp)
 }
@@ -339,21 +435,33 @@ prevalence_lang_reiczigel = function(
 #'   is (1-sensitivity)*n_diseased
 #' @param n_diseased the number of confirmed disease cases in the sensitivity
 #'   control group.
-#' @param ... 
+#' @param ... not used
 #' @param sens the sensitivity of the test as a `beta_dist` or as a vector of samples
 #' @param spec the specificity of the test as a `beta_dist` or as a vector of samples
 #' @param samples number fo random draws of sensitivity and specificity
 #' @param confint confidence interval limits
 #' @param fmt a `sprintf` formatting string accepting 3 numbers
 #' @param seed set seed for reproducibility
+#' @param prefix column name prefix
 #' 
 #' @return the expected value of apparent prevalence
 #' @export
 #'
 #' @examples
-#' uncertain_rogan_gladen(pos_obs = 20, n_obs = 1000, false_pos_controls = 10, n_controls = 800, false_neg_diseased = 20, n_diseased = 100)
-#' uncertain_rogan_gladen(pos_obs = 5, n_obs = 1000, sens = beta_dist(0.75,n=200), spec = beta_dist(0.9975, n=800))
-#' uncertain_rogan_gladen(pos_obs = c(5,10), n_obs = c(1000,1000), false_pos_controls = c(2,1), n_controls = c(800,800), false_neg_diseased = c(25,20),n_diseased = c(100,100))
+#' uncertain_rogan_gladen(
+#'   pos_obs = 20, n_obs = 1000, 
+#'   false_pos_controls = 10, n_controls = 800, 
+#'   false_neg_diseased = 20, n_diseased = 100)
+#'   
+#' uncertain_rogan_gladen(
+#'   pos_obs = 5, n_obs = 1000, 
+#'   sens = beta_dist(0.75,n=200), 
+#'   spec = beta_dist(0.9975, n=800))
+#' 
+#' uncertain_rogan_gladen(
+#'   pos_obs = c(5,10), n_obs = c(1000,1000), 
+#'   false_pos_controls = c(2,1), n_controls = c(800,800), 
+#'   false_neg_diseased = c(25,20),n_diseased = c(100,100))
 #' 
 uncertain_rogan_gladen = function(
     pos_obs,
@@ -363,8 +471,9 @@ uncertain_rogan_gladen = function(
     false_neg_diseased = NA,
     n_diseased = NA,
     ...,
-    sens = beta_dist(n_diseased-false_neg_diseased, false_neg_diseased), 
-    spec = beta_dist(n_controls-false_pos_controls, false_pos_controls),
+    # posterior beta distribution assuming a uniform prior 
+    spec = beta_dist(p=n_controls-false_pos_controls+1, q=false_pos_controls+1),
+    sens = beta_dist(p=n_diseased-false_neg_diseased+1, q=false_neg_diseased+1),
     samples = 1000,
     confint = 0.95,
     fmt = "%1.2f%% [%1.2f%% \u2014 %1.2f%%]",
@@ -375,11 +484,11 @@ uncertain_rogan_gladen = function(
   if (!is.na(seed)) set.seed(seed)
   
   if (inherits(sens,"beta_dist_list")) {
-    return(lapply(1:length(sens), function(i) {
+    return(dplyr::bind_rows(lapply(1:length(sens), function(i) {
       sens2 = sens[[i]]
       spec2 = spec[[i]]
       return(uncertain_rogan_gladen(pos_obs = pos_obs[[i]], n_obs = n_obs[[i]], sens = sens2, spec = spec2))
-    }))
+    })))
   }
   
   if (inherits(sens,"beta_dist")) {
@@ -389,24 +498,24 @@ uncertain_rogan_gladen = function(
     samples = length(sens)
   }
   
-  if (isa(spec,"beta_dist")) {
+  if (inherits(spec,"beta_dist")) {
     spec = spec$r(samples)
   } else {
     spec = unlist(spec)
     if (length(spec) != samples) stop("mismatch in length of samples in sens and spec")
   }
   
-  ap = rep(pos_obs/n_obs,samples)
+  ap = stats::rbeta(samples, pos_obs, n_obs-pos_obs)  # rep(pos_obs/n_obs,samples)
   p = rogan_gladen(ap,sens,spec)
   zcrit = (1-confint)/2
   if (is.na(confint)) return(p)
-  median = quantile(p, 0.5)
-  lower = quantile(p, zcrit)
-  upper = quantile(p, 1-zcrit)
+  median = stats::quantile(p, 0.5)
+  lower = stats::quantile(p, zcrit)
+  upper = stats::quantile(p, 1-zcrit)
   label = sprintf(fmt, median*100,lower*100,upper*100)
-  out = tibble(
+  out = tibble::tibble(
     median=median, lower = lower, upper=upper, label=label, method = "rogan-gladen (samples)"
   )
-  if (!is.null(prefix)) out = out %>% rename_with(~ sprintf("%s.%s",prefix,.x))
+  if (!is.null(prefix)) out = out %>% dplyr::rename_with(~ sprintf("%s.%s",prefix,.x))
   return(out)
 }

@@ -1,4 +1,4 @@
-url: ~
+url: https://bristol-vaccine-centre.github.io/testerror/
 template:
   bootstrap: 5
-
+destination: docs

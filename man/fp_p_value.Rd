@@ -4,7 +4,16 @@
 \alias{fp_p_value}
 \title{Significance of an uncertain test result}
 \usage{
-fp_p_value(pos_obs, n_obs, false_pos_controls, n_controls, ...)
+fp_p_value(
+  pos_obs,
+  n_obs,
+  false_pos_controls,
+  n_controls,
+  format = "\%1.3g",
+  lim = 1e-04,
+  bonferroni = NULL,
+  ...
+)
 }
 \arguments{
 \item{pos_obs}{the number of positive observations for a given test}
@@ -17,6 +26,12 @@ is \code{(1-specificity)*n_controls}}
 
 \item{n_controls}{the number of controls in the specificity
 disease-free control group.}
+
+\item{format}{a sprintf fmt string for the p-value}
+
+\item{lim}{a lower value to display}
+
+\item{bonferroni}{the number of simultaneous hypotheses that are being tested}
 
 \item{...}{not used}
 }
@@ -41,16 +56,14 @@ fp_p_value(c(10,2,4,3,10,20), 1200, c(0,0,2,0,2,0)+2, 800)
 
 # if the same observations are made against a smaller group then we get 
 # a positive result for 10
-sprintf("\%1.3f", fp_p_value(c(10,2,4,3,10,20), 1000, c(2,2,4,2,4,2), 800))
+fp_p_value( c(10,2,4,3,10,20), 1000, c(2,2,4,2,4,2), 800)
 
-tmp = tibble(
+tibble::tibble(
   x = c(1,2,5,10,20,40,20,20,20,20,20),
   n = 1000,
   fp_controls = c(0,0,0,0,0,0,0,1,2,3,4)+2,
   n_controls = 800
-) \%>\% mutate(
+) \%>\% dplyr::mutate(
   p_value = fp_p_value(x, n, fp_controls, n_controls)
-)
-
-print_fp_p_value(tmp$p_value)
+) \%>\% dplyr::glimpse()
 }

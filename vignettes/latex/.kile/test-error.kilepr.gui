@@ -50,8 +50,8 @@ Mode=LaTeX
 Mode Set By User=false
 
 [item:main/main.tex]
-open=false
-order=1
+open=true
+order=0
 
 [item:main/refs.bib]
 open=true
@@ -82,8 +82,8 @@ open=false
 order=-1
 
 [view-settings,view=0,item:main/main.tex]
-CursorColumn=10
-CursorLine=189
+CursorColumn=593
+CursorLine=242
 Dynamic Word Wrap=true
 JumpList=
 TextFolding=[]

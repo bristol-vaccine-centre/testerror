@@ -1,0 +1,119 @@
+---
+title: "Working with Beta distributions"
+output: html_document
+vignette: >
+  %\VignetteIndexEntry{Working with Beta distributions}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r, include = FALSE}
+
+library(tidyverse)
+library(testerror)
+
+options(mc.cores = 2) # parallel::detectCores())
+rstan::rstan_options(auto_write = FALSE)
+
+here::i_am("vignettes/testerror.Rmd")
+source(here::here("vignettes/formatting.R"))
+
+```
+
+Sensitivity and specificity are estimated quantities. Typically this is from
+observations that are assumed to be binomially distributed. The uncertainty in the sensitivity can
+be described in terms of the conjugate beta distribution. For example if a test detects 80 of
+of 100 positives then we can calculate the uncertainty of the sensitivity estimate:
+
+```{r}
+
+# The posterior of the conjugate beta distribution after one observation with 
+# no prior assumptions:
+beta_dist(p = 80, n = 100)
+```
+
+whereas if this was based on only 10 positives the confidence intervals would be much wider:
+
+```{r}
+beta_dist(p=8,n=10)
+```
+
+`beta_dist` creates an S3 object that can be converted to a tibble easily. Using a beta distribution
+to model the confidence limits of a binomial is somewhat inaccurate a extremes, unless the 
+beta is constructed from a uniform prior - i.e. a Beta(1,1) distribution. There is 
+a difference between the CI derived from the completely uninformed Beta, but for non
+zero values it is a good proxy.
+
+```{r}
+
+tmp1 = tibble::as_tibble(beta_dist(0:50,n=50)) %>% dplyr::mutate(x=shape1,n=conc,method="beta")
+tmp2 = binom::binom.confint(0:50, 50, method="wilson")
+
+
+ggplot(dplyr::bind_rows(tmp1,tmp2), ggplot2::aes(x=mean,y=median,ymin=lower,ymax=upper, colour=mean-median))+
+  ggplot2::geom_abline(colour="grey50")+
+  ggplot2::geom_point(aes())+
+  ggplot2::geom_errorbar()+
+  ggplot2::ylab("quantile")+
+  ggplot2::scale_colour_gradient2(mid="black",low = "cyan", high="magenta")+
+  ggplot2::facet_wrap(~method)
+```
+
+it also has methods for getting samples, density or quantiles simply:
+
+```{r}
+
+dist = beta_dist(20,n=50)
+x = seq(0,1,length.out=101)
+
+# density
+ggplot()+
+  ggplot2::geom_function(fun = dist$d, xlim=c(0,1))+
+  ggplot2::geom_function(fun = dist$p, xlim=c(0,1), colour="blue")+
+  ggplot2::geom_density(aes(x = x), data=tibble::tibble(x=dist$r(1000)), colour="red")
+
+
+```
+
+We also sometimes may get estimates of sensitivity as an uncertain quantity provided 
+as median with quantiles. We can fit a beta distribution to these quantiles:
+
+```{r}
+beta_params(median = 0.740, lower = 0.666, upper = 0.823, confint = 0.95)
+```
+
+Sometimes we may want to estimate from data. In this case we can simply fit a
+convex beta to data using moments. This will always work if the input is between
+0 and 1 but may be inappropriate depending on the shape of the distribution.
+
+```{r}
+
+x = stats::runif(2000, 0.2,0.6)
+b = beta_fit(x)
+
+# fitting a beta to uniform data is not very good but maybe pragmatic.
+ggplot()+
+  ggplot2::geom_histogram(aes(x=x,y=ggplot2::after_stat(density)),data=tibble::tibble(x=x), fill="grey50",colour="white")+
+  ggplot2::geom_line(aes(x=x,y=b$d(x)), data=tibble::tibble(x=seq(0,1,length.out=101)))
+```
+
+
+Although different shapes the moments of the distributions match:
+
+```{r}
+
+mean(x)
+mean(b$r(1000))
+
+
+sd(x)
+sd(b$r(1000))
+
+```

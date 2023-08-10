@@ -1,7 +1,14 @@
-pandoc: 2.19.2
-pkgdown: 2.0.6
+pandoc: 3.1.1
+pkgdown: 2.0.7
 pkgdown_sha: ~
 articles:
+  bayesian-panel-tests: bayesian-panel-tests.html
+  beta-distributions: beta-distributions.html
+  panel-tests: panel-tests.html
+  single-test: single-test.html
   testerror: testerror.html
-last_built: 2023-03-02T08:58Z
+last_built: 2023-08-10T16:04Z
+urls:
+  reference: https://bristol-vaccine-centre.github.io/testerror/reference
+  article: https://bristol-vaccine-centre.github.io/testerror/articles
 

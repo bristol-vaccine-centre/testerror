@@ -13,13 +13,9 @@ uncertain_panel_sens_estimator(
   false_neg_diseased = NA,
   n_diseased = NA,
   ...,
-  sens = beta_dist(n_diseased - false_neg_diseased, false_neg_diseased),
-  spec = beta_dist(n_controls - false_pos_controls, false_pos_controls),
+  sens = beta_dist(n_diseased - false_neg_diseased + 1, false_neg_diseased + 1),
+  spec = beta_dist(n_controls - false_pos_controls + 1, false_pos_controls + 1),
   samples = 1000,
-  confint = 0.95,
-  fmt = "\%1.2f\%\% [\%1.2f\%\% — \%1.2f\%\%]",
-  seed = NA,
-  na.rm = FALSE,
   fit_beta = FALSE
 )
 }
@@ -42,7 +38,7 @@ is (1-sensitivity)*n_diseased (ignored if \code{sens} is given)}
 \item{n_diseased}{the number of confirmed disease cases in the sensitivity
 control group (ignored if \code{sens} is given)}
 
-\item{...}{}
+\item{...}{not used}
 
 \item{sens}{the sensitivity of the component tests of test as a \code{beta_dist_list} (optional)}
 

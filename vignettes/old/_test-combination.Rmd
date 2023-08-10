@@ -639,7 +639,7 @@ tmp3 = to_correct_group %>% inner_join(
         control_pos = sum(control_pos), 
         control_neg = max(control_pos+control_neg) - sum(control_pos),
         sens_pos = max(sens_pos+sens_neg)*(1-prod(sens_neg/(sens_pos+sens_neg))), 
-        sens_neg = ifelse(prod(sens_neg/(sens_pos+sens_neg)) == 0, 0, max(sens_pos+sens_neg)*(prod(sens_neg/(sens_pos+sens_neg))))
+        sens_neg = dplyr::if_else(prod(sens_neg/(sens_pos+sens_neg)) == 0, 0, max(sens_pos+sens_neg)*(prod(sens_neg/(sens_pos+sens_neg))))
       ), by="group"
     ) %>%
    mutate(

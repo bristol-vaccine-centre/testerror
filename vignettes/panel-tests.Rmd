@@ -1,0 +1,195 @@
+---
+title: "Panel test error adjustment" 
+output: html_document
+vignette: > 
+  %\VignetteIndexEntry{Panel test error adjustment} 
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(tidyverse)
+library(testerror)
+options(mc.cores = 2) #parallel::detectCores())
+rstan::rstan_options(auto_write = FALSE)
+here::i_am("vignettes/testerror.Rmd")
+source(here::here("vignettes/formatting.R"))
+```
+
+We define panel testing as testing for multiple subtypes of disease, where any
+positive result for a subtype is regarded as a positive for the disease. As we
+describe in our paper this leads to compound error, which is particularly
+significant when the individual components are present at low prevalence and the
+number of components involved is large.
+
+To describe the impact of test error on this kind of panel we have constructed a
+simulation based on a panel test with 20 components, with an overall panel
+prevalence of 10%, distributed randomly between components. Each component test
+has 99.5% specificity and 80% sensitivity.
+
+```{r}
+tmp = testerror:::panel_example(comp_spec = 0.995, comp_sens = 0.8, n_comp = 20, n_samples = 2000, n_controls = 800,exact = FALSE)
+design = tmp$design %>% dplyr::filter(test != "Panel")
+design %>% dplyr::mutate(across(-test, ~sprintf("%1.2f%%", .x*100))) %>%
+  default_table()
+```
+
+The simulation generates a control data set based on pre-specified component
+test performance and a set of simulated known negatives (specificity) and known
+positives (sensitivity), and a observation data set based on component
+prevalence, and test performance. The control data set is summarised in the
+following table:
+
+```{r}
+tmp$performance %>% dplyr::transmute(
+  test = test,
+  specificity = sprintf("%d/%d = %s", false_pos_controls, n_controls, format(spec, "{sprintf('%1.1f%% [%1.1f%% \u2013 %1.1f%%]',median*100, lower*100,upper*100)}")),
+  sensitivity = sprintf("%d/%d = %s", false_neg_diseased, n_diseased, format(sens, "{sprintf('%1.1f%% [%1.1f%% \u2013 %1.1f%%]',median*100, lower*100,upper*100)}"))
+) %>% default_table()
+```
+
+The main simulation data of the test results observation is the following
+format:
+
+```{r}
+testerror:::.input_data
+```
+
+```{r}
+sim_result = tmp$samples %>% dplyr::select(id,test,result = observed)
+sim_result %>% glimpse()
+```
+
+and the control group a set of counts:
+
+```{r}
+sim_control = tmp$performance %>% dplyr::select(test, false_pos_controls, n_controls, false_neg_diseased, n_diseased)
+sim_control %>% glimpse()
+```
+
+given that we know the true prevalence, sensitivity and specificity of the
+simulation we can calculate the theoretical true prevalence, sensitivity and
+specificity of the panel
+
+```{r}
+# this is set in the simulation to be 0.1
+testerror::panel_prevalence(p = design$design_prev)
+# the specificity of the panel is the product of component specificites
+testerror::panel_spec(spec = design$design_spec)
+# the sensitivity of the panel is a complex relationship
+testerror::panel_sens(p = design$design_prev, sens = design$design_sens, spec = design$design_spec)
+```
+
+In most cases we only have observed data and control groups to estimate the
+panel test performance parameters. This introduces uncertainty into estimates of
+the panel sensitivity and specificity, which is estimated using resampling. The
+resulting empirical distributions are well represented by a Beta distribution,
+for both sensitivity and specificity (dotted lines - matched by moments), unless
+there had been a great deal of variation in the component panel performance
+metrics.
+
+```{r}
+component_counts = sim_result %>%
+  dplyr::summarise(pos = sum(result), n = dplyr::n(), .by=test)
+sens_dist = testerror::uncertain_panel_sens_estimator(
+  pos_obs = component_counts$pos,
+  n_obs = component_counts$n,
+  false_pos_controls = sim_control$false_pos_controls,
+  n_controls = sim_control$n_controls,
+  false_neg_diseased = sim_control$false_neg_diseased,
+  n_diseased = sim_control$n_diseased
+)
+spec_dist = testerror::uncertain_panel_spec(
+  false_pos_controls = sim_control$false_pos_controls,
+  n_controls = sim_control$n_controls
+)
+ggplot()+
+  ggplot2::geom_density(aes(x=sens),data=tibble::tibble(sens=sens_dist), colour="red")+
+  ggplot2::geom_function(fun = beta_fit(sens_dist)$d, linetype="dotted", colour="red")+
+  ggplot2::geom_density(aes(x=spec),data=tibble::tibble(spec=spec_dist), colour="blue")+
+  ggplot2::geom_function(fun = beta_fit(spec_dist)$d, linetype="dotted", colour="blue")+
+  ggplot2::labs(caption = sprintf("Red: panel sensitivity estimate %s\nBlue: panel specificity estimate %s", format(beta_fit(sens_dist)), format(beta_fit(spec_dist))))
+```
+
+Using the estimates of the panel sensitivity and specificity it is possible to
+generate an estimate for true prevalence for the panel using a rogan-gladen
+estimate
+
+```{r}
+panel_count = sim_result %>%
+  dplyr::summarise(panel_result = any(result), .by = id) %>%
+  dplyr::summarise(panel_pos = sum(panel_result), panel_n = dplyr::n()) %>%
+  dplyr::mutate(panel_test_pos = sprintf("%1.2f%% (%d/%d)", panel_pos/panel_n*100, panel_pos, panel_n))
+adj = panel_count %>% dplyr::mutate(
+    uncertain_panel_rogan_gladen(
+      panel_pos_obs = panel_pos,
+      panel_n_obs = panel_n,
+      pos_obs = component_counts$pos,
+      n_obs = component_counts$n,
+      false_pos_controls = sim_control$false_pos_controls,
+      n_controls = sim_control$n_controls,
+      false_neg_diseased = sim_control$false_neg_diseased,
+      n_diseased = sim_control$n_diseased
+    ) %>%
+    dplyr::select(tidyselect::starts_with("prevalence"))
+  )
+adj %>% dplyr::select(`Panel test positives` = panel_test_pos, `Modelled prevalence` = prevalence.label, `Method` = prevalence.method) %>% default_table()
+```
+
+The `r adj$panel_test_pos` positives is a poor estimate of true prevalence which
+is set in this scenario to 10%. The adjusted value `r adj$prevalence.label`
+includes the true value in its confidence limits.
+
+```{r}
+corr = true_panel_prevalence(
+   test_results = sim_result,
+   false_pos_controls = sim_control$false_pos_controls,
+   n_controls = sim_control$n_controls,
+   false_neg_diseased = sim_control$false_neg_diseased,
+   n_diseased = sim_control$n_diseased,
+   method = "rogan-gladen"
+)
+
+corr2 = true_panel_prevalence(
+   test_results = sim_result,
+   false_pos_controls = sim_control$false_pos_controls,
+   n_controls = sim_control$n_controls,
+   false_neg_diseased = sim_control$false_neg_diseased,
+   n_diseased = sim_control$n_diseased,
+   method = "lang-reiczigel"
+)
+
+corr3 = true_panel_prevalence(
+  test_results = sim_result,
+  false_pos_controls = sim_control$false_pos_controls,
+  n_controls = sim_control$n_controls,
+  false_neg_diseased = sim_control$false_neg_diseased,
+  n_diseased = sim_control$n_diseased,
+  method = "bayes",
+  model_type = "simpler"
+)
+
+testerror:::demo_bar_plot(tmp$summary %>% dplyr::inner_join(bind_rows(corr,corr2,corr3),by="test"))
+```
+
+```{r}
+corr3 %>% dplyr::transmute(
+  Test = test,
+  Positivity = sprintf("%d/%d (%1.2f%%)", pos_obs, n_obs, pos_obs/n_obs*100),
+  `Estimated prevalence` = prevalence.label,
+  `Sensitivity` = sens.label,
+  `Specificity` = spec.label,
+  `Method` = prevalence.method
+) %>% default_table() %>% huxtable::set_top_border(row = huxtable::final(1), col=huxtable::everywhere, value = 1)
+```
+
+```{r}
+# testerror:::demo_qq_plot(tmp$summary %>% dplyr::inner_join(bind_rows(corr,corr2, corr3)))
+```

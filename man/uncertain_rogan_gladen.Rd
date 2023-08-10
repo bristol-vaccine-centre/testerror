@@ -12,8 +12,8 @@ uncertain_rogan_gladen(
   false_neg_diseased = NA,
   n_diseased = NA,
   ...,
-  sens = beta_dist(n_diseased - false_neg_diseased, false_neg_diseased),
-  spec = beta_dist(n_controls - false_pos_controls, false_pos_controls),
+  spec = beta_dist(p = n_controls - false_pos_controls + 1, q = false_pos_controls + 1),
+  sens = beta_dist(p = n_diseased - false_neg_diseased + 1, q = false_neg_diseased + 1),
   samples = 1000,
   confint = 0.95,
   fmt = "\%1.2f\%\% [\%1.2f\%\% — \%1.2f\%\%]",
@@ -40,11 +40,11 @@ is (1-sensitivity)*n_diseased}
 \item{n_diseased}{the number of confirmed disease cases in the sensitivity
 control group.}
 
-\item{...}{}
-
-\item{sens}{the sensitivity of the test as a \code{beta_dist} or as a vector of samples}
+\item{...}{not used}
 
 \item{spec}{the specificity of the test as a \code{beta_dist} or as a vector of samples}
+
+\item{sens}{the sensitivity of the test as a \code{beta_dist} or as a vector of samples}
 
 \item{samples}{number fo random draws of sensitivity and specificity}
 
@@ -53,6 +53,8 @@ control group.}
 \item{fmt}{a \code{sprintf} formatting string accepting 3 numbers}
 
 \item{seed}{set seed for reproducibility}
+
+\item{prefix}{column name prefix}
 }
 \value{
 the expected value of apparent prevalence
@@ -65,8 +67,19 @@ an estimate of true prevalence from a given value of apparent prevalence.
 This is not vectorised
 }
 \examples{
-uncertain_rogan_gladen(pos_obs = 20, n_obs = 1000, false_pos_controls = 10, n_controls = 800, false_neg_diseased = 20, n_diseased = 100)
-uncertain_rogan_gladen(pos_obs = 5, n_obs = 1000, sens = beta_dist(0.75,n=200), spec = beta_dist(0.9975, n=800))
-uncertain_rogan_gladen(pos_obs = c(5,10), n_obs = c(1000,1000), false_pos_controls = c(2,1), n_controls = c(800,800), false_neg_diseased = c(25,20),n_diseased = c(100,100))
+uncertain_rogan_gladen(
+  pos_obs = 20, n_obs = 1000, 
+  false_pos_controls = 10, n_controls = 800, 
+  false_neg_diseased = 20, n_diseased = 100)
+  
+uncertain_rogan_gladen(
+  pos_obs = 5, n_obs = 1000, 
+  sens = beta_dist(0.75,n=200), 
+  spec = beta_dist(0.9975, n=800))
+
+uncertain_rogan_gladen(
+  pos_obs = c(5,10), n_obs = c(1000,1000), 
+  false_pos_controls = c(2,1), n_controls = c(800,800), 
+  false_neg_diseased = c(25,20),n_diseased = c(100,100))
 
 }

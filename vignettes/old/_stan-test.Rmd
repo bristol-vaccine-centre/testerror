@@ -428,9 +428,9 @@ combined_prev = serotype_tests %>%
 
 ```{r}
 do_bayesian_model = function(d, g = tibble::tibble(), idCol = id, testIdCol = test_id, resultCol = test, ...) {
-  idCol = enexpr(idCol)
-  testIdCol = enexpr(testIdCol)
-  resultCol = enexpr(resultCol)
+  idCol = rlang::enexpr(idCol)
+  testIdCol = rlang::enexpr(testIdCol)
+  resultCol = rlang::enexpr(resultCol)
   tmp = d %>%
     transmute(
       id = !!idCol,

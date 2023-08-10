@@ -42,12 +42,12 @@ tibble::tibble(
   relative_risk_ve(N_vacc_pn_pos, N_unvacc_pn_pos, N_vacc-N_vacc_pn_pos, N_unvacc-N_unvacc_pn_pos)
 )
 
-bind_rows(lapply(
-c("katz.log", "adj.log", "bailey", "koopman", "noether",  "sinh-1", "boot"),
-function(m) {as_tibble(
-  1-DescTools::BinomRatioCI(N_vacc_pn_pos, N_vacc, N_unvacc_pn_pos, N_unvacc, method = m)
-) \%>\% mutate(
-  method = m
-)}
-))
+# dplyr::bind_rows(lapply(
+#   c("katz.log", "adj.log", "bailey", "koopman", "noether",  "sinh-1", "boot"),
+#   function(m) {tibble::as_tibble(
+#     1-DescTools::BinomRatioCI(N_vacc_pn_pos, N_vacc, N_unvacc_pn_pos, N_unvacc, method = m)
+#   ) \%>\% dplyr::mutate(
+#     method = m
+#   )}
+# ))
 }

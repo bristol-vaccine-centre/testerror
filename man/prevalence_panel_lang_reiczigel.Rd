@@ -14,8 +14,12 @@ prevalence_panel_lang_reiczigel(
   false_neg_diseased = NA,
   n_diseased = NA,
   ...,
-  sens = beta_dist(n_diseased - false_neg_diseased, false_neg_diseased),
-  spec = beta_dist(n_controls - false_pos_controls, false_pos_controls),
+  spec = beta_dist(p = n_controls - false_pos_controls + 1, q = false_pos_controls + 1),
+  sens = beta_dist(p = n_diseased - false_neg_diseased + 1, q = false_neg_diseased + 1),
+  panel_sens = uncertain_panel_sens_estimator(pos_obs = pos_obs, n_obs = n_obs, sens =
+    sens, spec = spec, samples = samples, fit_beta = TRUE),
+  panel_spec = testerror::uncertain_panel_spec(spec = spec, samples = samples, fit_beta =
+    TRUE),
   samples = 1000
 )
 }
@@ -42,11 +46,15 @@ is (1-sensitivity)*n_diseased (ignored if \code{sens} is given)}
 \item{n_diseased}{the number of confirmed disease cases in the sensitivity
 control group (ignored if \code{sens} is given)}
 
-\item{...}{}
+\item{...}{not used}
+
+\item{spec}{the specificity of the test as a \code{beta_dist_list} (optional)}
 
 \item{sens}{the sensitivity of the component tests of test as a \code{beta_dist_list} (optional)}
 
-\item{spec}{the specificity of the test as a \code{beta_dist_list} (optional)}
+\item{panel_sens}{the sensitivity of the component tests of test as a \code{beta_dist} (optional)}
+
+\item{panel_spec}{the specificity of the test as a \code{beta_dist} (optional)}
 
 \item{samples}{number of random draws of sensitivity and specificity (optional - default 1000)}
 }
@@ -61,6 +69,5 @@ an estimate of true prevalence from a given value of apparent prevalence.
 This is not vectorised
 }
 \examples{
-#TODO uncertain_panel_rogan_gladen(pos_obs = 20, n_obs = 1000, false_pos_controls = 10, n_controls = 800, false_neg_diseased = 20, n_diseased = 100)
-#TODO uncertain_rogan_gladen(pos_obs = 5, n_obs = 1000, sens = beta_dist(0.75,n=200), spec = beta_dist(0.9975, n=800))
+#TODO
 }

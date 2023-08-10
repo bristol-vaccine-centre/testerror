@@ -4,10 +4,10 @@
 \alias{beta_params}
 \title{Generate concave beta distribution parameters from mean and confidence intervals}
 \usage{
-beta_params(mean, lower, upper, confint = 0.95, widen = 1, limit = 1, ...)
+beta_params(median, lower, upper, confint = 0.95, widen = 1, limit = 1, ...)
 }
 \arguments{
-\item{mean}{the mean of the probability given}
+\item{median}{the median of the probability given}
 
 \item{lower}{the lower ci of the probability given}
 
@@ -15,10 +15,12 @@ beta_params(mean, lower, upper, confint = 0.95, widen = 1, limit = 1, ...)
 
 \item{confint}{the ci limits}
 
-\item{widen}{widen the spread of the final beta by this factor.}
+\item{widen}{widen the spread of the final beta by this factor}
 
-\item{limit}{the lowest posible value for the shape parameters of the resulting
-\code{beta_dist}}
+\item{limit}{the lowest possible value for the shape parameters of the resulting
+\code{beta_dist} (1 enforces that the distribution is convex)}
+
+\item{...}{not used}
 }
 \value{
 a list with shape1, shape2 values, and d, p, q and r functions
@@ -28,9 +30,4 @@ Generate concave beta distribution parameters from mean and confidence intervals
 }
 \examples{
 beta = beta_params(0.25, 0.1, 0.3)
-tmp = beta$r(n=1000)
-diff = stats::quantile(tmp,0.975)-stats::quantile(tmp,0.025)
-if(abs(diff-0.2) > 0.1) stop("confidence limits should be 0.2 apart")
-if(abs(mean(tmp)-0.25) > 0.1) stop("mean value should be 0.25")
-
 }

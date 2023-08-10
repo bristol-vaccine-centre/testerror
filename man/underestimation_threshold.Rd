@@ -16,7 +16,7 @@ underestimation_threshold(sens, spec)
 the value where apparent prevalence equals true prevalence
 }
 \description{
-For a given sensitivity and specificity this give the critical chreshold after which
+For a given sensitivity and specificity this give the critical threshold after which
 test error introduces underestimation rather than over estimation
 }
 \examples{

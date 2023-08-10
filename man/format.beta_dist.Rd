@@ -4,10 +4,16 @@
 \alias{format.beta_dist}
 \title{Format a beta distribution}
 \usage{
-\method{format}{beta_dist}(x, ...)
+\method{format}{beta_dist}(
+  x,
+  glue = "{sprintf('\%1.3f [\%1.3f–\%1.3f] (N=\%1.2f)',median,lower,upper,conc)}",
+  ...
+)
 }
 \arguments{
 \item{x}{the beta distribution}
+
+\item{glue}{a glue spec taking any of \code{shape1}, \code{shape2}, \code{conc}, \code{mean}, \code{median}, \code{upper}, \code{lower}}
 
 \item{...}{not used}
 }
@@ -16,4 +22,7 @@ nothing
 }
 \description{
 Format a beta distribution
+}
+\examples{
+format(beta_dist(3,6), "{format(mean*100, digits=3)}\%")
 }

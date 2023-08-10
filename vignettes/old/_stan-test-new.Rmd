@@ -1,5 +1,5 @@
 ---
-  title: "Uncertainty propagation in VE studies"
+title: "Uncertainty propagation in VE studies"
 output: html_document
 date: "2023-03-19"
 ---
@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 devtools::load_all()
 here::i_am("vignettes/stan-test.Rmd")
 source(here::here("vignettes/vignette-utils.R"))
-options(mc.cores = parallel::detectCores())
+options(mc.cores = 2 ) #parallel::detectCores())
 # vignettes/latex/s2/fig
 ```
 
@@ -436,9 +436,9 @@ do_bayesian_model = function(d, g = tibble::tibble(), idCol = id, testIdCol = te
                              n_diseased = 1/(1-sens), 
                              controls = NULL, 
                              diseased = NULL, ...) {
-  idCol = enexpr(idCol)
-  testIdCol = enexpr(testIdCol)
-  resultCol = enexpr(resultCol)
+  idCol = rlang::enexpr(idCol)
+  testIdCol = rlang::enexpr(testIdCol)
+  resultCol = rlang::enexpr(resultCol)
   
   tmp = d %>%
     transmute(

@@ -132,9 +132,9 @@ do_bayesian_model = function(d, g = tibble::tibble(), idCol = id, testIdCol = te
                              controls = NULL,
                              model = stan_model_combined,
                              ...) {
-  idCol = enexpr(idCol)
-  testIdCol = enexpr(testIdCol)
-  resultCol = enexpr(resultCol)
+  idCol = rlang::enexpr(idCol)
+  testIdCol = rlang::enexpr(testIdCol)
+  resultCol = rlang::enexpr(resultCol)
   
   tmp = d %>%
     transmute(

@@ -144,8 +144,8 @@ map = tibble::tribble(
     test2 == "FN" ~ "P(\\neg O_j|A_j) P(A_j)",
     test2 == "TN" ~ "P(\\neg O_j|\\neg A_j) P(\\neg A_j)",
   ),
-  test1group = .eq(ifelse(test1 %in% c("TP","FP"), "O", "\\neg O")),
-  test2group = .eq(ifelse(test2 %in% c("TP","FP"), "O", "\\neg O")),
+  test1group = .eq(dplyr::if_else(test1 %in% c("TP","FP"), "O", "\\neg O")),
+  test2group = .eq(dplyr::if_else(test2 %in% c("TP","FP"), "O", "\\neg O")),
   p_combined = sprintf("%s %s",p1,p2)
   #p_combined = sprintf("\\biggl(%s\\biggr) \\times \\biggl(%s\\biggr)",p1,p2)
 ) 
@@ -662,7 +662,7 @@ plot_data = tidyr::crossing(
   ) %>% 
   mutate(
     sens_hi = (1-(1-sens_lo)*0.2),
-    sens = ifelse(test <= n_low_versus_high, sens_lo, sens_hi),
+    sens = dplyr::if_else(test <= n_low_versus_high, sens_lo, sens_hi),
     ratio = factor(n_low_versus_high+1, labels = sapply(0:10, function(x) sprintf("%d:%d",x,10-x)))
   ) %>%
   # group by the thing we are varying

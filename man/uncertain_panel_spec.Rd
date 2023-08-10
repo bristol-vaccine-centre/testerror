@@ -8,7 +8,7 @@ uncertain_panel_spec(
   false_pos_controls = NA,
   n_controls = NA,
   ...,
-  spec = beta_dist(n_controls - false_pos_controls, false_pos_controls),
+  spec = beta_dist(n_controls - false_pos_controls + 1, false_pos_controls + 1),
   samples = 1000,
   na.rm = FALSE,
   fit_beta = FALSE
@@ -22,11 +22,13 @@ is (1-specificity)*n_controls (ignored if \code{spec} is given)}
 \item{n_controls}{the number of controls in the specificity
 disease-free control group (ignored if \code{spec} is given).}
 
-\item{...}{}
+\item{...}{not used}
 
 \item{spec}{the specificity of the test as a \code{beta_dist_list} (optional)}
 
 \item{samples}{number of random draws of sensitivity and specificity (optional - default 1000)}
+
+\item{na.rm}{remove missing values}
 
 \item{fit_beta}{return the result as a \code{beta_dist} object?}
 }
