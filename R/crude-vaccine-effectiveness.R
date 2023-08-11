@@ -21,7 +21,7 @@
 #'   N_unvacc = 42256,
 #'   N_vacc_pn_pos = 49,
 #'   N_unvacc_pn_pos = 90
-#' ) |> dplyr::mutate(
+#' ) %>% dplyr::mutate(
 #'   odds_ratio_ve(N_vacc_pn_pos, N_unvacc_pn_pos, N_vacc-N_vacc_pn_pos, N_unvacc-N_unvacc_pn_pos)
 #' )
 #' 
@@ -64,7 +64,7 @@ odds_ratio_ve = function(vaccinatedCase, unvaccinatedCase, vaccinatedControl, un
 #'   N_unvacc = 42256,
 #'   N_vacc_pn_pos = 49,
 #'   N_unvacc_pn_pos = 90
-#' ) |> dplyr::mutate(
+#' ) %>% dplyr::mutate(
 #'   relative_risk_ve(N_vacc_pn_pos, N_unvacc_pn_pos, N_vacc-N_vacc_pn_pos, N_unvacc-N_unvacc_pn_pos)
 #' )
 #' 

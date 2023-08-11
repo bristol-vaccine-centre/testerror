@@ -23,12 +23,15 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          # - {os: macOS-latest,   r: 'release'}
-
+          - {os: macOS-latest,   r: 'release'}
+          
+          # according to https://github.com/stan-dev/rstan/wiki/Configuring-C---Toolchain-for-Windows
+          # there are issues compiling stan programs on 4.2+ versions of R unless
+          # you use non cran versions of rstan. Hence we pin to R4.0
           - {os: windows-latest, r: '4.0.5'}
           
           # - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
-          # - {os: ubuntu-latest,   r: 'release'}
+          - {os: ubuntu-latest,   r: 'release'}
           # - {os: ubuntu-latest,   r: 'oldrel-1'}
           # - {os: ubuntu-latest,   r: 'oldrel-2'}
 
