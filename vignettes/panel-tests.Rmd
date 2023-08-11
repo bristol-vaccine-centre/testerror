@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 library(tidyverse)
 library(testerror)
 options(mc.cores = 2) #parallel::detectCores())
-rstan::rstan_options(auto_write = FALSE)
+# rstan::rstan_options(auto_write = FALSE)
 here::i_am("vignettes/testerror.Rmd")
 source(here::here("vignettes/formatting.R"))
 ```

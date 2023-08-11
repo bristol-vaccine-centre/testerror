@@ -48,7 +48,8 @@ Suggests:
     binom,
     huxtable,
     here,
-    testthat
+    testthat,
+    devtools
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 URL: https://bristol-vaccine-centre.github.io/testerror/index.html, https://github.com/bristol-vaccine-centre/testerror, https://doi.org/10.5281/zenodo.7691196

@@ -4,8 +4,11 @@
 
 
 
-.model_cache = memoise::cache_filesystem(
-  fs::path(rappdirs::user_cache_dir("testerror"),"models"))
+# .model_cache = function() {
+#   path = fs::path(rappdirs::user_cache_dir("testerror"),"models")
+#   if (!fs::dir_exists(path)) fs::dir_create(path)
+#   memoise::cache_filesystem(path)
+# }
 
 #' @importFrom memoise memoise
 #' @importFrom digest digest
@@ -17,21 +20,26 @@
 #' @import StanHeaders
 NULL
 
-.build_model = function(model, name, stan_version=rstan::stan_version()) {
-  message("compiling stan model: ",name," on first use...")
-  rstan::stan_model(model_code = model,model_name = name)
-}
+# .build_model = function(model, name, stan_version=rstan::stan_version()) {
+#   message("compiling stan model: ",name," on first use...")
+#   rstan::stan_model(model_code = model,model_name = name)
+# }
+# 
+# 
+# .build_model_cached = memoise::memoise(.build_model, cache = .model_cache())
 
-
-.build_model_cached = memoise::memoise(.build_model, cache = .model_cache)
 .sampling_cached = memoise::memoise(rstan::sampling)
-
 
 .get_stan_model = function(name) {
   file = fs::path_ext_set(fs::path(system.file("stan", package="testerror"),name),"stan")
-  if (!fs::file_exists(file)) stop("Stan model ",name," is not defined")
-  model = readr::read_file(file)
-  tmp = .build_model_cached(model, name)
+  path = fs::path_ext_set(fs::path(rappdirs::user_cache_dir("testerror"),"models",rstan::stan_version(),name),"stan")
+  fs::dir_create(fs::path_dir(path))
+  if (!fs::file_exists(path)) fs::file_copy(file, path)
+  tmp = rstan::stan_model(
+    file = path,
+    model_name = name,
+    auto_write = TRUE
+  )
   return(tmp)
 }
 
