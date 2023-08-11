@@ -66,9 +66,9 @@ The problem of estimating expected prevalence given the positive test or apparen
 E(AP) &= prev \times sens + (1-prev) \times (1-spec) \\
 \widehat{AP} &= \frac{1}{|K|}\sum_{k \in K}{I_k} \\
 prev &\approx \begin{cases}
-    \widehat{AP} \le (1-spec), & 0 \\
-    (1-spec) < \widehat{AP} < sens, & \frac{\widehat{AP} + spec -1}{sens + spec - 1} \\
-    sens \le \widehat{AP_N}, & 1
+    0 & \widehat{AP} \le (1-spec)\\
+    \frac{\widehat{AP} + spec -1}{sens + spec - 1} & (1-spec) < \widehat{AP} < sens\\
+    1 & sens \le \widehat{AP_N}
   \end{cases} \\
 prev_{crit} &= \frac{(1-spec)}{(2-spec-sens)} \\
 \end{aligned}
@@ -143,9 +143,9 @@ sens_{N,j} &\approx 1-\frac{
   1 - \prod_{n \in N}{ \frac{sens_{n,j}-AP_{n,j}}{spec_{n,j} + sens_{n,} - 1} }
 } \\
 prev_{N,j} &= \begin{cases}
-    \widehat{AP_N} \le (1-spec_{N,j}), & 0 \\
-    (1-spec_{N,j}) < \widehat{AP_N} < sens_{N,j}, & \frac{\widehat{AP_N} + spec_{N,j} -1}{sens_{N,j} + spec_{N,j} - 1} \\
-    sens_{N,j} \le \widehat{AP_N}, & 1
+    0 & \widehat{AP_N} \le (1-spec_{N,j})\\
+    \frac{\widehat{AP_N} + spec_{N,j} -1}{sens_{N,j} + spec_{N,j} - 1} & (1-spec_{N,j}) < \widehat{AP_N} < sens_{N,j}\\
+    1 & sens_{N,j} \le \widehat{AP_N}
   \end{cases} \\
 \overline{prev_N} &= \frac{1}{|J|}\sum_{j \in J}{prev_{N,i}}
 \end{aligned}
