@@ -505,7 +505,8 @@ uncertain_rogan_gladen = function(
     if (length(spec) != samples) stop("mismatch in length of samples in sens and spec")
   }
   
-  ap = stats::rbeta(samples, pos_obs, n_obs-pos_obs)  # rep(pos_obs/n_obs,samples)
+  ap = stats::rbeta(samples, pos_obs+1, n_obs-pos_obs+1)  
+  # ap = rep(pos_obs/n_obs,samples)
   p = rogan_gladen(ap,sens,spec)
   zcrit = (1-confint)/2
   if (is.na(confint)) return(p)

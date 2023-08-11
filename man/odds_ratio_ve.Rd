@@ -38,7 +38,7 @@ tibble::tibble(
   N_unvacc = 42256,
   N_vacc_pn_pos = 49,
   N_unvacc_pn_pos = 90
-) |> dplyr::mutate(
+) \%>\% dplyr::mutate(
   odds_ratio_ve(N_vacc_pn_pos, N_unvacc_pn_pos, N_vacc-N_vacc_pn_pos, N_unvacc-N_unvacc_pn_pos)
 )
 
