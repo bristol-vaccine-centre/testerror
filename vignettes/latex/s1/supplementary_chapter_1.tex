@@ -159,9 +159,9 @@ Or expressed in more familiar terms, the apparent prevalence (\(E(AP)\)) from pr
 \begin{aligned}
 E(AP) &= sens \times prev + (1-spec) \times (1-prev) \\
 \widehat{prev} &\approx \begin{cases}
-    \widehat{AP} \le (1-spec), & 0 \\
-    (1-spec) < \widehat{AP} < sens, & \frac{\widehat{AP} + spec -1}{sens + spec - 1} \\
-    sens \le \widehat{AP}, & 1 \\
+    0 & \widehat{AP} \le (1-spec)\\
+    \frac{\widehat{AP} + spec -1}{sens + spec - 1} & (1-spec) < \widehat{AP} < sens\\
+    1 & sens \le \widehat{AP}\\
   \end{cases}
 \end{aligned}
 \mytag{eq:rogan-gladen}
