@@ -1,48 +1,31 @@
-# Internal functions used in some vignettes and examples
-
-# generate a theoretical distribution of component prevalences that combine to produce
-# a panel prevalence at a given level. Based on a relative frequency of observation.
-distribute = function(dist, p) {
-  dist = dist/sum(dist)
-  p = unique(p)
-  if (length(p) > 1) stop("p must be unique")
-  u = stats::uniroot(f = function(k) 1-prod(1-dist^k*p)-p,interval = c(0,.Machine$double.max.exp))
-  tmp = u$root
-  out = dist^tmp*p
-  if (abs(1-prod(1-out)-p) > .Machine$double.eps^0.25 ) stop("did not find a distribution")
-  return(out)
-}
-
-# # rfixed2(900,c(1,0,0.5))
-# rfixed2 = function(n, prob) {
-#   s = n/length(prob)
-#   if (s != round(s)) stop("`n` must be a whole multiple of the number of probabilities (",length(prob),")")
-#   pos = round(s*prob)
-#   tmp2 = lapply(pos, function(p) {
-#     neg = round(s-p)
-#     tmp = c(rep(0,neg),rep(1,p))
-#     sample(tmp)
-#   })
-#   browser()
-# }
-
-# Create a sample with exactly n*prev positives.
-rfixed = function(boots, n, prev) {
-  pos = round(n*prev)
-  neg = round(n-pos)
-  s = c(rep(0,neg),rep(1,pos))
-  lapply(1:boots,  function(...) sample(s)) %>% unlist()
-}
-
-rfixed_mnom = function(boots, n, dist, prev) {
-  dist = dist/sum(dist)
-  dist = dist*prev
-  tmp = unlist(sapply(1:length(dist), function(x) rep(x,round(dist[x]*n))))
-  tmp = c(tmp, rep(0,n-length(tmp)))
-  lapply(1:boots,  function(...) sample(tmp)) %>% unlist()
-}
 
 ## Panel test example ----
+
+# a set of panels with different prevalences.
+# configurable with component distribution, overall prevalence, and number of 
+# components
+multi_panel_example = function(
+    panel_prev = seq(0.025,0.2, length.out=8), 
+    n_comp = 20,
+    comp_dist = stats::rpois(n_comp,10) * c(1,stats::rpois(n_comp-1,2)),
+    ...) {
+  tmp1 = tibble(
+    scenario_name = sprintf("P: %1.2f%%",panel_prev*100),
+    scenario_prev = panel_prev
+  ) 
+  tmp2=NULL
+  for (p in panel_prev) {
+    tmp3 = panel_example(
+      panel_prev = p, 
+      n_comp = n_comp,
+      comp_dist = comp_dist, 
+      comp_prev = distribute(comp_dist, panel_prev),
+      ...)
+    tmp4 = as_tibble(purrr:::map(tmp3, ~ list(.x)))
+    tmp2 = bind_rows(tmp2, tmp4)
+  }
+  return(bind_cols(tmp1,tmp2))
+}
 
 # generate a simple dataset and summarise it.
 panel_example = function(
@@ -51,123 +34,102 @@ panel_example = function(
     comp_dist = stats::rpois(n_comp,10) * c(1,stats::rpois(n_comp-1,2)),
     comp_spec = stats::rbeta(n_comp, 995, 5),
     comp_sens = stats::rbeta(n_comp, 40, 10),
+    comp_test = factor(sprintf("Component %s",LETTERS[1:n_comp])),
+    comp_prev = distribute(comp_dist, panel_prev),
+    panel_name = "Panel",
+    panel_spec = NULL,
     n_samples = 1000,
     n_controls = 800,
     n_diseased = 30,
+    n_boots = 1,
     seed = 1001,
-    exact = TRUE
+    exact = FALSE,
+    exact_controls = exact,
+    exact_samples = exact
 ) {
   
   set.seed(seed)
-  comp_test = factor(sprintf("Component %s",LETTERS[1:n_comp]))
-  comp_prev = distribute(comp_dist, panel_prev)
   
-  # the component design parameters includiong test sens, spec and prev
-  comp_design = tibble::tibble(
-    test = comp_test,
-    design_prev = comp_prev,
-    design_spec = comp_spec,
-    design_sens = comp_sens
-  ) 
+  if (is.null(panel_spec)) {
+    panel_spec = tibble::tibble(panel_name = panel_name, comp_test = comp_test)
+  } else if (is.data.frame(panel_spec)) {
+    # leave as is
+  } else {
+    panel_spec = dplyr::bind_rows(lapply(seq_along(panel_spec), 
+                     function(i) tibble::tibble(
+                        panel_name = names(panel_spec)[[i]],
+                        comp_test = panel_spec[[i]]
+                      )
+    ))
+  }
+  panel_spec = panel_spec %>% group_by(panel_name) %>% mutate(n_components=n())
+  
+  tmp = test_example(
+    prev = comp_prev,
+    spec = comp_spec,
+    sens = comp_sens,
+    name = comp_test,
+    n_samples = n_samples,
+    n_controls = n_controls,
+    n_diseased = n_diseased,
+    n_boots = n_boots,
+    seed = seed,
+    exact_controls = exact_controls,
+    exact_samples = exact_samples
+  )
   
   # the theoretical combination of components into panel sens, spec and prev
-  panel_design = comp_design %>%
+  # this is not grouped by boot
+  panel_design = tmp$design %>%
+    dplyr::mutate(test = as.character(test)) %>%
+    dplyr::inner_join(panel_spec %>% mutate(comp_test = as.character(comp_test)), by=c("test"="comp_test")) %>%
+    dplyr::group_by(panel_name, n_components) %>%
     dplyr::summarise(
-      panel_design_prev = panel_prevalence(design_prev),
-      panel_design_spec = panel_spec(design_spec),
-      panel_design_sens = panel_sens(design_prev,design_sens,design_spec)
-    ) %>% dplyr::mutate(test = "Panel") %>%
-    dplyr::rename_with(~ stringr::str_remove(.x,"panel_"))
+      tmp_design_prev = panel_prevalence(design_prev),
+      tmp_design_spec = panel_spec(design_spec),
+      tmp_design_sens = panel_sens(design_prev,design_sens,design_spec)
+    ) %>% 
+    dplyr::rename(test = panel_name) %>%
+    dplyr::rename_with(.cols = tidyselect::starts_with("tmp_"), .fn = ~ stringr::str_remove(.x,"tmp_"))
   
   # Panel and component design
-  design_summary = dplyr::bind_rows(
-    comp_design,
+  tmp$design = dplyr::bind_rows(
+    tmp$design %>% mutate(n_components=1), 
     panel_design
   )
   
-  # sample from the design to create a disease positive and a disease
-  # negative control group sample. This simultates the outcome of controls
-  # for each component
-  performance = comp_design %>% either_or(
-    exact,
-    if_true = ~ .x %>% dplyr::mutate(
-      false_pos_controls = round(n_controls * (1-design_spec)),
-      n_controls = n_controls,
-      false_neg_diseased = round(n_diseased * (1-design_sens)),
-      n_diseased = n_diseased
-    ), 
-    if_false = ~ .x %>% dplyr::mutate(
-      false_pos_controls = stats::rbinom(n_comp, n_controls, (1-design_spec)),
-      n_controls = n_controls,
-      false_neg_diseased = stats::rbinom(n_comp, n_diseased, (1-design_sens)),
-      n_diseased = n_diseased
-    )
-  ) %>% dplyr::mutate(
-    # posterior beta distribtuion assuming a uniform prior 
-    spec = beta_dist(p=n_controls-false_pos_controls+1, q=false_pos_controls+1),
-    sens = beta_dist(p=n_diseased-false_neg_diseased+1, q=false_neg_diseased+1),
-  ) %>% dplyr::select(-design_prev) 
-  
-  # sample from the design to create a set of test results for each component
-  # test with an actual value (defined by prevalence) and an observed (defined 
-  # by actual, component sens and spec)
-  samples = tibble::tibble(
-      id = 1:n_samples
-    ) %>% 
-    dplyr::cross_join(comp_design) %>%
-    dplyr::mutate(
-      actual = stats::rbinom(n_samples * n_comp, 1, design_prev),
-      observed = stats::rbinom(n_samples * n_comp, 1, actual * design_sens + (1-actual) * (1-design_spec))
-    ) %>%
-    dplyr::select(-tidyselect::starts_with("design"))
-    
   # calculate a panel test result (at level of individual)
-  panel = samples %>%
-    dplyr::group_by(id) %>%
+  panel = tmp$samples %>%
+    dplyr::mutate(test = as.character(test)) %>%
+    dplyr::inner_join(panel_spec %>% mutate(comp_test = as.character(comp_test)), by=c("test"="comp_test")) %>%
+    dplyr::group_by(panel_name, n_components,boot,id) %>%
     dplyr::summarise( 
       actual = 1-prod(1-actual),
       observed = 1-prod(1-observed),
       .groups = "drop"
     )
   
-  # summarise the samples into per component test counts of positives
-  # this is simulation actual and obseved counts
-  comp_summary = samples %>% 
-    dplyr::group_by(test) %>%
-    dplyr::summarise(
-      actual_pos = sum(actual),
-      observed_pos = sum(observed),
-      n_samples = dplyr::n(),
-      .groups = "drop"
-    )
-  
   # summarise the panel test results into panel test counts of positives
   panel_summary = panel %>% 
+    dplyr::group_by(test = panel_name, n_components,boot) %>%
     dplyr::summarise(
       actual_pos = sum(actual),
       observed_pos = sum(observed),
       n_samples = dplyr::n(),
       .groups = "drop"
     ) %>% dplyr::mutate(
-      test = "Panel"
+      true_prev = actual_pos/n_samples,
+      apparent_prev = observed_pos/n_samples,
     )
   
   # combine simulation actual and observed counts to calculate
   # true and apparent prevalence.
-  summary = dplyr::bind_rows(
-    comp_summary, 
+  tmp$summary = dplyr::bind_rows(
+    tmp$summary %>% mutate(n_components=1), 
     panel_summary
-  ) %>% dplyr::mutate(
-    true_prev = actual_pos/n_samples,
-    apparent_prev = observed_pos/n_samples,
   )
   
-  return(list(
-    design = design_summary,
-    samples = samples,
-    summary = summary,
-    performance = performance
-  ))
+  return(tmp)
 }
 
 # Simple test example ----
@@ -183,13 +145,17 @@ test_example = function(
     n_boots = 1,
     name = sprintf("%1.1f%%",prev*100),
     exact = FALSE,
+    exact_controls = exact,
+    exact_samples = exact,
     seed = 1001
 ) {
   
-  set.seed(seed)
-  name = rlang::enexpr(name)
+  if (n_boots > 1 && exact_controls && exact_samples) 
+    stop("more than one bootstrap with no randomness requested")
   
-  n = .recycle(prev,spec,sens,n_controls,n_diseased)
+  set.seed(seed)
+  
+  n = pkgutils::recycle(prev,spec,sens,n_controls,n_diseased)
   
   # the component design parameters including test sens, spec and prev
   comp_design = tibble::tibble(
@@ -197,7 +163,7 @@ test_example = function(
     design_spec = spec,
     design_sens = sens
   ) %>% dplyr::mutate(
-    test = forcats::as_factor(!!name)
+    test = forcats::as_factor(name)
   )
   
   if (anyDuplicated(comp_design$test)) stop("test names must be unique")
@@ -205,38 +171,47 @@ test_example = function(
   # sample from the design to create a disease positive and a disease
   # negative control group sample. This simultates the outcome of controls
   # for each component
-  performance = comp_design %>% either_or(
-    exact,
+  performance = comp_design %>% 
+    cross_join(tibble(boot = 1:n_boots)) %>%
+    either_or(
+    exact_controls,
     if_true = ~ .x %>% dplyr::mutate(
       false_pos_controls = round(n_controls * (1-design_spec)),
       false_neg_diseased = round(n_diseased * (1-design_sens)),
     ), 
     if_false = ~ .x %>% dplyr::mutate(
-      false_pos_controls = stats::rbinom(n, n_controls, (1-design_spec)),
-      false_neg_diseased = stats::rbinom(n, n_diseased, (1-design_sens)),
+      false_pos_controls = stats::rbinom(dplyr::n(), n_controls, (1-design_spec)),
+      false_neg_diseased = stats::rbinom(dplyr::n(), n_diseased, (1-design_sens)),
     )
   ) %>% dplyr::mutate(
-    n_controls = n_controls,
-    n_diseased = n_diseased,
-    spec = beta_dist(p=n_controls-false_pos_controls+1, q=false_pos_controls+1),
-    sens = beta_dist(p=n_diseased-false_neg_diseased+1, q=false_neg_diseased+1),
+    n_controls = rep(n_controls,n_boots),
+    n_diseased = rep(n_diseased,n_boots),
+    spec = beta_dist(shape1=n_controls-false_pos_controls+1, shape2=false_pos_controls+1),
+    sens = beta_dist(shape1=n_diseased-false_neg_diseased+1, shape2=false_neg_diseased+1),
   ) %>% dplyr::select(-design_prev) 
   
   # sample from the design to create a set of test results for each component
   # test with an actual value (defined by prevalence) and an observed (defined 
   # by actual, component sens and spec)
   samples = tidyr::crossing(
-    boot = 1:n_boots,
-    id = 1:n_samples
+    id = 1:n_samples,
+    boot = 1:n_boots
   ) %>% 
     dplyr::cross_join(comp_design) %>%
-    
-    dplyr::mutate(
-      actual = ( #dplyr::if_else(exact,
-          #rfixed2(n_boots, n_samples * n, design_prev),
-          stats::rbinom(n_boots * n_samples * n, 1, design_prev)
-      ),
-      observed = stats::rbinom(n_boots * n_samples * n, 1, actual * design_sens + (1-actual) * (1-design_spec))
+    either_or(
+      exact_samples,
+      if_true = ~ .x %>%
+        group_by(boot,test) %>%
+        mutate(actual = rfixed(1, dplyr::n(), design_prev)) %>%
+        group_by(boot,test,actual) %>%
+        mutate(
+          observed = rfixed(1, dplyr::n(), dplyr::if_else(actual==1, design_sens, 1-design_spec))
+        ) %>% 
+        ungroup(), 
+      if_false = ~ .x %>% dplyr::mutate(
+        actual = stats::rbinom(n_boots * n_samples * n, 1, design_prev),
+        observed = stats::rbinom(n_boots * n_samples * n, 1, actual * design_sens + (1-actual) * (1-design_spec))
+      )
     ) %>%
     dplyr::select(-tidyselect::starts_with("design"))
   
@@ -265,6 +240,29 @@ test_example = function(
 
 
 # Plots ----
+
+# plot true and predicted test results for a single panel.
+demo_bar_plot_base = function(
+    summary = interfacer::iface(
+      test = character ~ "the test",
+      apparent_prev = double ~ "observed test positive rate",
+      true_prev = double ~ "true positive rate",
+      n_samples = integer ~ "the overall number of patients tested"
+    ), 
+    ...
+) {
+  prediction = interfacer::ivalidate(summary, ...)
+  prediction = prediction %>% dplyr::mutate(
+    test = forcats::as_factor(test)
+  )
+  tmp = prediction %>% dplyr::select(test,apparent_prev) %>% dplyr::distinct()
+  n_samples = unique(prediction$n_samples)
+  ggplot2::ggplot(prediction)+
+    ggplot2::geom_bar(ggplot2::aes(x=test,y=apparent_prev*100), data = tmp, stat="identity", fill="grey80", colour=NA,width=0.8)+
+    ggplot2::geom_errorbar(ggplot2::aes(x=test,y=apparent_prev*100,ymin=apparent_prev*100,ymax=apparent_prev*100), colour="red",width=0.8)+
+    ggplot2::geom_errorbar(ggplot2::aes(x=test,y=true_prev*100,ymin=true_prev*100,ymax=true_prev*100), colour="blue",width=0.8)+
+    ggplot2::scale_y_continuous(sec.axis = ggplot2::sec_axis(trans = ~ ./100*n_samples, name="counts"),name = "prevalence (%)")
+}
 
 # plot true and predicted test results for a single panel.
 demo_bar_plot = function(

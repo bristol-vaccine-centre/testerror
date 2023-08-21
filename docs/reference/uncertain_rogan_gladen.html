@@ -12,7 +12,7 @@ an estimate of true prevalence from a given value of apparent prevalence."><!-- 
     
     <a class="navbar-brand me-2" href="../index.html">testerror</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,7 +52,7 @@ an estimate of true prevalence from a given value of apparent prevalence."><!-- 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="" class="logo" alt=""><h1>True prevalence from apparent prevalence with uncertainty</h1>
-      <small class="dont-index">Source: <a href="https://github.com/bristol-vaccine-centre/testerror/blob/HEAD/R/test-error-adjustment.R" class="external-link"><code>R/test-error-adjustment.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/bristol-vaccine-centre/testerror/blob/HEAD/R/uncertain_rogan_gladen.R" class="external-link"><code>R/uncertain_rogan_gladen.R</code></a></small>
       <div class="d-none name"><code>uncertain_rogan_gladen.Rd</code></div>
     </div>
 
@@ -66,18 +66,17 @@ an estimate of true prevalence from a given value of apparent prevalence.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">uncertain_rogan_gladen</span><span class="op">(</span></span>
 <span>  <span class="va">pos_obs</span>,</span>
 <span>  <span class="va">n_obs</span>,</span>
-<span>  false_pos_controls <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  n_controls <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  false_neg_diseased <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  n_diseased <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  false_pos_controls <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  n_controls <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  false_neg_diseased <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  n_diseased <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span>,</span>
-<span>  spec <span class="op">=</span> <span class="fu"><a href="beta_dist.html">beta_dist</a></span><span class="op">(</span>p <span class="op">=</span> <span class="va">n_controls</span> <span class="op">-</span> <span class="va">false_pos_controls</span> <span class="op">+</span> <span class="fl">1</span>, q <span class="op">=</span> <span class="va">false_pos_controls</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span>,</span>
-<span>  sens <span class="op">=</span> <span class="fu"><a href="beta_dist.html">beta_dist</a></span><span class="op">(</span>p <span class="op">=</span> <span class="va">n_diseased</span> <span class="op">-</span> <span class="va">false_neg_diseased</span> <span class="op">+</span> <span class="fl">1</span>, q <span class="op">=</span> <span class="va">false_neg_diseased</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span>,</span>
+<span>  spec <span class="op">=</span> <span class="fu"><a href="spec_prior.html">spec_prior</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  sens <span class="op">=</span> <span class="fu"><a href="sens_prior.html">sens_prior</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  samples <span class="op">=</span> <span class="fl">1000</span>,</span>
 <span>  confint <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  fmt <span class="op">=</span> <span class="st">"%1.2f%% [%1.2f%% — %1.2f%%]"</span>,</span>
-<span>  seed <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  prefix <span class="op">=</span> <span class="st">"prevalence"</span></span>
+<span>  seed <span class="op">=</span> <span class="cn">NA</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -118,11 +117,11 @@ control group.</p></dd>
 
 
 <dt>spec</dt>
-<dd><p>the specificity of the test as a <code>beta_dist</code> or as a vector of samples</p></dd>
+<dd><p>the prior specificity of the test as a <code>beta_dist</code>.</p></dd>
 
 
 <dt>sens</dt>
-<dd><p>the sensitivity of the test as a <code>beta_dist</code> or as a vector of samples</p></dd>
+<dd><p>the prior sensitivity of the test as a <code>beta_dist</code>.</p></dd>
 
 
 <dt>samples</dt>
@@ -151,10 +150,6 @@ control group.</p></dd>
 
 <p>the expected value of apparent prevalence</p>
     </div>
-    <div class="section level2">
-    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>This is not vectorised</p>
-    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
@@ -162,32 +157,32 @@ control group.</p></dd>
 <span class="r-in"><span>  pos_obs <span class="op">=</span> <span class="fl">20</span>, n_obs <span class="op">=</span> <span class="fl">1000</span>, </span></span>
 <span class="r-in"><span>  false_pos_controls <span class="op">=</span> <span class="fl">10</span>, n_controls <span class="op">=</span> <span class="fl">800</span>, </span></span>
 <span class="r-in"><span>  false_neg_diseased <span class="op">=</span> <span class="fl">20</span>, n_diseased <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 1 × 5</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 1 × 13</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   prevalence.median prevalence.lower prevalence.upper prevalence.label     </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span>           0.008<span style="text-decoration: underline;">17</span>                0           0.022<span style="text-decoration: underline;">5</span> 0.82% [0.00% — 2.25%]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 1 more variable: prevalence.method &lt;chr&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span>            0.010<span style="text-decoration: underline;">2</span>                0           0.018<span style="text-decoration: underline;">0</span> 1.02% [0.00% — 1.80%]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 9 more variables: spec.median &lt;dbl&gt;, spec.lower &lt;dbl&gt;, spec.upper &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   spec.label &lt;chr&gt;, sens.median &lt;dbl&gt;, sens.lower &lt;dbl&gt;, sens.upper &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   sens.label &lt;chr&gt;, prevalence.method &lt;chr&gt;</span></span>
 <span class="r-in"><span>  </span></span>
 <span class="r-in"><span><span class="fu">uncertain_rogan_gladen</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  pos_obs <span class="op">=</span> <span class="fl">5</span>, n_obs <span class="op">=</span> <span class="fl">1000</span>, </span></span>
 <span class="r-in"><span>  sens <span class="op">=</span> <span class="fu"><a href="beta_dist.html">beta_dist</a></span><span class="op">(</span><span class="fl">0.75</span>,n<span class="op">=</span><span class="fl">200</span><span class="op">)</span>, </span></span>
 <span class="r-in"><span>  spec <span class="op">=</span> <span class="fu"><a href="beta_dist.html">beta_dist</a></span><span class="op">(</span><span class="fl">0.9975</span>, n<span class="op">=</span><span class="fl">800</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 1 × 5</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   prevalence.median prevalence.lower prevalence.upper prevalence.label     </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span>           0.003<span style="text-decoration: underline;">23</span>                0           0.011<span style="text-decoration: underline;">0</span> 0.32% [0.00% — 1.10%]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 1 more variable: prevalence.method &lt;chr&gt;</span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in beta_dist(0.75, n = 200):</span> additional parameters detected to `beta_dist`: all parameters must be named</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu">uncertain_rogan_gladen</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  pos_obs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">5</span>,<span class="fl">10</span><span class="op">)</span>, n_obs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1000</span>,<span class="fl">1000</span><span class="op">)</span>, </span></span>
 <span class="r-in"><span>  false_pos_controls <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">1</span><span class="op">)</span>, n_controls <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">800</span>,<span class="fl">800</span><span class="op">)</span>, </span></span>
 <span class="r-in"><span>  false_neg_diseased <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">25</span>,<span class="fl">20</span><span class="op">)</span>,n_diseased <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">100</span>,<span class="fl">100</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 2 × 5</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 2 × 13</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   prevalence.median prevalence.lower prevalence.upper prevalence.label     </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span>           0.001<span style="text-decoration: underline;">83</span>          0                 0.010<span style="text-decoration: underline;">1</span> 0.18% [0.00% — 1.01%]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span>           0.009<span style="text-decoration: underline;">39</span>          0.001<span style="text-decoration: underline;">09</span>           0.019<span style="text-decoration: underline;">0</span> 0.94% [0.11% — 1.90%]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 1 more variable: prevalence.method &lt;chr&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span>           0.003<span style="text-decoration: underline;">73</span>          0                0.006<span style="text-decoration: underline;">49</span> 0.37% [0.00% — 0.65%]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span>           0.011<span style="text-decoration: underline;">4</span>           0.007<span style="text-decoration: underline;">14</span>          0.013<span style="text-decoration: underline;">3</span>  1.14% [0.71% — 1.33%]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 9 more variables: spec.median &lt;dbl&gt;, spec.lower &lt;dbl&gt;, spec.upper &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   spec.label &lt;chr&gt;, sens.median &lt;dbl&gt;, sens.lower &lt;dbl&gt;, sens.upper &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   sens.label &lt;chr&gt;, prevalence.method &lt;chr&gt;</span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

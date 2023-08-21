@@ -12,7 +12,7 @@ estimates of test sensitivity and test specificity, using one of 3 methods."><!-
     
     <a class="navbar-brand me-2" href="../index.html">testerror</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,7 +52,7 @@ estimates of test sensitivity and test specificity, using one of 3 methods."><!-
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="" class="logo" alt=""><h1>Vectorised true prevalence estimates</h1>
-      <small class="dont-index">Source: <a href="https://github.com/bristol-vaccine-centre/testerror/blob/HEAD/R/test-error-adjustment.R" class="external-link"><code>R/test-error-adjustment.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/bristol-vaccine-centre/testerror/blob/HEAD/R/true_prevalence.R" class="external-link"><code>R/true_prevalence.R</code></a></small>
       <div class="d-none name"><code>true_prevalence.Rd</code></div>
     </div>
 
@@ -73,8 +73,8 @@ estimates of test sensitivity and test specificity, using one of 3 methods.</p>
 <span>  confint <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lang-reiczigel"</span>, <span class="st">"rogan-gladen"</span>, <span class="st">"bayes"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span>,</span>
-<span>  sens <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  spec <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sens <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -91,7 +91,7 @@ estimates of test sensitivity and test specificity, using one of 3 methods.</p>
 <dt>false_pos_controls</dt>
 <dd><p>the number of positives that appeared in the specificity
 disease-free control group. These are by definition false positives. This
-is (1-specificity)*n_controls (ignored if <code>spec</code> given)</p></dd>
+is (1-specificity)*n_controls</p></dd>
 
 
 <dt>n_controls</dt>
@@ -102,7 +102,7 @@ disease-free control group.</p></dd>
 <dt>false_neg_diseased</dt>
 <dd><p>the number of negatives that appeared in the sensitivity
 confirmed disease group. These are by definition false negatives. This
-is (1-sensitivity)*n_diseased (ignored if <code>sens</code> given)</p></dd>
+is (1-sensitivity)*n_diseased</p></dd>
 
 
 <dt>n_diseased</dt>
@@ -111,26 +111,36 @@ control group.</p></dd>
 
 
 <dt>confint</dt>
-<dd><p>confidence limit width</p></dd>
+<dd><p>confidence interval limits</p></dd>
 
 
 <dt>method</dt>
-<dd><p>one of:</p><ul><li><p>"lang-reiczigel": Frequentist confidence limits</p></li>
-<li><p>"rogan-gladen": Rogan gladen incorporating uncertainty with resampling</p></li>
-<li><p>"bayes": Bayesian analysis</p></li>
+<dd><p>one of:</p><ul><li><p>"lang-reiczigel": Frequentist confidence limits: see <code><a href="prevalence_lang_reiczigel.html">prevalence_lang_reiczigel()</a></code></p></li>
+<li><p>"rogan-gladen": Rogan gladen incorporating uncertainty with resampling: see <code><a href="uncertain_rogan_gladen.html">uncertain_rogan_gladen()</a></code></p></li>
+<li><p>"bayes": Bayesian analysis: see <code><a href="bayesian_component_simpler_model.html">bayesian_component_simpler_model()</a></code></p></li>
 </ul></dd>
 
 
 <dt>...</dt>
-<dd><p>passed onto methods</p></dd>
+<dd><p>Arguments passed on to <code><a href="uncertain_rogan_gladen.html">uncertain_rogan_gladen</a></code></p><dl><dt><code>samples</code></dt>
+<dd><p>number fo random draws of sensitivity and specificity</p></dd>
 
+    <dt><code>fmt</code></dt>
+<dd><p>a <code>sprintf</code> formatting string accepting 3 numbers</p></dd>
 
-<dt>sens</dt>
-<dd><p>the sensitivity of the test as a <code>beta_dist</code> (optional)</p></dd>
+    <dt><code>seed</code></dt>
+<dd><p>set seed for reproducibility</p></dd>
+
+  
+</dl></dd>
 
 
 <dt>spec</dt>
-<dd><p>the specificity of the test as a <code>beta_dist</code> (optional)</p></dd>
+<dd><p>the prior specificity of the test as a <code>beta_dist</code>.</p></dd>
+
+
+<dt>sens</dt>
+<dd><p>the prior sensitivity of the test as a <code>beta_dist</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -142,9 +152,9 @@ control group.</p></dd>
 <li><p>prevalence.median (numeric) - the median estimate</p></li>
 <li><p>prevalence.method (character) - the method of estimation</p></li>
 <li><p>prevalence.upper (numeric) - the upper estimate</p></li>
-<li><p>test (character) - the name of the test or panel
-Grouped by: <none></none></p></li>
-</ul></div>
+<li><p>test (character) - the name of the test or panel</p></li>
+</ul><p>Ungrouped</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
@@ -152,38 +162,155 @@ Grouped by: <none></none></p></li>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 50 × 15</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    prevalence.lower prevalence.median prevalence.upper prevalence.method</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span>          0                 0.003<span style="text-decoration: underline;">76</span>           0.042<span style="text-decoration: underline;">1</span> lang-reiczigel   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span>          0                 0.011<span style="text-decoration: underline;">3</span>            0.053<span style="text-decoration: underline;">6</span> lang-reiczigel   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span>          0                 0.018<span style="text-decoration: underline;">8</span>            0.064<span style="text-decoration: underline;">6</span> lang-reiczigel   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span>          0.003<span style="text-decoration: underline;">17</span>           0.026<span style="text-decoration: underline;">3</span>            0.075<span style="text-decoration: underline;">3</span> lang-reiczigel   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span>          0.007<span style="text-decoration: underline;">92</span>           0.033<span style="text-decoration: underline;">9</span>            0.085<span style="text-decoration: underline;">8</span> lang-reiczigel   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span>          0.012<span style="text-decoration: underline;">9</span>            0.041<span style="text-decoration: underline;">4</span>            0.096<span style="text-decoration: underline;">1</span> lang-reiczigel   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span>          0.017<span style="text-decoration: underline;">9</span>            0.048<span style="text-decoration: underline;">9</span>            0.106  lang-reiczigel   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span>          0.023<span style="text-decoration: underline;">2</span>            0.056<span style="text-decoration: underline;">5</span>            0.116  lang-reiczigel   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span>          0.028<span style="text-decoration: underline;">5</span>            0.064<span style="text-decoration: underline;">0</span>            0.126  lang-reiczigel   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span>          0.033<span style="text-decoration: underline;">9</span>            0.071<span style="text-decoration: underline;">5</span>            0.136  lang-reiczigel   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span>          0                 0.003<span style="text-decoration: underline;">73</span>           0.042<span style="text-decoration: underline;">0</span> lang-reiczigel   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span>          0                 0.011<span style="text-decoration: underline;">2</span>            0.053<span style="text-decoration: underline;">4</span> lang-reiczigel   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span>          0                 0.018<span style="text-decoration: underline;">8</span>            0.064<span style="text-decoration: underline;">4</span> lang-reiczigel   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span>          0.003<span style="text-decoration: underline;">13</span>           0.026<span style="text-decoration: underline;">3</span>            0.075<span style="text-decoration: underline;">1</span> lang-reiczigel   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span>          0.007<span style="text-decoration: underline;">87</span>           0.033<span style="text-decoration: underline;">8</span>            0.085<span style="text-decoration: underline;">6</span> lang-reiczigel   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span>          0.012<span style="text-decoration: underline;">8</span>            0.041<span style="text-decoration: underline;">3</span>            0.095<span style="text-decoration: underline;">9</span> lang-reiczigel   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span>          0.017<span style="text-decoration: underline;">9</span>            0.048<span style="text-decoration: underline;">8</span>            0.106  lang-reiczigel   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span>          0.023<span style="text-decoration: underline;">1</span>            0.056<span style="text-decoration: underline;">4</span>            0.116  lang-reiczigel   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span>          0.028<span style="text-decoration: underline;">4</span>            0.063<span style="text-decoration: underline;">9</span>            0.126  lang-reiczigel   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span>          0.033<span style="text-decoration: underline;">8</span>            0.071<span style="text-decoration: underline;">4</span>            0.136  lang-reiczigel   </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 40 more rows</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 11 more variables: prevalence.label &lt;chr&gt;, spec.median &lt;dbl&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   spec.lower &lt;dbl&gt;, spec.upper &lt;dbl&gt;, spec.label &lt;chr&gt;, sens.median &lt;dbl&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   sens.lower &lt;dbl&gt;, sens.upper &lt;dbl&gt;, sens.label &lt;chr&gt;, pos_obs &lt;int&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   n_obs &lt;dbl&gt;</span></span>
-<span class="r-in"><span><span class="fu">true_prevalence</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span><span class="op">*</span><span class="fl">2</span>, <span class="fl">200</span>, <span class="fl">25</span>, <span class="fl">800</span>, <span class="fl">4.5</span>, <span class="fl">5.5</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">true_prevalence</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span><span class="op">*</span><span class="fl">2</span>, <span class="fl">200</span>, <span class="fl">25</span>, <span class="fl">800</span>, <span class="fl">1</span>, <span class="fl">6</span>, method<span class="op">=</span><span class="st">"rogan-gladen"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 10 × 15</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    prevalence.lower prevalence.median prevalence.upper prevalence.method</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span>                0            0                0.055<span style="text-decoration: underline;">9</span> lang-reiczigel   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span>                0            0                0.095<span style="text-decoration: underline;">9</span> lang-reiczigel   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span>                0            0                0.162  lang-reiczigel   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span>                0            0.058<span style="text-decoration: underline;">1</span>           0.247  lang-reiczigel   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span>                0            0.125            0.342  lang-reiczigel   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span>                0            0.191            0.442  lang-reiczigel   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span>                0            0.257            0.544  lang-reiczigel   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span>                0            0.324            0.647  lang-reiczigel   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span>                0            0.390            0.751  lang-reiczigel   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span>                0            0.457            0.856  lang-reiczigel   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 11 more variables: prevalence.label &lt;chr&gt;, spec.median &lt;dbl&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   spec.lower &lt;dbl&gt;, spec.upper &lt;dbl&gt;, spec.label &lt;chr&gt;, sens.median &lt;dbl&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   sens.lower &lt;dbl&gt;, sens.upper &lt;dbl&gt;, sens.label &lt;chr&gt;, pos_obs &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    prevalence.median prevalence.lower prevalence.upper prevalence.label      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span>            0               0                 0      0.00% [0.00% — 0.00%] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span>            0               0                 0      0.00% [0.00% — 0.00%] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span>            0               0                 0.012<span style="text-decoration: underline;">1</span> 0.00% [0.00% — 1.21%] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span>            0.011<span style="text-decoration: underline;">9</span>          0                 0.030<span style="text-decoration: underline;">8</span> 1.19% [0.00% — 3.08%] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span>            0.025<span style="text-decoration: underline;">0</span>          0.008<span style="text-decoration: underline;">64</span>           0.051<span style="text-decoration: underline;">2</span> 2.50% [0.86% — 5.12%] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span>            0.037<span style="text-decoration: underline;">4</span>          0.019<span style="text-decoration: underline;">5</span>            0.067<span style="text-decoration: underline;">6</span> 3.74% [1.95% — 6.76%] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span>            0.049<span style="text-decoration: underline;">9</span>          0.031<span style="text-decoration: underline;">1</span>            0.086<span style="text-decoration: underline;">6</span> 4.99% [3.11% — 8.66%] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span>            0.062<span style="text-decoration: underline;">0</span>          0.042<span style="text-decoration: underline;">3</span>            0.112  6.20% [4.23% — 11.24%]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span>            0.074<span style="text-decoration: underline;">5</span>          0.054<span style="text-decoration: underline;">7</span>            0.124  7.45% [5.47% — 12.41%]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span>            0.087<span style="text-decoration: underline;">6</span>          0.067<span style="text-decoration: underline;">3</span>            0.159  8.76% [6.73% — 15.91%]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 11 more variables: spec.median &lt;dbl&gt;, spec.lower &lt;dbl&gt;, spec.upper &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   spec.label &lt;chr&gt;, sens.median &lt;dbl&gt;, sens.lower &lt;dbl&gt;, sens.upper &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   sens.label &lt;chr&gt;, prevalence.method &lt;chr&gt;, pos_obs &lt;dbl&gt;, n_obs &lt;dbl&gt;</span></span>
+<span class="r-in"><span><span class="fu">true_prevalence</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span><span class="op">*</span><span class="fl">2</span>, <span class="fl">200</span>, <span class="fl">5</span>, <span class="fl">800</span>, <span class="fl">1</span>, <span class="fl">6</span>, method<span class="op">=</span><span class="st">"bayes"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> SAMPLING FOR MODEL 'component-simpler' NOW (CHAIN 1).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Gradient evaluation took 2e-05 seconds</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Adjust your expectations accordingly!</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration:    1 / 2000 [  0%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration:  200 / 2000 [ 10%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration:  400 / 2000 [ 20%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration:  600 / 2000 [ 30%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration:  800 / 2000 [ 40%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 1000 / 2000 [ 50%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 1200 / 2000 [ 60%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 1400 / 2000 [ 70%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 1600 / 2000 [ 80%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:  Elapsed Time: 0.158783 seconds (Warm-up)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:                0.152411 seconds (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:                0.311194 seconds (Total)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> SAMPLING FOR MODEL 'component-simpler' NOW (CHAIN 2).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Gradient evaluation took 1.5e-05 seconds</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Adjust your expectations accordingly!</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration:    1 / 2000 [  0%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration:  200 / 2000 [ 10%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration:  400 / 2000 [ 20%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration:  600 / 2000 [ 30%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration:  800 / 2000 [ 40%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration: 1000 / 2000 [ 50%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration: 1001 / 2000 [ 50%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration: 1200 / 2000 [ 60%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration: 1400 / 2000 [ 70%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration: 1600 / 2000 [ 80%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2:  Elapsed Time: 0.153795 seconds (Warm-up)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2:                0.14783 seconds (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2:                0.301625 seconds (Total)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> SAMPLING FOR MODEL 'component-simpler' NOW (CHAIN 3).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Gradient evaluation took 1.5e-05 seconds</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Adjust your expectations accordingly!</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration:    1 / 2000 [  0%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration:  200 / 2000 [ 10%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration:  400 / 2000 [ 20%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration:  600 / 2000 [ 30%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration:  800 / 2000 [ 40%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration: 1000 / 2000 [ 50%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration: 1001 / 2000 [ 50%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration: 1200 / 2000 [ 60%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration: 1400 / 2000 [ 70%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration: 1600 / 2000 [ 80%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3:  Elapsed Time: 0.160532 seconds (Warm-up)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3:                0.150666 seconds (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3:                0.311198 seconds (Total)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> SAMPLING FOR MODEL 'component-simpler' NOW (CHAIN 4).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Gradient evaluation took 1.5e-05 seconds</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Adjust your expectations accordingly!</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration:    1 / 2000 [  0%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration:  200 / 2000 [ 10%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration:  400 / 2000 [ 20%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration:  600 / 2000 [ 30%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration:  800 / 2000 [ 40%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration: 1000 / 2000 [ 50%]  (Warmup)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration: 1001 / 2000 [ 50%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration: 1200 / 2000 [ 60%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration: 1400 / 2000 [ 70%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration: 1600 / 2000 [ 80%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4:  Elapsed Time: 0.146729 seconds (Warm-up)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4:                0.147935 seconds (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4:                0.294664 seconds (Total)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 10 × 15</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    prevalence.median prevalence.lower prevalence.upper prevalence.label       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span>            0.012<span style="text-decoration: underline;">0</span>         0.000<span style="text-decoration: underline;">653</span>           0.051<span style="text-decoration: underline;">5</span> 1.20% [0.07% — 5.15%]  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span>            0.023<span style="text-decoration: underline;">6</span>         0.002<span style="text-decoration: underline;">39</span>            0.072<span style="text-decoration: underline;">0</span> 2.36% [0.24% — 7.20%]  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span>            0.036<span style="text-decoration: underline;">8</span>         0.007<span style="text-decoration: underline;">87</span>            0.105  3.68% [0.79% — 10.50%] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span>            0.050<span style="text-decoration: underline;">8</span>         0.017<span style="text-decoration: underline;">0</span>             0.127  5.08% [1.70% — 12.67%] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span>            0.064<span style="text-decoration: underline;">2</span>         0.026<span style="text-decoration: underline;">1</span>             0.156  6.42% [2.61% — 15.58%] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span>            0.079<span style="text-decoration: underline;">4</span>         0.035<span style="text-decoration: underline;">2</span>             0.188  7.94% [3.52% — 18.79%] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span>            0.091<span style="text-decoration: underline;">9</span>         0.044<span style="text-decoration: underline;">7</span>             0.210  9.19% [4.47% — 21.02%] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span>            0.107          0.054<span style="text-decoration: underline;">9</span>             0.244  10.70% [5.49% — 24.36%]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span>            0.120          0.066<span style="text-decoration: underline;">0</span>             0.266  12.01% [6.60% — 26.63%]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span>            0.133          0.075<span style="text-decoration: underline;">0</span>             0.285  13.30% [7.50% — 28.50%]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 11 more variables: prevalence.method &lt;chr&gt;, sens.median &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   sens.lower &lt;dbl&gt;, sens.upper &lt;dbl&gt;, sens.label &lt;chr&gt;, spec.median &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   spec.lower &lt;dbl&gt;, spec.upper &lt;dbl&gt;, spec.label &lt;chr&gt;, pos_obs &lt;dbl&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   n_obs &lt;dbl&gt;</span></span>
 </code></pre></div>
     </div>

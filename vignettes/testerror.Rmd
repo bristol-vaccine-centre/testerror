@@ -45,7 +45,10 @@ This package provides modelled estimates of prevalence from test and panel test
 positivity.
 
 ```{r}
-tmp = testerror:::panel_example(panel_prev = 0.15, comp_spec = 0.99, comp_sens = 0.8, n_comp = 15, n_samples = 2000, n_controls = 800)
+tmp = testerror:::panel_example(
+  panel_prev = 0.15, comp_spec = 0.99, 
+  comp_sens = 0.8, n_comp = 15, n_samples = 2000, 
+  n_controls = 800, n_diseased = 30, exact_controls = TRUE) #, exact_samples = TRUE)
 
 corr2 = true_panel_prevalence(
    test_results = tmp$samples %>% dplyr::select(id,test,result = observed),
@@ -54,6 +57,8 @@ corr2 = true_panel_prevalence(
    false_neg_diseased = tmp$performance$false_neg_diseased,
    n_diseased = tmp$performance$n_diseased,
    method = "lang-reiczigel"
+   #method = "rogan-gladen"
+   #method = "bayes"
 )
 
 testerror:::demo_bar_plot(tmp$summary %>% dplyr::inner_join(bind_rows(corr2),by="test"))

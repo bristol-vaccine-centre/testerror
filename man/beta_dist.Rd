@@ -4,16 +4,20 @@
 \alias{beta_dist}
 \title{Generate a beta distribution out of probabilities, or positive and negative counts}
 \usage{
-beta_dist(p, q = NULL, n = NULL, ...)
+beta_dist(..., p = NULL, q = NULL, n = NULL, shape1 = NULL, shape2 = NULL)
 }
 \arguments{
+\item{...}{not used}
+
 \item{p}{the first shape / the probability or count of success}
 
 \item{q}{(optional) the second shape / the probability or count of failure}
 
 \item{n}{(optional) the number of trials.}
 
-\item{...}{not used}
+\item{shape1}{the first shape parameter (use this to force interpretation as shape)}
+
+\item{shape2}{the second shape parameter (use this to force interpretation as shape)}
 }
 \value{
 either a single \code{beta_dist} object or a list of \code{beta_dist}s
@@ -22,5 +26,5 @@ either a single \code{beta_dist} object or a list of \code{beta_dist}s
 Generate a beta distribution out of probabilities, or positive and negative counts
 }
 \examples{
-beta_dist(c(1,2,3),c(3,2,1))
+beta_dist(shape1 = c(1,2,3),shape2 = c(3,2,1))
 }

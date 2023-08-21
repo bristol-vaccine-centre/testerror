@@ -12,7 +12,7 @@ an estimate of true prevalence from a given value of apparent prevalence."><!-- 
     
     <a class="navbar-brand me-2" href="../index.html">testerror</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,7 +52,7 @@ an estimate of true prevalence from a given value of apparent prevalence."><!-- 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="" class="logo" alt=""><h1>Rogan-Gladen true prevalence for panel with resampling</h1>
-      <small class="dont-index">Source: <a href="https://github.com/bristol-vaccine-centre/testerror/blob/HEAD/R/panel-test-error-adjustment.R" class="external-link"><code>R/panel-test-error-adjustment.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/bristol-vaccine-centre/testerror/blob/HEAD/R/uncertain_panel_rogan_gladen.R" class="external-link"><code>R/uncertain_panel_rogan_gladen.R</code></a></small>
       <div class="d-none name"><code>uncertain_panel_rogan_gladen.Rd</code></div>
     </div>
 
@@ -68,16 +68,14 @@ an estimate of true prevalence from a given value of apparent prevalence.</p>
 <span>  <span class="va">panel_n_obs</span>,</span>
 <span>  <span class="va">pos_obs</span>,</span>
 <span>  <span class="va">n_obs</span>,</span>
-<span>  false_pos_controls <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  n_controls <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  false_neg_diseased <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  n_diseased <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  false_pos_controls <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  n_controls <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  false_neg_diseased <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  n_diseased <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span>,</span>
-<span>  spec <span class="op">=</span> <span class="fu"><a href="beta_dist.html">beta_dist</a></span><span class="op">(</span>p <span class="op">=</span> <span class="va">n_controls</span> <span class="op">-</span> <span class="va">false_pos_controls</span> <span class="op">+</span> <span class="fl">1</span>, q <span class="op">=</span> <span class="va">false_pos_controls</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span>,</span>
-<span>  sens <span class="op">=</span> <span class="fu"><a href="beta_dist.html">beta_dist</a></span><span class="op">(</span>p <span class="op">=</span> <span class="va">n_diseased</span> <span class="op">-</span> <span class="va">false_neg_diseased</span> <span class="op">+</span> <span class="fl">1</span>, q <span class="op">=</span> <span class="va">false_neg_diseased</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span>,</span>
-<span>  panel_sens <span class="op">=</span> <span class="fu"><a href="uncertain_panel_sens_estimator.html">uncertain_panel_sens_estimator</a></span><span class="op">(</span>pos_obs <span class="op">=</span> <span class="va">pos_obs</span>, n_obs <span class="op">=</span> <span class="va">n_obs</span>, sens <span class="op">=</span></span>
-<span>    <span class="va">sens</span>, spec <span class="op">=</span> <span class="va">spec</span>, samples <span class="op">=</span> <span class="va">samples</span>, fit_beta <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>,</span>
-<span>  panel_spec <span class="op">=</span> <span class="fu"><a href="uncertain_panel_spec.html">uncertain_panel_spec</a></span><span class="op">(</span>spec <span class="op">=</span> <span class="va">spec</span>, samples <span class="op">=</span> <span class="va">samples</span>, fit_beta <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>,</span>
+<span>  sens <span class="op">=</span> <span class="fu"><a href="sens_prior.html">sens_prior</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  spec <span class="op">=</span> <span class="fu"><a href="spec_prior.html">spec_prior</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  confint <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  samples <span class="op">=</span> <span class="fl">1000</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -93,57 +91,60 @@ an estimate of true prevalence from a given value of apparent prevalence.</p>
 
 
 <dt>pos_obs</dt>
-<dd><p>a vector of the number of positive observations for each component of a panel test</p></dd>
+<dd><p>the number of positive observations for a given test</p></dd>
 
 
 <dt>n_obs</dt>
-<dd><p>a vector of the number of observations for each component test</p></dd>
+<dd><p>the number of observations for a given test</p></dd>
 
 
 <dt>false_pos_controls</dt>
-<dd><p>the number of positives that appeared in the component tests of a specificity
+<dd><p>the number of positives that appeared in the specificity
 disease-free control group. These are by definition false positives. This
-is (1-specificity)*n_controls (ignored if <code>spec</code> is given)</p></dd>
+is (1-specificity)*n_controls</p></dd>
 
 
 <dt>n_controls</dt>
 <dd><p>the number of controls in the specificity
-disease-free control group (ignored if <code>spec</code> is given).</p></dd>
+disease-free control group.</p></dd>
 
 
 <dt>false_neg_diseased</dt>
-<dd><p>the number of negatives that appeared in the component tests of a sensitivity
+<dd><p>the number of negatives that appeared in the sensitivity
 confirmed disease group. These are by definition false negatives. This
-is (1-sensitivity)*n_diseased (ignored if <code>sens</code> is given)</p></dd>
+is (1-sensitivity)*n_diseased</p></dd>
 
 
 <dt>n_diseased</dt>
 <dd><p>the number of confirmed disease cases in the sensitivity
-control group (ignored if <code>sens</code> is given)</p></dd>
+control group.</p></dd>
 
 
 <dt>...</dt>
-<dd><p>not used</p></dd>
+<dd><p>Arguments passed on to <code><a href="uncertain_rogan_gladen.html">uncertain_rogan_gladen</a></code></p><dl><dt><code>fmt</code></dt>
+<dd><p>a <code>sprintf</code> formatting string accepting 3 numbers</p></dd>
 
+    <dt><code>seed</code></dt>
+<dd><p>set seed for reproducibility</p></dd>
 
-<dt>spec</dt>
-<dd><p>the specificity of the test as a <code>beta_dist_list</code> (optional)</p></dd>
+  
+</dl></dd>
 
 
 <dt>sens</dt>
-<dd><p>the sensitivity of the component tests of test as a <code>beta_dist_list</code> (optional)</p></dd>
+<dd><p>the prior sensitivity of the test as a <code>beta_dist</code>.</p></dd>
 
 
-<dt>panel_sens</dt>
-<dd><p>the sensitivity of the component tests of test as a set of samples (optional)</p></dd>
+<dt>spec</dt>
+<dd><p>the prior specificity of the test as a <code>beta_dist</code>.</p></dd>
 
 
-<dt>panel_spec</dt>
-<dd><p>the specificity of the test as a set of samples (optional)</p></dd>
+<dt>confint</dt>
+<dd><p>confidence interval limits</p></dd>
 
 
 <dt>samples</dt>
-<dd><p>number of random draws of sensitivity and specificity (optional - default 1000)</p></dd>
+<dd><p>number fo random draws of sensitivity and specificity</p></dd>
 
 </dl></div>
     <div class="section level2">

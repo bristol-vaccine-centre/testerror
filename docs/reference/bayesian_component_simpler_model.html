@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">testerror</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,7 +50,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="" class="logo" alt=""><h1>Bayesian simpler model true prevalence for component</h1>
-      <small class="dont-index">Source: <a href="https://github.com/bristol-vaccine-centre/testerror/blob/HEAD/R/bayesian-models.R" class="external-link"><code>R/bayesian-models.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/bristol-vaccine-centre/testerror/blob/HEAD/R/bayesian_component_simpler_model.R" class="external-link"><code>R/bayesian_component_simpler_model.R</code></a></small>
       <div class="d-none name"><code>bayesian_component_simpler_model.Rd</code></div>
     </div>
 
@@ -68,8 +68,8 @@
 <span>  false_neg_diseased <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  n_diseased <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span>,</span>
-<span>  sens <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sens <span class="op">=</span> <span class="fu"><a href="uniform_prior.html">uniform_prior</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  spec <span class="op">=</span> <span class="fu"><a href="uniform_prior.html">uniform_prior</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  confint <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  fmt <span class="op">=</span> <span class="st">"%1.2f%% [%1.2f%% — %1.2f%%]"</span>,</span>
 <span>  chains <span class="op">=</span> <span class="fl">4</span>,</span>
@@ -85,29 +85,29 @@
 
 
 <dt>n_obs</dt>
-<dd><p>a vector of the number of observations for each component test</p></dd>
+<dd><p>the number of observations for a given test</p></dd>
 
 
 <dt>false_pos_controls</dt>
-<dd><p>the number of positives that appeared in the
-component tests of a specificity disease-free control group. These are by
-definition false positives.</p></dd>
+<dd><p>the number of positives that appeared in the specificity
+disease-free control group. These are by definition false positives. This
+is (1-specificity)*n_controls</p></dd>
 
 
 <dt>n_controls</dt>
-<dd><p>the number of controls in the specificity (optional)
-disease-free control group (optional).</p></dd>
+<dd><p>the number of controls in the specificity
+disease-free control group.</p></dd>
 
 
 <dt>false_neg_diseased</dt>
-<dd><p>the number of negatives that appeared in the
-component tests of a sensitivity confirmed disease group. These are by
-definition false negatives. (optional)</p></dd>
+<dd><p>the number of negatives that appeared in the sensitivity
+confirmed disease group. These are by definition false negatives. This
+is (1-sensitivity)*n_diseased</p></dd>
 
 
 <dt>n_diseased</dt>
 <dd><p>the number of confirmed disease cases in the sensitivity
-control group (potional)</p></dd>
+control group.</p></dd>
 
 
 <dt>...</dt>
@@ -115,17 +115,15 @@ control group (potional)</p></dd>
 
 
 <dt>sens</dt>
-<dd><p>the prior sensitivity of the components as a <code>beta_dist_list</code>
-(optional)</p></dd>
+<dd><p>the prior sensitivity of the test as a <code>beta_dist</code>.</p></dd>
 
 
 <dt>spec</dt>
-<dd><p>the prior specificity of the components as a <code>beta_dist_list</code>
-(optional)</p></dd>
+<dd><p>the prior specificity of the test as a <code>beta_dist</code>.</p></dd>
 
 
 <dt>confint</dt>
-<dd><p>confidence limit width</p></dd>
+<dd><p>confidence interval limits</p></dd>
 
 
 <dt>fmt</dt>

@@ -15,6 +15,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
+devtools::load_all()
 library(tidyverse)
 library(testerror)
 options(mc.cores = 2) #parallel::detectCores())
@@ -35,9 +36,12 @@ prevalence of 10%, distributed randomly between components. Each component test
 has 99.5% specificity and 80% sensitivity.
 
 ```{r}
-tmp = testerror:::panel_example(comp_spec = 0.995, comp_sens = 0.8, n_comp = 20, n_samples = 2000, n_controls = 800,exact = FALSE)
-design = tmp$design %>% dplyr::filter(test != "Panel")
-design %>% dplyr::mutate(across(-test, ~sprintf("%1.2f%%", .x*100))) %>%
+tmp = testerror:::panel_example(
+  comp_spec = beta_dist(p = 0.995, n=2000)$r(20),
+  comp_sens = beta_dist(p = 0.8, n=100)$r(20), 
+  n_comp = 20, n_samples = 2000, n_controls = 800,exact = FALSE)
+design = tmp$design %>% dplyr::filter(test != "Panel") %>% select(-n_components)
+design %>% dplyr::mutate(across(c(-test), ~sprintf("%1.2f%%", .x*100))) %>%
   default_table()
 ```
 

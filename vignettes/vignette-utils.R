@@ -1,8 +1,8 @@
 
 ## Simulation ----
 
-ipd_distribution = function(pcv_groups = c("PCV7","PCV13","PCV15","PCV20")) {
-  ipd = readRDS(here::here("vignettes/ipd-serotype-distribution.rds"))
+ipd_distribution = function(pcv_groups = c("PCV7","PCV13","PCV15","PCV20"), prev=0.1) {
+  ipd = readRDS(here::here("vignettes/paper/ipd-serotype-distribution.rds"))
   tmp = avoncap::serotype_data$map %>% tidyr::pivot_longer(cols = -serotype, names_to = "pneumo.group") %>%
     dplyr::filter(pneumo.group %in% pcv_groups & value==TRUE) %>% 
     dplyr::select(-value) %>%
@@ -13,7 +13,8 @@ ipd_distribution = function(pcv_groups = c("PCV7","PCV13","PCV15","PCV20")) {
     dplyr::mutate(
       x= dplyr::if_else(is.na(x),0,x),
       n= sum(x),
-      distribution = x/n
+      distribution = x/n,
+      prev = distribute(x,prev)
     )
   return(tmp)
 }
@@ -49,7 +50,13 @@ ipd_distribution = function(pcv_groups = c("PCV7","PCV13","PCV15","PCV20")) {
     
 
 
-
+rfixed_mnom = function(boots, n, dist, prev) {
+  dist = dist/sum(dist)
+  dist = dist*prev
+  tmp = unlist(sapply(1:length(dist), function(x) rep(x,round(dist[x]*n))))
+  tmp = c(tmp, rep(0,n-length(tmp)))
+  lapply(1:boots,  function(...) sample(tmp)) %>% unlist()
+}
 
 # group modify helper function
 # g must contain grouping info only - group identifier and group_prevalence
@@ -173,7 +180,7 @@ sim_test_2 = function(d, g, ..., exact = TRUE) {
   if (exact) {
     pos_count = sum(d$actual == 1)
     neg_count = sum(d$actual == 0)
-    # browser()
+    browser()
     fp_tp = rfixed(1, pos_count, g$test_sens)
     fn_tn = rfixed(1, neg_count, 1-g$test_spec)
     pos_idx = cumsum(d$actual == 1)

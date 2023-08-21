@@ -24,5 +24,5 @@ nothing
 Format a beta distribution
 }
 \examples{
-format(beta_dist(3,6), "{format(mean*100, digits=3)}\%")
+format(beta_dist(shape1=3,shape2=6), "{format(mean*100, digits=3)}\%")
 }

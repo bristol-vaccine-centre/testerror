@@ -69,8 +69,8 @@ beta_fit = function(samples, na.rm=FALSE) {
     v = stats::sd(samples)^2
     e = mean(samples)
     return(beta_dist(
-      ((e*(1-e))/v-1)*e,
-      ((e*(1-e))/v-1)*(1-e)
+      shape1=((e*(1-e))/v-1)*e,
+      shape2=((e*(1-e))/v-1)*(1-e)
     ))
   # } else {
   #   return(
@@ -84,41 +84,88 @@ beta_fit = function(samples, na.rm=FALSE) {
 #' @param p the first shape / the probability or count of success
 #' @param q (optional) the second shape / the probability or count of failure
 #' @param n (optional) the number of trials.
+#' @param shape1 the first shape parameter (use this to force interpretation as shape)
+#' @param shape2 the second shape parameter (use this to force interpretation as shape)
 #' @param ... not used
 #'
 #' @return either a single `beta_dist` object or a list of `beta_dist`s
 #'
 #' @export
 #' @examples 
-#' beta_dist(c(1,2,3),c(3,2,1))
-beta_dist = function(p, q=NULL, n=NULL, ...) {
+#' beta_dist(shape1 = c(1,2,3),shape2 = c(3,2,1))
+#' beta_dist(p = 0.7, n = 2)
+beta_dist = function(..., p=NULL, q=NULL, n=NULL, shape1=NULL, shape2=NULL) {
   # TODO: change this to be explicit about shape versus probability
-  .recycle(p,q,n)
-  if (is.null(q) & is.null(n)) stop("one of shape2 (q) or concentration (n) must be given")
-  if (!is.null(q) & !is.null(n)) {
-    if (all(p+q == 1)) {
-      shape1 = p*n
-      shape2 = q*n
-    } else {
-      if (!all(p+q == n)) stop("shape parameters (p, q) must add up to 1 or n")
-      shape1 = p
-      shape2 = q
-    }
-  } else if (!is.null(q)) {
-    shape1 = p
-    shape2 = q
-  } else if (!is.null(n)) {
-    if (all(p <= 1)) {
-      shape1 = p*n
-      shape2 = (1-p)*n
-    } else {
-      shape1 = p
-      shape2 = n-p
-    }
-  }
+  if (length(rlang::list2(...))>0) stop("additional parameters detected to `beta_dist`: all parameters must be named")
+  len = pkgutils::recycle(p,q,n,shape1,shape2)
+  pkgutils::resolve_missing(
+    n = shape1+shape2,
+    p = shape1/n,
+    q = shape2/n,
+    shape1 = n*p,
+    shape2 = n*q,
+    p = 1-q,
+    q = 1-p
+  )
+  pkgutils::check_consistent(
+    n >= shape1,
+    n >= shape2,
+    shape1 >= 0,
+    shape2 >= 0,
+    p <= 1,
+    p >= 0,
+    q <= 1,
+    q >= 0,
+    n >= 0
+  )
   
-  if (length(shape1) > 1) {
-    tmp = lapply(seq_along(p), function(i) beta_dist(p=shape1[[i]], q=shape2[[i]], ...))
+  # if (is.null(shape1) || is.null(shape2)) {
+  #   if (is.null(p)+is.null(q)+is.null(n) > 1) stop("two of shape1 (p), shape2 (q) or concentration (n) must be given")
+  #   if (is.null(n)) {
+  #     # concentration parameter is not given
+  #     # p & q are pure shape parameters
+  #     shape1 = p
+  #     shape2 = q
+  #   } else {
+  #     if (is.null(p)) {
+  #       if (any(q > 1)) {
+  #         # q is a shape param
+  #         shape1 = n-q
+  #         shape2 = q
+  #       } else {
+  #         # q is either a probability or a small shape number
+  #         # we are assuming a probability, because shape2 is NULL
+  #         shape1 = n*(1-q)
+  #         shape2 = n*q
+  #       }
+  #     } else if (is.null(q)) {
+  #       if (any(p > 1)) {
+  #         # p is a shape param
+  #         shape1 = p
+  #         shape2 = n-p
+  #       } else {
+  #         # p is either a probability or a small shape number
+  #         # we are assuming a probability, because shape2 is NULL
+  #         shape1 = n*p
+  #         shape2 = n*(1-p)
+  #       }
+  #     } else {
+  #       # all 3 provided
+  #       if (all(p+q == 1)) {
+  #         shape1 = p*n
+  #         shape2 = q*n
+  #       } else if (all(p+q == n)) {
+  #         shape1 = p
+  #         shape2 = q
+  #       } else {
+  #         stop("shape parameters (p, q) must add up to 1 or n")
+  #       }
+  #     }
+  #   }
+  # }
+  
+  if (len > 1) {
+    tmp = lapply(1:len, function(i) beta_dist(..., p = p[[i]], q=q[[i]], n=n[[i]], shape1=shape1[[i]], shape2=shape2[[i]]))
     return(structure(tmp, class=c("beta_dist_list",class(tmp))))
   }
   
@@ -139,6 +186,7 @@ beta_dist = function(p, q=NULL, n=NULL, ...) {
 #'
 #' @param x a `beta_dist` or `beta_dist_list` acting as the prior
 #' @param pos positive observation(s)
+#' @param neg negative observation(s)
 #' @param n number observations
 #' @param ... not used
 #'
@@ -146,28 +194,48 @@ beta_dist = function(p, q=NULL, n=NULL, ...) {
 #' @export
 #'
 #' @examples
-#' update_posterior(beta_dist(1,1), 10, 30)
-update_posterior = function(x, pos, n, ... ) {
+#' update_posterior(beta_dist(shape1=1,shape2=1), neg=10, n=30)
+update_posterior = function(x, ..., pos=NULL, neg=NULL, n=NULL) {
   UseMethod("update_posterior", x)
 }
 
 #' @inherit update_posterior
 #' @export
-update_posterior.beta_dist = function(x, pos, n, ...) {
-  if (n<pos) stop("update_posterior called with more positives (pos) than observations (n)")
-  beta_dist(p=x$shape1+pos, q=x$shape2+n-pos)
+update_posterior.beta_dist = function(x, ..., pos=NULL, neg=NULL, n=NULL) {
+  pkgutils::recycle(pos,neg,n)
+  if (is.null(pos) && is.null(neg) && is.null(n)) return(x)
+  pkgutils::resolve_missing(pos=n-neg, neg=n-pos, n=pos+neg)
+  
+  if (length(pos) > 1) {
+    tmp = lapply(seq_along(pos), function(i) {update_posterior.beta_dist(x, pos=pos[[i]], neg=neg[[i]], n=n[[i]])})
+    return(structure(tmp, class=c("beta_dist_list",class(tmp))))
+  }
+  
+  return(beta_dist(shape1=x$shape1+pos, shape2=x$shape2+neg))
 }
 
 #' @inherit update_posterior
 #' @export
-update_posterior.beta_dist_list = function(x, pos, n, ...) {
+update_posterior.beta_dist_list = function(x, ..., pos=NULL, neg=NULL, n=NULL) {
+  pkgutils::recycle(x, pos, n)
+  if (is.null(pos) && is.null(neg) && is.null(n)) return(x)
+  pkgutils::resolve_missing(pos=n-neg, neg=n-pos, n=pos+neg)
+  
   tmp = lapply(seq_along(x), function(i) {
-    update_posterior(x[[i]],pos[[i]],n[[i]])
+    update_posterior(x[[i]], pos = pos[[i]], neg = neg[[i]], n = n[[i]])
   })
   return(structure(tmp, class=c("beta_dist_list",class(tmp))))
 }
 
+#' Repeat a `beta_dist`
+#'
+#' @param x a `beta_dist`
+#' @param times n
+#'
+#' @return a `beta_dist_list`
+#' @export
 rep.beta_dist = function(x, times) {
+  if (times==1) return(x)
   tmp = rep(list(x), times)
   return(structure(tmp, class=c("beta_dist_list",class(tmp))))
 }
@@ -218,7 +286,7 @@ as_tibble.beta_dist = function(x, prefix=NULL, confint = 0.95, ...) {
 #' 
 #' @export
 #' @examples 
-#' format(beta_dist(3,6), "{format(mean*100, digits=3)}%")
+#' format(beta_dist(shape1=3,shape2=6), "{format(mean*100, digits=3)}%")
 format.beta_dist = function(x, glue = "{sprintf('%1.3f [%1.3f\u2013%1.3f] (N=%1.2f)',median,lower,upper,conc)}", ...) {
   tmp = as_tibble.beta_dist(x)
   glue::glue_data(tmp, glue)
@@ -259,4 +327,62 @@ length.beta_dist = function(x, ...) {
 #' @export
 print.beta_dist = function(x, ...) {
   cat(format(x, ...), "\n")
+}
+
+#' Get a parameter of the `beta_dist`
+#'
+#' @param x a `beta_dist` or `beta_dist_list` acting as the prior
+#' @param type the parameter to extract one of `shape1` or `shape2` or `conc`
+#'
+#' @return a vector of doubles
+#' @export
+#'
+#' @examples
+#' get_beta_shape(beta_dist(shape1=1,shape2=1))
+#' get_beta_shape(beta_dist(shape1=2:5,shape2=1:4))
+get_beta_shape = function(x, type = c("shape1","shape2","conc")) {
+  UseMethod("get_beta_shape", x)
+}
+
+#' @inherit get_beta_shape
+#' @export
+get_beta_shape.beta_dist = function(x, type = c("shape1","shape2","conc")) {
+  type = match.arg(type)
+  return(x[[type]])
+}
+
+#' @inherit get_beta_shape
+#' @export
+get_beta_shape.beta_dist_list = function(x, type = c("shape1","shape2","conc")) {
+  type = match.arg(type)
+  return(purrr::map_dbl(x, ~ .x[[type]]))
+}
+
+
+#' A uniform prior
+#'
+#' @return a `beta_dist`
+#' @export
+uniform_prior = function() {
+  beta_dist(shape1 = 1, shape2 = 1)
+}
+
+#' The default prior for specificity
+#'
+#' If undefined this is `r format(beta_dist(p=0.7, n=2))`. This can be set with `options(testerror.sens_prior = beta_dist(p=??, n=??))`
+#'
+#' @return a `beta_dist`
+#' @export
+sens_prior = function() {
+  getOption("testerror.sens_prior", beta_dist(p=0.7, n=2))
+}
+
+#' The default prior for specificity
+#'
+#' If undefined this is `r format(beta_dist(p=0.98, n=1))`. This can be set with `options(testerror.spec_prior = beta_dist(p=??, n=??))`
+#'
+#' @return a `beta_dist`
+#' @export
+spec_prior = function() {
+  getOption("testerror.spec_prior", beta_dist(p=0.98, n=1))
 }

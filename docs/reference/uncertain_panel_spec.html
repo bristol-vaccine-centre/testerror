@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">testerror</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,7 +50,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="" class="logo" alt=""><h1>Propagate component test specificity into panel specificity</h1>
-      <small class="dont-index">Source: <a href="https://github.com/bristol-vaccine-centre/testerror/blob/HEAD/R/unadjusted-calculations.R" class="external-link"><code>R/unadjusted-calculations.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/bristol-vaccine-centre/testerror/blob/HEAD/R/uncertain_panel_spec.R" class="external-link"><code>R/uncertain_panel_spec.R</code></a></small>
       <div class="d-none name"><code>uncertain_panel_spec.Rd</code></div>
     </div>
 
@@ -61,10 +61,10 @@
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">uncertain_panel_spec</span><span class="op">(</span></span>
-<span>  false_pos_controls <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  n_controls <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  false_pos_controls <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  n_controls <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span>,</span>
-<span>  spec <span class="op">=</span> <span class="fu"><a href="beta_dist.html">beta_dist</a></span><span class="op">(</span><span class="va">n_controls</span> <span class="op">-</span> <span class="va">false_pos_controls</span> <span class="op">+</span> <span class="fl">1</span>, <span class="va">false_pos_controls</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span>,</span>
+<span>  spec <span class="op">=</span> <span class="fu"><a href="spec_prior.html">spec_prior</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  samples <span class="op">=</span> <span class="fl">1000</span>,</span>
 <span>  na.rm <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  fit_beta <span class="op">=</span> <span class="cn">FALSE</span></span>
@@ -74,14 +74,14 @@
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
     <dl><dt>false_pos_controls</dt>
-<dd><p>the number of positives that appeared in the component tests of a specificity
+<dd><p>the number of positives that appeared in the specificity
 disease-free control group. These are by definition false positives. This
-is (1-specificity)*n_controls (ignored if <code>spec</code> is given)</p></dd>
+is (1-specificity)*n_controls</p></dd>
 
 
 <dt>n_controls</dt>
 <dd><p>the number of controls in the specificity
-disease-free control group (ignored if <code>spec</code> is given).</p></dd>
+disease-free control group.</p></dd>
 
 
 <dt>...</dt>
@@ -89,11 +89,11 @@ disease-free control group (ignored if <code>spec</code> is given).</p></dd>
 
 
 <dt>spec</dt>
-<dd><p>the specificity of the test as a <code>beta_dist_list</code> (optional)</p></dd>
+<dd><p>the prior specificity of the test as a <code>beta_dist</code>.</p></dd>
 
 
 <dt>samples</dt>
-<dd><p>number of random draws of sensitivity and specificity (optional - default 1000)</p></dd>
+<dd><p>number fo random draws of sensitivity and specificity</p></dd>
 
 
 <dt>na.rm</dt>
@@ -116,7 +116,7 @@ disease-free control group (ignored if <code>spec</code> is given).</p></dd>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">uncertain_panel_spec</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">3</span>,<span class="fl">4</span>,<span class="fl">2</span>,<span class="fl">2</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">800</span>,<span class="fl">800</span>,<span class="fl">800</span>,<span class="fl">800</span>,<span class="fl">800</span><span class="op">)</span>, fit_beta<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.978 [0.966–0.987] (N=796.96) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.984 [0.974–0.991] (N=777.44) </span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>

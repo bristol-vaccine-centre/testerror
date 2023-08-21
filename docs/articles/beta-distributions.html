@@ -26,7 +26,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">testerror</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -93,12 +93,14 @@ estimate:</p>
 <code class="sourceCode R"><span></span>
 <span><span class="co"># The posterior of the conjugate beta distribution after one observation with </span></span>
 <span><span class="co"># no prior assumptions:</span></span>
-<span><span class="fu"><a href="../reference/beta_dist.html">beta_dist</a></span><span class="op">(</span>p <span class="op">=</span> <span class="fl">80</span>, n <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 0.802 [0.717–0.872] (N=100.00)</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/beta_dist.html">beta_dist</a></span><span class="op">(</span>shape1<span class="op">=</span> <span class="fl">80</span>, n <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
+<span><span class="co">#&gt; 0.802 [0.717–0.872] (N=100.00)</span></span>
+<span><span class="fu"><a href="../reference/beta_dist.html">beta_dist</a></span><span class="op">(</span>shape2<span class="op">=</span> <span class="fl">80</span>, n <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
+<span><span class="co">#&gt; 0.198 [0.128–0.283] (N=100.00)</span></span></code></pre></div>
 <p>whereas if this was based on only 10 positives the confidence
 intervals would be much wider:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/beta_dist.html">beta_dist</a></span><span class="op">(</span>p<span class="op">=</span><span class="fl">8</span>,n<span class="op">=</span><span class="fl">10</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/beta_dist.html">beta_dist</a></span><span class="op">(</span>shape1<span class="op">=</span><span class="fl">8</span>,n<span class="op">=</span><span class="fl">10</span><span class="op">)</span></span>
 <span><span class="co">#&gt; 0.820 [0.518–0.972] (N=10.00)</span></span></code></pre></div>
 <p><code>beta_dist</code> creates an S3 object that can be converted to
 a tibble easily. Using a beta distribution to model the confidence
@@ -108,7 +110,7 @@ There is a difference between the CI derived from the completely
 uninformed Beta, but for non zero values it is a good proxy.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
-<span><span class="va">tmp1</span> <span class="op">=</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble</a></span><span class="op">(</span><span class="fu"><a href="../reference/beta_dist.html">beta_dist</a></span><span class="op">(</span><span class="fl">0</span><span class="op">:</span><span class="fl">50</span>,n<span class="op">=</span><span class="fl">50</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">shape1</span>,n<span class="op">=</span><span class="va">conc</span>,method<span class="op">=</span><span class="st">"beta"</span><span class="op">)</span></span>
+<span><span class="va">tmp1</span> <span class="op">=</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble</a></span><span class="op">(</span><span class="fu"><a href="../reference/beta_dist.html">beta_dist</a></span><span class="op">(</span>shape1<span class="op">=</span><span class="fl">0</span><span class="op">:</span><span class="fl">50</span>,n<span class="op">=</span><span class="fl">50</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">shape1</span>,n<span class="op">=</span><span class="va">conc</span>,method<span class="op">=</span><span class="st">"beta"</span><span class="op">)</span></span>
 <span><span class="va">tmp2</span> <span class="op">=</span> <span class="fu">binom</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/binom/man/binom.confint.html" class="external-link">binom.confint</a></span><span class="op">(</span><span class="fl">0</span><span class="op">:</span><span class="fl">50</span>, <span class="fl">50</span>, method<span class="op">=</span><span class="st">"wilson"</span><span class="op">)</span></span>
 <span></span>
 <span></span>
@@ -125,7 +127,7 @@ uninformed Beta, but for non zero values it is a good proxy.</p>
 simply:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
-<span><span class="va">dist</span> <span class="op">=</span> <span class="fu"><a href="../reference/beta_dist.html">beta_dist</a></span><span class="op">(</span><span class="fl">20</span>,n<span class="op">=</span><span class="fl">50</span><span class="op">)</span></span>
+<span><span class="va">dist</span> <span class="op">=</span> <span class="fu"><a href="../reference/beta_dist.html">beta_dist</a></span><span class="op">(</span>shape1<span class="op">=</span><span class="fl">20</span>,n<span class="op">=</span><span class="fl">50</span><span class="op">)</span></span>
 <span><span class="va">x</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span>,length.out<span class="op">=</span><span class="fl">101</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># density</span></span>
@@ -159,15 +161,15 @@ shape of the distribution.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.4041426</span></span>
+<span><span class="co">#&gt; [1] 0.3978281</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">b</span><span class="op">$</span><span class="fu">r</span><span class="op">(</span><span class="fl">1000</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.4059838</span></span>
+<span><span class="co">#&gt; [1] 0.4012958</span></span>
 <span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.1145736</span></span>
+<span><span class="co">#&gt; [1] 0.1149606</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd</a></span><span class="op">(</span><span class="va">b</span><span class="op">$</span><span class="fu">r</span><span class="op">(</span><span class="fl">1000</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.114044</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.1130096</span></span></code></pre></div>
   </main>
 </div>
 

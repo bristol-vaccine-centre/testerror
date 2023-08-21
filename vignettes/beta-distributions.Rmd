@@ -36,13 +36,14 @@ of 100 positives then we can calculate the uncertainty of the sensitivity estima
 
 # The posterior of the conjugate beta distribution after one observation with 
 # no prior assumptions:
-beta_dist(p = 80, n = 100)
+beta_dist(shape1= 80, n = 100)
+beta_dist(shape2= 80, n = 100)
 ```
 
 whereas if this was based on only 10 positives the confidence intervals would be much wider:
 
 ```{r}
-beta_dist(p=8,n=10)
+beta_dist(shape1=8,n=10)
 ```
 
 `beta_dist` creates an S3 object that can be converted to a tibble easily. Using a beta distribution
@@ -53,7 +54,7 @@ zero values it is a good proxy.
 
 ```{r}
 
-tmp1 = tibble::as_tibble(beta_dist(0:50,n=50)) %>% dplyr::mutate(x=shape1,n=conc,method="beta")
+tmp1 = tibble::as_tibble(beta_dist(shape1=0:50,n=50)) %>% dplyr::mutate(x=shape1,n=conc,method="beta")
 tmp2 = binom::binom.confint(0:50, 50, method="wilson")
 
 
@@ -70,7 +71,7 @@ it also has methods for getting samples, density or quantiles simply:
 
 ```{r}
 
-dist = beta_dist(20,n=50)
+dist = beta_dist(shape1=20,n=50)
 x = seq(0,1,length.out=101)
 
 # density

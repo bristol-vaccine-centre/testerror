@@ -8,11 +8,13 @@ library(rstan)
 devtools::load_all("~/Git/ggrrr")
 devtools::load_all("~/Git/avoncap")
 devtools::load_all()
-here::i_am("vignettes/bayesian-model-figures.R")
+here::i_am("vignettes/paper/bayesian-model-figures.R")
 source(here::here("vignettes/vignette-utils.R"))
 options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
 ggrrr::gg_pedantic()
+
+## Supp 2 figure 1 ----
 
 app=apparent_prevalence_plot(p = c(0.1,0.3),top_left = "")
 
@@ -36,70 +38,131 @@ app2 = app+
 
 save_as(app2,  here::here("vignettes/latex/s2/fig/rogan-gladen"))
 
+## Set up scenario / IPD test data ----
 
-# ggplot(crossing(
-#   sens=seq(0.5,1,length.out=1001),
-#   spec=seq(0.95,1,length.out=1001)
-# ) %>% mutate(crit = (1-spec)/(2-spec-sens)),
-# aes(x=spec, y=sens))+
-#   geom_tile(aes(fill=crit))+
-#   scale_fill_gradient(limits=c(0,1), high = "orange" , low = "white", name="critical threshold", oob=scales::squish, guide = "none") +
-#   metR::geom_contour2(aes(z=crit,label=sprintf("%1.1f%%",after_stat(level)*100)), 
-#                       breaks=c(0.99,0.5,0.2,0.1,0.05,0.01), 
-#                       label.placer = metR::label_placer_fraction(frac = 0.3),
-#                       skip=0,
-#                       label_size = 6/ggplot2:::.pt,
-#                       margin = grid::unit(c(2, 2, 2, 2), "pt")
-#   )
-#   #scale_x_continuous(trans="logit", breaks=c(0.5, 0.75,0.9, 0.95, 0.98, 0.99, 0.9975, 0.9999))
+# ipd PCV panels:
+panels = ipd_distribution() %>% unnest(pcv_group) %>% 
+  transmute(panel_name = forcats::as_factor(panel_id), comp_test = pneumo.phe_serotype)
 
-scenario = do_scenario(n_controls=800, n_diseased=26)
+scenario = panel_example(
+  n_comp = 20,
+  n_controls = 800,
+  n_diseased = 200,
+  comp_spec = 0.9975,
+  comp_sens = 0.8,
+  comp_prev = ipd_distribution() %>% pull(prev),
+  comp_test = ipd_distribution() %>% pull(pneumo.phe_serotype) %>% forcats::as_factor(),
+  panel_spec = panels,
+  exact_controls = TRUE,
+  exact_samples = TRUE
+)
 
-# Just use scenario setup to describe sens uncertainty ----
-# TODO: need to figure out what te fit looks like.
+demo_bar_plot_base(scenario$summary %>% filter(n_components == 1))
+demo_bar_plot_base(scenario$summary %>% filter(n_components > 1))
 
-scenario_config = scenario %>% select(-id,-boot,-actual,-test) %>% unnest(test_pcv_group) %>% distinct()
+# calculate scenario estimates
 
-scenario_config_2 = scenario_config %>% 
-  glimpse() %>%
-  group_by(across(c(starts_with("group"),starts_with("panel")))) %>%
-  summarise(
-    panel_size = n(),
-    panel_prevalence = testerror::panel_prevalence(test_prevalence),
-    panel_sens = testerror::panel_sens(test_prevalence, test_sens, test_spec),
-    panel_expected_apparent_prevalence = testerror::panel_prevalence(test_expected_apparent_prevalence),
-    panel_spec = testerror::panel_spec(test_spec),
-    panel_sens_estimator = testerror::panel_sens_estimator(ap = test_expected_apparent_prevalence,sens = test_sens, spec = test_spec),
-    panel_sens_samples = list(testerror::uncertain_panel_sens_estimator(
-      pos_obs = test_expected_apparent_prevalence*1000, n_obs = 1000,
-      false_pos_controls = test_false_pos_controls, n_controls = test_n_controls,
-      false_neg_diseased = test_false_neg_diseased, n_diseased = test_n_diseased
-    )),
-    panel_spec_samples = list(testerror::uncertain_panel_spec(
-      false_pos_controls = test_false_pos_controls, n_controls = test_n_controls
-    ))
-  ) %>%
-  group_by(across(c(starts_with("group"),starts_with("panel")))) %>%
-  mutate(
-    panel_sens_beta = purrr::map(panel_sens_samples, ~ as_tibble(beta_fit(.x))),
-    panel_spec_beta = purrr::map(panel_spec_samples, ~ as_tibble(beta_fit(.x))),
-    testerror::uncertain_rogan_gladen(
-      pos_obs = panel_expected_apparent_prevalence*1000, n_obs = 1000,
-      sens = panel_sens_samples,
-      spec = panel_spec_samples,
-      prefix = "rogan_gladen"
-    )
-  ) %>%
-  unnest(cols = c(panel_sens_beta,panel_spec_beta),names_sep = ".") %>%
-  mutate(
-    testerror::true_prevalence(
-      pos_obs = panel_expected_apparent_prevalence*1000, n_obs = 1000,
-      false_pos_controls = panel_spec_beta.shape2, n_controls = panel_spec_beta.conc,
-      false_neg_diseased = panel_sens_beta.shape2, n_diseased = panel_sens_beta.conc,
-      prefix = "lang_reiczigel"
-    )
-  ) %>%
-  glimpse()
+sim_control = scenario$performance %>% 
+  dplyr::select(test, false_pos_controls, n_controls, false_neg_diseased, n_diseased) %>%
+  dplyr::inner_join(panels, by = c("test"="comp_test"), relationship="many-to-many") %>%
+  tidyr::nest(control = c(-panel_name))
+
+sim_result = scenario$samples %>% 
+  dplyr::select(id,test,result = observed) %>%
+  dplyr::inner_join(panels, by = c("test"="comp_test"), relationship="many-to-many") %>%
+  tidyr::nest(data = c(-panel_name))
+
+sim = sim_control %>% inner_join(sim_result, by="panel_name")
+
+sim_out = bind_rows(
+    lapply(c("lang-reiczigel"), function(m) { 
+      sim %>% transmute(
+        panel_name = panel_name,
+        method = m,
+        modelled = purrr::pmap(., function(panel_name, control, data, ...) { 
+            true_panel_prevalence(
+                 test_results = data,
+                 false_pos_controls = control$false_pos_controls,
+                 n_controls = control$n_controls,
+                 false_neg_diseased = control$false_neg_diseased,
+                 n_diseased = control$n_diseased,
+                 panel_name = panel_name,
+                 method = m
+            )
+        }))
+    })
+)
+
+tmp = scenario$summary %>% inner_join(
+  sim_out %>% tidyr::unnest(modelled) %>% mutate(test = factor(test, levels=levels(scenario$summary$test))),
+  by = "test")
+
+
+
+### Do the 
+
+scenario = multi_panel_example(
+  n_comp = 20,
+  n_controls = 800,
+  n_diseased = 200,
+  comp_dist = ipd_distribution("PCV20") %>% pull(x),
+  comp_test = ipd_distribution("PCV20") %>% pull(pneumo.phe_serotype) %>% forcats::as_factor()
+)
+
+scenario %>% unnest(summary) %>% filter(test == "Panel") %>% select(scenario_prev,true_prev) %>% view()
+
+
+testerror:::demo_qq_plot(tmp %>% filter(n_components == 1 & panel_name == "PCV20"))
+
+testerror:::demo_qq_plot(tmp %>% filter(n_components != 1))
+
+# scenario = do_scenario(n_controls=800, n_diseased=26)
+# 
+# # Just use scenario setup to describe sens uncertainty ----
+# # TODO: need to figure out what te fit looks like.
+# 
+# scenario_config = scenario %>% select(-id,-boot,-actual,-test) %>% unnest(test_pcv_group) %>% distinct()
+# 
+# scenario_config_2 = scenario_config %>% 
+#   glimpse() %>%
+#   group_by(across(c(starts_with("group"),starts_with("panel")))) %>%
+#   summarise(
+#     panel_size = n(),
+#     panel_prevalence = testerror::panel_prevalence(test_prevalence),
+#     panel_sens = testerror::panel_sens(test_prevalence, test_sens, test_spec),
+#     panel_expected_apparent_prevalence = testerror::panel_prevalence(test_expected_apparent_prevalence),
+#     panel_spec = testerror::panel_spec(test_spec),
+#     panel_sens_estimator = testerror::panel_sens_estimator(ap = test_expected_apparent_prevalence,sens = test_sens, spec = test_spec),
+#     panel_sens_samples = list(testerror::uncertain_panel_sens_estimator(
+#       pos_obs = test_expected_apparent_prevalence*1000, n_obs = 1000,
+#       false_pos_controls = test_false_pos_controls, n_controls = test_n_controls,
+#       false_neg_diseased = test_false_neg_diseased, n_diseased = test_n_diseased
+#     )),
+#     panel_spec_samples = list(testerror::uncertain_panel_spec(
+#       false_pos_controls = test_false_pos_controls, n_controls = test_n_controls
+#     ))
+#   ) %>%
+#   group_by(across(c(starts_with("group"),starts_with("panel")))) %>%
+#   mutate(
+#     panel_sens_beta = purrr::map(panel_sens_samples, ~ as_tibble(beta_fit(.x))),
+#     panel_spec_beta = purrr::map(panel_spec_samples, ~ as_tibble(beta_fit(.x))),
+#     testerror::uncertain_rogan_gladen(
+#       pos_obs = panel_expected_apparent_prevalence*1000, n_obs = 1000,
+#       sens = panel_sens_samples,
+#       spec = panel_spec_samples,
+#       prefix = "rogan_gladen"
+#     )
+#   ) %>%
+#   unnest(cols = c(panel_sens_beta,panel_spec_beta),names_sep = ".") %>%
+#   mutate(
+#     testerror::true_prevalence(
+#       pos_obs = panel_expected_apparent_prevalence*1000, n_obs = 1000,
+#       false_pos_controls = panel_spec_beta.shape2, n_controls = panel_spec_beta.conc,
+#       false_neg_diseased = panel_sens_beta.shape2, n_diseased = panel_sens_beta.conc,
+#       prefix = "lang_reiczigel"
+#     )
+#   ) %>%
+#   glimpse()
 
 # tmp = tibble(
 #   type = "sens",
@@ -116,186 +179,186 @@ scenario_config_2 = scenario_config %>%
 
 # Compile the multiple tests model ----
 
-stan_model_combined = rstan::stan_model(file = here::here("vignettes/multiple-tests.stan"))
-
-sampling = memoise::memoise(rstan::sampling,cache = cd)
-
-# The simulated data (which is grouped) needs to be fed to stan.
-# the data has a patient id (id) and a test id (test_id)
-do_bayesian_model = function(d, g = tibble::tibble(), idCol = id, testIdCol = test_id, resultCol = test, sens = 0.8, spec = 0.9975, 
-                             #false_pos_controls = (n_controls-2/3)*(1-spec)+1/3,
-                             false_pos_controls = (n_controls)*(1-spec),
-                             n_controls = 1/(1-spec),
-                             #false_neg_diseased = (n_diseased-2/3)*(1-sens)+1/3,
-                             false_neg_diseased = (n_diseased)*(1-sens),
-                             n_diseased = 1/(1-sens), 
-                             controls = NULL,
-                             model = stan_model_combined,
-                             ...) {
-  idCol = rlang::enexpr(idCol)
-  testIdCol = rlang::enexpr(testIdCol)
-  resultCol = rlang::enexpr(resultCol)
-  
-  tmp = d %>%
-    transmute(
-      id = !!idCol,
-      test_id = !!testIdCol,
-      result = !!resultCol
-    ) 
-  if (is.factor(tmp$test_id)) {
-    tests = levels(forcats::fct_drop(tmp$test_id))
-  } else {
-    tests = unique(tmp$test_id)
-  }
-  n_test = length(tests)
-  
-  tmp = tmp %>%
-    pivot_wider(names_from = test_id, values_from = result,values_fill = NA_integer_) %>%
-    select(-id) %>% 
-    as.matrix()
-  
-  if (!is.null(controls)) {
-    
-    y_control = controls %>%
-      transmute(
-        id = !!idCol,
-        test_id = !!testIdCol,
-        result = !!resultCol
-      ) %>%
-      pivot_wider(names_from = test_id, values_from = result,values_fill = NA_integer_) %>%
-      select(-id) %>% as.matrix()
-    
-  } else {
-    y_control =  matrix(numeric(), ncol = n_test, nrow = 0, byrow = TRUE)
-  }
-  
-  est_data_combined = list(
-    n_test = n_test,
-    k_sample = nrow(tmp),
-    y_sample = tmp,
-    k_control = nrow(y_control),
-    y_control = y_control,
-    # n_disease = nrow(y_disease),
-    # y_disease = y_disease,
-    # Priors on sensitivity / specificity
-    a_spec = n_controls-false_pos_controls,
-    b_spec = false_pos_controls,
-    a_sens = n_diseased-false_neg_diseased,
-    b_sens = false_neg_diseased
-  )
-  
-  sens_prior = do.call(sprintf, c(list(fmt = "%1.4f [%1.4f \u2013 %1.4f]"), 1-false_neg_diseased/n_diseased, 
-                                  qbeta(c(0.025,0.975), shape1 = n_diseased-false_neg_diseased, shape2 = false_neg_diseased)))
-  
-  spec_prior = do.call(sprintf, c(list(fmt = "%1.4f [%1.4f \u2013 %1.4f]"), 1-false_pos_controls/n_controls, 
-                                  qbeta(c(0.025,0.975), shape1 = n_controls-false_pos_controls, shape2 = false_pos_controls)))
-  
-  
-  fit_combined = sampling(
-      model,
-      data = est_data_combined,
-      chains = 4,
-      warmup = 1000,          # number of warmup iterations per chain
-      iter = 2000,            # total number of iterations per chain
-      show_messages = TRUE
-    )
-  
-  summ = summary(fit_combined, pars = c("p","sens","spec"))$summary
-  
-  summ2 = as_tibble(summ,rownames = "param") %>% 
-    mutate(
-      test_id = tests[as.integer(stringr::str_extract(param,"[0-9]+"))],
-      param = stringr::str_extract(param,"[a-zA-Z]+")
-    )
-  
-  comb_summ = summary(fit_combined, pars = c("p_combined","sens_combined","spec_combined"))$summary
-  comb_summ2 = as_tibble(comb_summ,rownames = "param") %>% 
-    mutate(
-      param = stringr::str_extract(param,"[a-zA-Z]+")
-    )
-  
-  return(
-    tibble(
-      data = list(d),
-      standata = list(est_data_combined),
-      stanfit = list(fit_combined),
-      component = list(summ2),
-      panel = list(comb_summ2),
-      tests = list(tests),
-      sens_prior = sens_prior,
-      spec_prior = spec_prior
-    )
-  )
-}
+# stan_model_combined = rstan::stan_model(file = here::here("vignettes/multiple-tests.stan"))
+# 
+# sampling = memoise::memoise(rstan::sampling,cache = cd)
+# 
+# # The simulated data (which is grouped) needs to be fed to stan.
+# # the data has a patient id (id) and a test id (test_id)
+# do_bayesian_model = function(d, g = tibble::tibble(), idCol = id, testIdCol = test_id, resultCol = test, sens = 0.8, spec = 0.9975, 
+#                              #false_pos_controls = (n_controls-2/3)*(1-spec)+1/3,
+#                              false_pos_controls = (n_controls)*(1-spec),
+#                              n_controls = 1/(1-spec),
+#                              #false_neg_diseased = (n_diseased-2/3)*(1-sens)+1/3,
+#                              false_neg_diseased = (n_diseased)*(1-sens),
+#                              n_diseased = 1/(1-sens), 
+#                              controls = NULL,
+#                              model = stan_model_combined,
+#                              ...) {
+#   idCol = rlang::enexpr(idCol)
+#   testIdCol = rlang::enexpr(testIdCol)
+#   resultCol = rlang::enexpr(resultCol)
+#   
+#   tmp = d %>%
+#     transmute(
+#       id = !!idCol,
+#       test_id = !!testIdCol,
+#       result = !!resultCol
+#     ) 
+#   if (is.factor(tmp$test_id)) {
+#     tests = levels(forcats::fct_drop(tmp$test_id))
+#   } else {
+#     tests = unique(tmp$test_id)
+#   }
+#   n_test = length(tests)
+#   
+#   tmp = tmp %>%
+#     pivot_wider(names_from = test_id, values_from = result,values_fill = NA_integer_) %>%
+#     select(-id) %>% 
+#     as.matrix()
+#   
+#   if (!is.null(controls)) {
+#     
+#     y_control = controls %>%
+#       transmute(
+#         id = !!idCol,
+#         test_id = !!testIdCol,
+#         result = !!resultCol
+#       ) %>%
+#       pivot_wider(names_from = test_id, values_from = result,values_fill = NA_integer_) %>%
+#       select(-id) %>% as.matrix()
+#     
+#   } else {
+#     y_control =  matrix(numeric(), ncol = n_test, nrow = 0, byrow = TRUE)
+#   }
+#   
+#   est_data_combined = list(
+#     n_test = n_test,
+#     k_sample = nrow(tmp),
+#     y_sample = tmp,
+#     k_control = nrow(y_control),
+#     y_control = y_control,
+#     # n_disease = nrow(y_disease),
+#     # y_disease = y_disease,
+#     # Priors on sensitivity / specificity
+#     a_spec = n_controls-false_pos_controls,
+#     b_spec = false_pos_controls,
+#     a_sens = n_diseased-false_neg_diseased,
+#     b_sens = false_neg_diseased
+#   )
+#   
+#   sens_prior = do.call(sprintf, c(list(fmt = "%1.4f [%1.4f \u2013 %1.4f]"), 1-false_neg_diseased/n_diseased, 
+#                                   qbeta(c(0.025,0.975), shape1 = n_diseased-false_neg_diseased, shape2 = false_neg_diseased)))
+#   
+#   spec_prior = do.call(sprintf, c(list(fmt = "%1.4f [%1.4f \u2013 %1.4f]"), 1-false_pos_controls/n_controls, 
+#                                   qbeta(c(0.025,0.975), shape1 = n_controls-false_pos_controls, shape2 = false_pos_controls)))
+#   
+#   
+#   fit_combined = sampling(
+#       model,
+#       data = est_data_combined,
+#       chains = 4,
+#       warmup = 1000,          # number of warmup iterations per chain
+#       iter = 2000,            # total number of iterations per chain
+#       show_messages = TRUE
+#     )
+#   
+#   summ = summary(fit_combined, pars = c("p","sens","spec"))$summary
+#   
+#   summ2 = as_tibble(summ,rownames = "param") %>% 
+#     mutate(
+#       test_id = tests[as.integer(stringr::str_extract(param,"[0-9]+"))],
+#       param = stringr::str_extract(param,"[a-zA-Z]+")
+#     )
+#   
+#   comb_summ = summary(fit_combined, pars = c("p_combined","sens_combined","spec_combined"))$summary
+#   comb_summ2 = as_tibble(comb_summ,rownames = "param") %>% 
+#     mutate(
+#       param = stringr::str_extract(param,"[a-zA-Z]+")
+#     )
+#   
+#   return(
+#     tibble(
+#       data = list(d),
+#       standata = list(est_data_combined),
+#       stanfit = list(fit_combined),
+#       component = list(summ2),
+#       panel = list(comb_summ2),
+#       tests = list(tests),
+#       sens_prior = sens_prior,
+#       spec_prior = spec_prior
+#     )
+#   )
+# }
 
 
 # Test the multiple tests model ----
-
-bayesian_result = scenario %>% 
-  unnest(test_pcv_group) %>%
-  #glimpse() %>%
-  #filter(panel_id == "PCV20") %>%
-  group_by(group, panel_id) %>%
-  group_modify(do_bayesian_model, sens=0.8, spec = 0.9975, n_controls=800, n_diseased=26)
-
-
-do_combine_results = function(bayesian_result) {
-  
-  grp = bayesian_result %>% groups()
-  serotype_tests = bayesian_result %>% 
-    mutate(
-      prior_false_pos_controls = purrr::map_dbl(standata, ~ .x$b_spec),
-      prior_n_controls = purrr::map_dbl(standata, ~ .x$a_spec+.x$b_spec),
-      prior_false_neg_diseased = purrr::map_dbl(standata, ~ .x$b_sens),
-      prior_n_diseased = purrr::map_dbl(standata, ~ .x$a_sens+.x$b_sens),
-      prior_spec = purrr::map_dbl(standata, ~ .x$a_spec/(.x$a_spec+.x$b_spec)),
-      prior_sens = purrr::map_dbl(standata, ~ .x$a_sens/(.x$a_sens+.x$b_sens)),
-    ) %>% 
-    select(!!!grp, data, starts_with("prior")) %>% 
-    unnest(data)
-  
-  disagg_prev = serotype_tests %>%
-    group_by(!!!grp, across(c(starts_with("prior"), starts_with("group"),starts_with("test"),-test))) %>%
-    summarise(
-      actual = sum(actual),
-      test = sum(test),
-      total = n()
-    ) %>%
-    group_by(!!!grp, across(c(starts_with("prior"), starts_with("group"),starts_with("test"),-test))) %>%
-    mutate(
-      actual_prevalence = actual/total,
-      prev.est = testerror::rogan_gladen(test/total, test_sens, test_spec),
-      testerror::true_prevalence(pos_obs = test, n_obs = total, false_pos_controls = prior_false_pos_controls, n_controls = prior_n_controls, false_neg_diseased = prior_false_neg_diseased, n_diseased = prior_n_diseased,),
-      testerror::true_prevalence(pos_obs = test, n_obs = total, false_pos_controls = prior_false_pos_controls, n_controls = prior_n_controls, false_neg_diseased = prior_false_neg_diseased, n_diseased = prior_n_diseased,method = "rogan-gladen", prefix="rogan_gladen")
-    )
-  
-  combined_prev = serotype_tests %>%
-    mutate(prevalence = test_prevalence) %>%
-    group_by(!!!grp, across(starts_with("group"))) %>%
-    estimate_panel_performance_uncertain(test_id) %>%
-    mutate(
-      prev_est.0.5 = testerror::rogan_gladen(panel_apparent_prevalence, panel_sens_est, panel_spec),
-      panel_actual_prevalence = actual/total
-    )
-  
-  comp_tmp = bayesian_result %>% ungroup() %>% select(!!!grp,group,component) %>% unnest(component) %>% filter(param=="p") %>%
-    left_join(disagg_prev %>% mutate(test_id = as.character(test_id)), by=join_by(!!!grp, test_id)) %>%
-    mutate(binom_ci_2(test,total,"apparent"))
-  
-  panel_tmp = bayesian_result %>% ungroup() %>% select(!!!grp,group,panel) %>% unnest(panel) %>%  filter(param=="p") %>%
-    inner_join(combined_prev,by=join_by(!!!grp)) %>%
-    mutate(binom_ci_2(test,total,"apparent"))
-  
-  return(list(
-    components = comp_tmp,
-    panels = panel_tmp,
-    priors = sprintf("prior:\nsens: %s\nspec: %s", unique(bayesian_result$sens_prior), unique(bayesian_result$spec_prior)),
-    params = sprintf("simulation:\nsens: %1.4f\nspec: %1.4f", unique(serotype_tests$test_sens),unique(serotype_tests$test_spec)),
-    raw_result = bayesian_result
-  ))
-}
-
-combined = do_combine_results(bayesian_result)
+# 
+# bayesian_result = scenario %>% 
+#   unnest(test_pcv_group) %>%
+#   #glimpse() %>%
+#   #filter(panel_id == "PCV20") %>%
+#   group_by(group, panel_id) %>%
+#   group_modify(do_bayesian_model, sens=0.8, spec = 0.9975, n_controls=800, n_diseased=26)
+# 
+# 
+# do_combine_results = function(bayesian_result) {
+#   
+#   grp = bayesian_result %>% groups()
+#   serotype_tests = bayesian_result %>% 
+#     mutate(
+#       prior_false_pos_controls = purrr::map_dbl(standata, ~ .x$b_spec),
+#       prior_n_controls = purrr::map_dbl(standata, ~ .x$a_spec+.x$b_spec),
+#       prior_false_neg_diseased = purrr::map_dbl(standata, ~ .x$b_sens),
+#       prior_n_diseased = purrr::map_dbl(standata, ~ .x$a_sens+.x$b_sens),
+#       prior_spec = purrr::map_dbl(standata, ~ .x$a_spec/(.x$a_spec+.x$b_spec)),
+#       prior_sens = purrr::map_dbl(standata, ~ .x$a_sens/(.x$a_sens+.x$b_sens)),
+#     ) %>% 
+#     select(!!!grp, data, starts_with("prior")) %>% 
+#     unnest(data)
+#   
+#   disagg_prev = serotype_tests %>%
+#     group_by(!!!grp, across(c(starts_with("prior"), starts_with("group"),starts_with("test"),-test))) %>%
+#     summarise(
+#       actual = sum(actual),
+#       test = sum(test),
+#       total = n()
+#     ) %>%
+#     group_by(!!!grp, across(c(starts_with("prior"), starts_with("group"),starts_with("test"),-test))) %>%
+#     mutate(
+#       actual_prevalence = actual/total,
+#       prev.est = testerror::rogan_gladen(test/total, test_sens, test_spec),
+#       testerror::true_prevalence(pos_obs = test, n_obs = total, false_pos_controls = prior_false_pos_controls, n_controls = prior_n_controls, false_neg_diseased = prior_false_neg_diseased, n_diseased = prior_n_diseased,),
+#       testerror::true_prevalence(pos_obs = test, n_obs = total, false_pos_controls = prior_false_pos_controls, n_controls = prior_n_controls, false_neg_diseased = prior_false_neg_diseased, n_diseased = prior_n_diseased,method = "rogan-gladen", prefix="rogan_gladen")
+#     )
+#   
+#   combined_prev = serotype_tests %>%
+#     mutate(prevalence = test_prevalence) %>%
+#     group_by(!!!grp, across(starts_with("group"))) %>%
+#     estimate_panel_performance_uncertain(test_id) %>%
+#     mutate(
+#       prev_est.0.5 = testerror::rogan_gladen(panel_apparent_prevalence, panel_sens_est, panel_spec),
+#       panel_actual_prevalence = actual/total
+#     )
+#   
+#   comp_tmp = bayesian_result %>% ungroup() %>% select(!!!grp,group,component) %>% unnest(component) %>% filter(param=="p") %>%
+#     left_join(disagg_prev %>% mutate(test_id = as.character(test_id)), by=join_by(!!!grp, test_id)) %>%
+#     mutate(binom_ci_2(test,total,"apparent"))
+#   
+#   panel_tmp = bayesian_result %>% ungroup() %>% select(!!!grp,group,panel) %>% unnest(panel) %>%  filter(param=="p") %>%
+#     inner_join(combined_prev,by=join_by(!!!grp)) %>%
+#     mutate(binom_ci_2(test,total,"apparent"))
+#   
+#   return(list(
+#     components = comp_tmp,
+#     panels = panel_tmp,
+#     priors = sprintf("prior:\nsens: %s\nspec: %s", unique(bayesian_result$sens_prior), unique(bayesian_result$spec_prior)),
+#     params = sprintf("simulation:\nsens: %1.4f\nspec: %1.4f", unique(serotype_tests$test_sens),unique(serotype_tests$test_spec)),
+#     raw_result = bayesian_result
+#   ))
+# }
+# 
+# combined = do_combine_results(bayesian_result)
 
 do_plots = function(combined, show=c("bayes","lang-reiczigel","rogan-gladen")) {
 

@@ -12,7 +12,7 @@ an estimate of true prevalence from a given value of apparent prevalence."><!-- 
     
     <a class="navbar-brand me-2" href="../index.html">testerror</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,7 +52,7 @@ an estimate of true prevalence from a given value of apparent prevalence."><!-- 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="" class="logo" alt=""><h1>True prevalence from apparent prevalence with uncertainty</h1>
-      <small class="dont-index">Source: <a href="https://github.com/bristol-vaccine-centre/testerror/blob/HEAD/R/test-error-adjustment.R" class="external-link"><code>R/test-error-adjustment.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/bristol-vaccine-centre/testerror/blob/HEAD/R/prevalence_lang_reiczigel.R" class="external-link"><code>R/prevalence_lang_reiczigel.R</code></a></small>
       <div class="d-none name"><code>prevalence_lang_reiczigel.Rd</code></div>
     </div>
 
@@ -71,8 +71,9 @@ an estimate of true prevalence from a given value of apparent prevalence.</p>
 <span>  <span class="va">false_neg_diseased</span>,</span>
 <span>  <span class="va">n_diseased</span>,</span>
 <span>  <span class="va">...</span>,</span>
+<span>  spec <span class="op">=</span> <span class="fu"><a href="spec_prior.html">spec_prior</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  sens <span class="op">=</span> <span class="fu"><a href="sens_prior.html">sens_prior</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  confint <span class="op">=</span> <span class="fl">0.95</span>,</span>
-<span>  prefix <span class="op">=</span> <span class="st">"prevalence"</span>,</span>
 <span>  fmt <span class="op">=</span> <span class="st">"%1.2f%% [%1.2f%% — %1.2f%%]"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -113,12 +114,16 @@ control group.</p></dd>
 <dd><p>not used</p></dd>
 
 
+<dt>spec</dt>
+<dd><p>the prior specificity of the test as a <code>beta_dist</code>.</p></dd>
+
+
+<dt>sens</dt>
+<dd><p>the prior sensitivity of the test as a <code>beta_dist</code>.</p></dd>
+
+
 <dt>confint</dt>
 <dd><p>confidence interval limits</p></dd>
-
-
-<dt>prefix</dt>
-<dd><p>column name prefix</p></dd>
 
 
 <dt>fmt</dt>

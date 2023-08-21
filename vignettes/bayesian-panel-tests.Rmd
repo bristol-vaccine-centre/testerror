@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
-
+devtools::load_all()
 library(tidyverse)
 library(testerror)
 options(mc.cores = 2) # parallel::detectCores())
@@ -76,7 +76,7 @@ uad1_n = 796
 
 # control group data
 # negatives at 
-uad1_spec = beta_dist(1,1) %>% 
+uad1_spec = spec_prior() %>% 
   # data from Pride et al
   update_posterior(0,17)
 
@@ -99,7 +99,7 @@ uad1_controls = tibble::tibble(
 )
 
 
-uad1_sens = beta_dist(1,1) %>% 
+uad1_sens = sens_prior() %>% 
   # data from Pride et al
   update_posterior(17,17)
 

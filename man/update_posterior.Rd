@@ -4,16 +4,18 @@
 \alias{update_posterior}
 \title{Update the posterior of a \code{beta_dist}}
 \usage{
-update_posterior(x, pos, n, ...)
+update_posterior(x, ..., pos = NULL, neg = NULL, n = NULL)
 }
 \arguments{
 \item{x}{a \code{beta_dist} or \code{beta_dist_list} acting as the prior}
 
+\item{...}{not used}
+
 \item{pos}{positive observation(s)}
 
-\item{n}{number observations}
+\item{neg}{negative observation(s)}
 
-\item{...}{not used}
+\item{n}{number observations}
 }
 \value{
 a new \code{beta_dist} o \code{beta_dist_list}
@@ -22,5 +24,5 @@ a new \code{beta_dist} o \code{beta_dist_list}
 Update the posterior of a \code{beta_dist}
 }
 \examples{
-update_posterior(beta_dist(1,1), 10, 30)
+update_posterior(beta_dist(shape1=1,shape2=1), neg=10, n=30)
 }
