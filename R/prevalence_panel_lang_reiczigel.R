@@ -33,6 +33,11 @@ prevalence_panel_lang_reiczigel = function(
     samples = 1000
 ) {
   
+  pkgutils::recycle(
+    pos_obs, n_obs, false_pos_controls, n_controls, 
+    false_neg_diseased, n_diseased, sens, spec
+  )
+  
   # Fit beta distributions to panel sensitivity and specificity estimators:
   panel_sens = uncertain_panel_sens_estimator(
     pos_obs = pos_obs, 

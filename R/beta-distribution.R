@@ -287,7 +287,7 @@ as_tibble.beta_dist = function(x, prefix=NULL, confint = 0.95, ...) {
 #' @export
 #' @examples 
 #' format(beta_dist(shape1=3,shape2=6), "{format(mean*100, digits=3)}%")
-format.beta_dist = function(x, glue = "{sprintf('%1.3f [%1.3f\u2013%1.3f] (N=%1.2f)',median,lower,upper,conc)}", ...) {
+format.beta_dist = function(x, glue = "{sprintf('%1.1f%% [%1.1f%%\u2013%1.1f%%] (N=%1.1f)',median*100,lower*100,upper*100,conc)}", ...) {
   tmp = as_tibble.beta_dist(x)
   glue::glue_data(tmp, glue)
   # suppressWarnings(do.call(sprintf, c(list(fmt = fmt), x$shape1/ (x$shape1 + x$shape2), 
@@ -365,6 +365,14 @@ get_beta_shape.beta_dist_list = function(x, type = c("shape1","shape2","conc")) 
 #' @export
 uniform_prior = function() {
   beta_dist(shape1 = 1, shape2 = 1)
+}
+
+#' Uninformative prior
+#'
+#' @return a `beta_dist`
+#' @export
+uninformed_prior = function() {
+  beta_dist(shape1 = 0.0001, shape2 = 0.0001)
 }
 
 #' The default prior for specificity

@@ -21,11 +21,13 @@ NULL
   fs::dir_create(fs::path_dir(path))
   if (!fs::file_exists(path)) fs::file_copy(file, path)
   
-  tmp = rstan::stan_model(
+  # must call the stan_model in the global environment to allow caching to occur
+  tmp = do.call(rstan::stan_model, args = list(
     file = path,
     model_name = name,
     auto_write = TRUE
-  )
+  ), envir = globalenv())
+  
   return(tmp)
 }
 
@@ -131,8 +133,8 @@ NULL
     standata$k_spec = as.integer(n_controls)
     standata$fp_spec = as.integer(false_pos_controls)
   } else {
-    standata$k_spec = rep(0,n_test)
-    standata$fp_spec = rep(0,n_test)
+    standata$k_spec = rep(0L,n_test)
+    standata$fp_spec = rep(0L,n_test)
   }
   
   # positive controls (sens)  
@@ -140,8 +142,8 @@ NULL
     standata$k_sens = as.integer(n_diseased)
     standata$fn_sens = as.integer(false_neg_diseased)
   } else {
-    standata$k_sens = rep(0,n_test)
-    standata$fp_sens = rep(0,n_test)
+    standata$k_sens = rep(0L,n_test)
+    standata$fn_sens = rep(0L,n_test)
   }
   
   # Panel sens priors

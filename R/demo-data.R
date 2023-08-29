@@ -9,22 +9,20 @@ multi_panel_example = function(
     n_comp = 20,
     comp_dist = stats::rpois(n_comp,10) * c(1,stats::rpois(n_comp-1,2)),
     ...) {
-  tmp1 = tibble(
-    scenario_name = sprintf("P: %1.2f%%",panel_prev*100),
-    scenario_prev = panel_prev
-  ) 
-  tmp2=NULL
-  for (p in panel_prev) {
+  dplyr::bind_rows(lapply(panel_prev, function(p) {
     tmp3 = panel_example(
       panel_prev = p, 
       n_comp = n_comp,
       comp_dist = comp_dist, 
-      comp_prev = distribute(comp_dist, panel_prev),
+      comp_prev = distribute(comp_dist, p),
       ...)
-    tmp4 = as_tibble(purrr:::map(tmp3, ~ list(.x)))
-    tmp2 = bind_rows(tmp2, tmp4)
-  }
-  return(bind_cols(tmp1,tmp2))
+    tibble::tibble(
+      scenario_name = sprintf("P: %1.2f%%",p*100),
+      scenario_prev = p,
+      as_tibble(purrr:::map(tmp3, ~ list(.x)))
+    )
+  }))
+  
 }
 
 # generate a simple dataset and summarise it.
@@ -259,8 +257,8 @@ demo_bar_plot_base = function(
   n_samples = unique(prediction$n_samples)
   ggplot2::ggplot(prediction)+
     ggplot2::geom_bar(ggplot2::aes(x=test,y=apparent_prev*100), data = tmp, stat="identity", fill="grey80", colour=NA,width=0.8)+
-    ggplot2::geom_errorbar(ggplot2::aes(x=test,y=apparent_prev*100,ymin=apparent_prev*100,ymax=apparent_prev*100), colour="red",width=0.8)+
-    ggplot2::geom_errorbar(ggplot2::aes(x=test,y=true_prev*100,ymin=true_prev*100,ymax=true_prev*100), colour="blue",width=0.8)+
+    ggplot2::geom_errorbar(ggplot2::aes(x=test,y=apparent_prev*100,ymin=apparent_prev*100,ymax=apparent_prev*100), colour="red",width=0.8, alpha=0.5)+
+    ggplot2::geom_errorbar(ggplot2::aes(x=test,y=true_prev*100,ymin=true_prev*100,ymax=true_prev*100), colour="blue",width=0.8, alpha=0.5)+
     ggplot2::scale_y_continuous(sec.axis = ggplot2::sec_axis(trans = ~ ./100*n_samples, name="counts"),name = "prevalence (%)")
 }
 
@@ -281,12 +279,12 @@ demo_bar_plot = function(
   tmp = prediction %>% dplyr::select(test,apparent_prev) %>% dplyr::distinct()
   n_samples = unique(prediction$n_samples)
   ggplot2::ggplot(prediction)+
-    ggplot2::geom_bar(ggplot2::aes(x=test,y=apparent_prev), data = tmp, stat="identity", fill="grey80", colour=NA,width=0.8)+
-    ggplot2::geom_errorbar(ggplot2::aes(x=test,y=apparent_prev,ymin=apparent_prev,ymax=apparent_prev), colour="red",width=0.8)+
-    ggplot2::geom_errorbar(ggplot2::aes(x=test,y=true_prev,ymin=true_prev,ymax=true_prev), colour="blue",width=0.8)+
-    ggplot2::scale_y_continuous(sec.axis = ggplot2::sec_axis(trans = ~ .*n_samples, name="counts"),name = "proportion")+
-    ggplot2::geom_point(ggplot2::aes(x=test, y=prevalence.median, colour = prevalence.method), size=1,position = ggplot2::position_dodge(width=0.2))+
-    ggplot2::geom_errorbar(ggplot2::aes(x=test, y=prevalence.median, ymin=prevalence.lower, ymax=prevalence.upper, colour = prevalence.method), width=0.15, position = ggplot2::position_dodge(width=0.2))+
+    ggplot2::geom_bar(ggplot2::aes(x=test,y=apparent_prev*100), data = tmp, stat="identity", fill="grey80", colour=NA,width=0.8)+
+    ggplot2::geom_errorbar(ggplot2::aes(x=test,y=apparent_prev*100,ymin=apparent_prev*100,ymax=apparent_prev*100), colour="red",width=0.8, alpha=0.5)+
+    ggplot2::geom_errorbar(ggplot2::aes(x=test,y=true_prev*100,ymin=true_prev*100,ymax=true_prev*100), colour="blue",width=0.8, alpha=0.5)+
+    ggplot2::scale_y_continuous(sec.axis = ggplot2::sec_axis(trans = ~ ./100*n_samples, name="counts"),name = "prevalence (%)")+
+    ggplot2::geom_point(ggplot2::aes(x=test, y=prevalence.median*100, colour = prevalence.method), size=0.25,position = ggplot2::position_dodge(width=0.3))+
+    ggplot2::geom_errorbar(ggplot2::aes(x=test, y=prevalence.median*100, ymin=prevalence.lower*100, ymax=prevalence.upper*100, colour = prevalence.method), width=0.15, position = ggplot2::position_dodge(width=0.3),size=0.25)+
     ggplot2::scale_colour_grey(start=0,end = 0.4,name="")+
     ggplot2::xlab(NULL)
 }

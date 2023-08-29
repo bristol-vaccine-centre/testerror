@@ -3,7 +3,7 @@
 
 library(tidyverse)
 library(patchwork)
-here::i_am("vignettes/formal-analysis-figures.R")
+here::i_am("vignettes/paper/formal-analysis-figures.R")
 source(here::here("vignettes/vignette-utils.R"))
 ggrrr::gg_pedantic()
 devtools::load_all()

@@ -3,6 +3,8 @@
 #' @param pos_obs a vector of the number of positive observations for each component test
 #' @inheritParams uncertain_rogan_gladen
 #' @inheritParams rstan::sampling
+#' @param cache_result save the result of the sampling in memory for the current 
+#'   session
 #'
 #' @return a list of dataframes containing the prevalence, sensitivity, and
 #'   specificity estimates, and a `stanfit` object with the raw fit data
@@ -21,7 +23,8 @@ bayesian_component_simpler_model = function(
     fmt = "%1.2f%% [%1.2f%% \u2014 %1.2f%%]",
     chains = 4,
     warmup = 1000,
-    iter = 2000
+    iter = 2000,
+    cache_result = TRUE
 ) {
   
   n = pkgutils::recycle(pos_obs, n_obs, false_pos_controls, n_controls,
@@ -56,6 +59,17 @@ bayesian_component_simpler_model = function(
   # https://callr.r-lib.org/
   # https://www.jchau.org/2021/02/02/tracking-stan-sampling-progress-shiny/
   # https://github.com/r-lib/progress
+  
+  if (!cache_result) {
+    memoise::drop_cache(.sampling_cached)(
+      .get_stan_model("panel-simpler"),
+      data = standata,
+      chains = chains,
+      warmup = warmup,
+      iter = iter,
+      show_messages = getOption("testerror.debug",FALSE)
+    )
+  }
   
   fit_combined = .sampling_cached(
     .get_stan_model("component-simpler"),

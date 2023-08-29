@@ -29,6 +29,10 @@ uncertain_panel_rogan_gladen = function(
     samples = 1000
 ) { 
   
+  pkgutils::recycle(
+    pos_obs, n_obs, false_pos_controls, n_controls, 
+    false_neg_diseased, n_diseased, sens, spec
+  )
   pkgutils::check_integer(panel_pos_obs, panel_n_obs, pos_obs, n_obs)
   pkgutils::check_integer(false_pos_controls, n_controls, false_neg_diseased, n_diseased)
   

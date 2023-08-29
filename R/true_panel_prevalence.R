@@ -83,8 +83,10 @@ true_panel_prevalence = function(
   method = match.arg(method)
   if (stringr::str_starts(method,"l")) {
     
-    if (is.null(sens)) sens = sens_prior()
-    if (is.null(spec)) spec = spec_prior()
+    # if (is.null(sens)) sens = sens_prior()
+    # if (is.null(spec)) spec = spec_prior()
+    if (is.null(sens)) sens = uninformed_prior()
+    if (is.null(spec)) spec = uninformed_prior()
     
     # Lang-Reiczigel (frequentist)
     panel = prevalence_panel_lang_reiczigel(
@@ -129,6 +131,9 @@ true_panel_prevalence = function(
     
     if (is.null(sens)) sens = sens_prior()
     if (is.null(spec)) spec = spec_prior()
+    # if (is.null(sens)) sens = uninformed_prior()
+    # if (is.null(spec)) spec = uninformed_prior()
+    
     
     # Rogan Gladen
     comp = uncertain_rogan_gladen(
@@ -175,6 +180,10 @@ true_panel_prevalence = function(
     # Some bayesian models can have both data and priors specified for
     if (is.null(sens)) sens = uniform_prior()
     if (is.null(spec)) spec = uniform_prior()
+    # if (is.null(sens)) sens = uninformed_prior()
+    # if (is.null(spec)) spec = uninformed_prior()
+    # if (is.null(sens)) sens = sens_prior()
+    # if (is.null(spec)) spec = spec_prior()
     
     # Bayesian
     bayes = bayesian_panel_true_prevalence_model(

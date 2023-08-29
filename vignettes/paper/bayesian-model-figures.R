@@ -36,7 +36,7 @@ app2 = app+
   scale_fill_gradient(high = "#0A0AFF" , low = "white", name="probability", oob=scales::squish)+
   scale_y_continuous(sec.axis = sec_axis( trans=~.*100, name="Binomial count"), breaks=c(0,1),expand = c(0, 0))
 
-save_as(app2,  here::here("vignettes/latex/s2/fig/rogan-gladen"))
+ggrrr::gg_save_as(app2,  here::here("vignettes/latex/s2/fig/rogan-gladen-v2"), size = std_size$third)
 
 ## Set up scenario / IPD test data ----
 
@@ -57,68 +57,293 @@ scenario = panel_example(
   exact_samples = TRUE
 )
 
-demo_bar_plot_base(scenario$summary %>% filter(n_components == 1))
-demo_bar_plot_base(scenario$summary %>% filter(n_components > 1))
+caption = c(
+scenario$design %>% 
+  filter(n_components == 1) %>% 
+  transmute(label = sprintf("simulated component test performance: sensitivity %1.2f%%, specificity %1.2f%%",design_sens*100, design_spec*100)) %>% 
+  pull(label) %>% unique(),
 
-# calculate scenario estimates
+scenario$design %>% 
+  filter(n_components > 1) %>% 
+  transmute(label = sprintf("%s \u2013 %1.2f%%",test,design_prev*100)) %>% 
+  pull(label) %>% paste0(collapse = "; ") %>% sprintf(fmt = "simulated panel prevalence: %s")#,
+) %>% paste0(collapse = "\n")
 
-sim_control = scenario$performance %>% 
-  dplyr::select(test, false_pos_controls, n_controls, false_neg_diseased, n_diseased) %>%
-  dplyr::inner_join(panels, by = c("test"="comp_test"), relationship="many-to-many") %>%
-  tidyr::nest(control = c(-panel_name))
+## Supp 2 figure 2 ----
 
-sim_result = scenario$samples %>% 
-  dplyr::select(id,test,result = observed) %>%
-  dplyr::inner_join(panels, by = c("test"="comp_test"), relationship="many-to-many") %>%
-  tidyr::nest(data = c(-panel_name))
+p1 = demo_bar_plot_base(scenario$summary %>% filter(n_components == 1))+facet_wrap(~"serotypes")+coord_cartesian(ylim = c(0,15))
+p2 = demo_bar_plot_base(scenario$summary %>% filter(n_components > 1))+facet_wrap(~"PCV")+coord_cartesian(ylim = c(0,15))
 
-sim = sim_control %>% inner_join(sim_result, by="panel_name")
+p = p1+theme(axis.title.y.right = element_blank(),axis.text.y.right = element_blank())+xlab(NULL)+
+  p2+theme(axis.title.y.left = element_blank(),axis.text.y.left = element_blank())+xlab(NULL)+
+  patchwork::plot_layout(nrow=1, widths = c(20,4))+
+  patchwork::plot_annotation(caption=caption)
 
-sim_out = bind_rows(
-    lapply(c("lang-reiczigel"), function(m) { 
-      sim %>% transmute(
-        panel_name = panel_name,
-        method = m,
-        modelled = purrr::pmap(., function(panel_name, control, data, ...) { 
-            true_panel_prevalence(
-                 test_results = data,
-                 false_pos_controls = control$false_pos_controls,
-                 n_controls = control$n_controls,
-                 false_neg_diseased = control$false_neg_diseased,
-                 n_diseased = control$n_diseased,
-                 panel_name = panel_name,
-                 method = m
-            )
-        }))
-    })
+ggrrr::gg_save_as(p,  here::here("vignettes/latex/s2/fig/simulation_setup_prev_10_v2"), size = std_size$third)
+
+## Modelled output for all PCV groups ----
+
+sim_out_1 = bind_rows(
+  purrr::map(c("bayes","lang-reiczigel","rogan-gladen"), function(m, ...) { 
+    bind_rows(purrr::map(c("PCV7","PCV13","PCV15","PCV20"), function(p, ...) {
+      obs = scenario$samples %>% inner_join(panels %>% filter(panel_name == p), by=c("test"="comp_test")) %>% rename(result=observed)
+      control = scenario$performance %>% inner_join(panels %>% filter(panel_name == p), by=c("test"="comp_test"))
+      true_panel_prevalence(
+        test_results = obs,
+        false_pos_controls = control$false_pos_controls,
+        n_controls = control$n_controls,
+        false_neg_diseased = control$false_neg_diseased,
+        n_diseased = control$n_diseased,
+        panel_name = p,
+        method = m
+      ) %>% 
+        mutate(panel_group = p) %>%  
+        inner_join(scenario$summary, by="test")
+    },.progress = TRUE))
+  }, .progress = TRUE)
 )
 
-tmp = scenario$summary %>% inner_join(
-  sim_out %>% tidyr::unnest(modelled) %>% mutate(test = factor(test, levels=levels(scenario$summary$test))),
-  by = "test")
+## Supp 2 final figure ----
 
 
+p1 = demo_bar_plot(sim_out_1 %>% filter(n_components==1 & panel_group=="PCV20"))
+p2 = demo_bar_plot(sim_out_1 %>% filter(n_components>1))
 
-### Do the 
+p = p1+theme(axis.title.y.right = element_blank(),axis.text.y.right = element_blank())+xlab(NULL)+
+  p2+theme(axis.title.y.left = element_blank(),axis.text.y.left = element_blank())+xlab(NULL)+
+    patchwork::plot_layout(nrow=1, widths = c(20,4),guides = "collect")+
+  patchwork::plot_annotation(caption=caption) & theme(legend.position = 'bottom',legend.justification = "center") &
+  coord_cartesian(ylim=c(0,15))
 
-scenario = multi_panel_example(
+ggrrr::gg_save_as(p,  here::here("vignettes/latex/s2/fig/simulation_result_prev_10_v2"), size = std_size$half)
+
+## Main paper figure 2 ----
+
+p1 = demo_bar_plot(sim_out_1 %>% filter(n_components==1 & panel_group=="PCV20" & prevalence.method=="bayes (binom)"))
+p2 = demo_bar_plot(sim_out_1 %>% filter(n_components>1 & prevalence.method=="bayes (binom)"))
+
+p = p1+theme(axis.title.y.right = element_blank(),axis.text.y.right = element_blank())+xlab(NULL)+
+  p2+theme(axis.title.y.left = element_blank(),axis.text.y.left = element_blank())+xlab(NULL)+
+  patchwork::plot_layout(nrow=1, widths = c(20,4),guides = "collect")+
+  patchwork::plot_annotation(caption=caption) & theme(legend.position = 'bottom',legend.justification = "center") &
+  coord_cartesian(ylim=c(0,15))
+p
+ggrrr::gg_save_as(p,  here::here("vignettes/latex/main/fig/simulation_result_bayes_v2"), size = std_size$half)
+
+## Scenario with multiple panels with different prevalences ----
+
+scenario2 = multi_panel_example(
   n_comp = 20,
   n_controls = 800,
   n_diseased = 200,
+  comp_spec = 0.9975,
+  comp_sens = 0.8,
   comp_dist = ipd_distribution("PCV20") %>% pull(x),
   comp_test = ipd_distribution("PCV20") %>% pull(pneumo.phe_serotype) %>% forcats::as_factor()
 )
 
-scenario %>% unnest(summary) %>% filter(test == "Panel") %>% select(scenario_prev,true_prev) %>% view()
+# scenario2 %>% unnest(summary) %>% filter(test == "Panel") %>% select(scenario_prev,true_prev) %>% view()
+
+analyse_scenario = function(scenario, methods=c("bayes","lang-reiczigel","rogan-gladen"), comp_sens, comp_spec, cap = 5,comp_lim = c(0,0.10),
+                            panel_lim = c(0,0.25)) {
+  
+  sim_out = bind_rows(
+      purrr::map(methods, function(m, ...) { 
+        scenario %>% mutate(
+          method = m,
+          modelled = purrr::map(samples, 
+              ~ true_panel_prevalence(
+                   test_results = .x %>% rename(result=observed),
+                   # false_pos_controls = .x$false_pos_controls,
+                   # n_controls = .x$n_controls,
+                   # false_neg_diseased = .x$false_neg_diseased,
+                   # n_diseased = .x$n_diseased,
+                   sens = comp_sens, 
+                   spec = comp_spec,
+                   panel_name = "Panel",
+                   method = m
+              ), .progress = TRUE)
+          )
+      }, .progress = TRUE)
+  )
+  
+  caption = c(
+    scenario %>% unnest(design) %>% 
+      filter(n_components == 1) %>% 
+      transmute(label = sprintf("simulated component sensitivity %1.2f%%, specificity %1.2f%%",design_sens*100, design_spec*100)) %>% 
+      pull(label) %>% unique(),
+    
+    sprintf("prior component sensitivity %s, specificity %s", format(comp_sens), format(comp_spec)),
+    
+    sim_out %>% unnest(modelled) %>% 
+      filter(test == "Panel") %>% 
+      group_by(prevalence.method) %>%
+      summarise(
+        sens.lower = mean(sens.lower),
+        sens.median = mean(sens.median),
+        sens.upper = mean(sens.upper),
+        spec.lower = mean(spec.lower),
+        spec.median = mean(spec.median),
+        spec.upper = mean(spec.upper)
+      ) %>%
+      transmute(label = sprintf("%s: estimated panel sensitivity %1.2f%% [%1.2f%% \u2013 %1.2f%%], specificity %1.2f%% [%1.2f%% \u2013 %1.2f%%]",
+                                prevalence.method,sens.median*100,sens.lower*100,sens.upper*100,spec.median*100,spec.lower*100,spec.upper*100)) %>% 
+      pull(label)
+  
+  ) %>% `[`(1:cap) %>% paste0(collapse="\n")
+  
+  sim_plot = sim_out %>% transmute(
+    scenario_name = scenario_name,
+    data = purrr::map2(summary, modelled, ~ .x %>% select(-boot) %>% inner_join(.y, by="test"))
+  ) %>% unnest(data)
+  
+  p1 = testerror:::demo_qq_plot(sim_plot %>% filter(n_components == 1))
+  p2 = testerror:::demo_qq_plot(sim_plot %>% filter(n_components != 1))+facet_wrap(~"panel")
+  p = p1+coord_fixed(xlim=comp_lim, ylim=comp_lim)+
+    p2+coord_fixed(xlim=comp_lim, ylim=panel_lim)+
+    patchwork::plot_layout(guides="collect")+
+    patchwork::plot_annotation(caption = caption) & 
+    theme(legend.position = 'bottom',legend.justification = "center")
+  
+  return(list(p, p1, p2, caption))
+
+}
 
 
-testerror:::demo_qq_plot(tmp %>% filter(n_components == 1 & panel_name == "PCV20"))
+tmp = analyse_scenario(scenario2,
+                       comp_sens = beta_dist(p=0.8, n=26), comp_spec = beta_dist(p=0.9975, n=800))
+ggrrr::gg_save_as(tmp[[1]], here::here("vignettes/latex/s2/fig/simulation_result_sens_80_80_v2"),size = std_size$half)
 
-testerror:::demo_qq_plot(tmp %>% filter(n_components != 1))
+# Sens = 60 ----
+
+scenario3 = multi_panel_example(
+  n_comp = 20,
+  n_controls = 800,
+  n_diseased = 200,
+  comp_spec = 0.9975,
+  comp_sens = 0.6,
+  comp_dist = ipd_distribution("PCV20") %>% pull(x),
+  comp_test = ipd_distribution("PCV20") %>% pull(pneumo.phe_serotype) %>% forcats::as_factor(),
+  exact_controls = TRUE
+)
+
+p_60 = analyse_scenario(scenario3, comp_sens = beta_dist(p=0.6, n=26), comp_spec = beta_dist(p=0.9975, n=800), cap=2)
+
+# Sens = 75 ----
+
+scenario4 = multi_panel_example(
+  n_comp = 20,
+  n_controls = 800,
+  n_diseased = 200,
+  comp_spec = 0.9975,
+  comp_sens = 0.75,
+  comp_dist = ipd_distribution("PCV20") %>% pull(x),
+  comp_test = ipd_distribution("PCV20") %>% pull(pneumo.phe_serotype) %>% forcats::as_factor(),
+  exact_controls = TRUE
+)
+
+p_75 = analyse_scenario(scenario4, comp_sens = beta_dist(p=0.75, n=26), comp_spec = beta_dist(p=0.9975, n=800), cap=2)
+
+# Sens = 90 ----
+
+scenario5 = multi_panel_example(
+  n_comp = 20,
+  n_controls = 800,
+  n_diseased = 200,
+  comp_spec = 0.9975,
+  comp_sens = 0.9,
+  comp_dist = ipd_distribution("PCV20") %>% pull(x),
+  comp_test = ipd_distribution("PCV20") %>% pull(pneumo.phe_serotype) %>% forcats::as_factor(),
+  exact_controls = TRUE
+)
+
+p_90 = analyse_scenario(scenario5, comp_sens = beta_dist(p=0.9, n=26), comp_spec = beta_dist(p=0.9975, n=800), cap=2)
+
+
+# ggrrr::gg_save_as(tmp[[1]], here::here("vignettes/latex/s2/fig/simulation_result_sens_60_60_v2"),size = std_size$half)
+
+comp_lim = c(0,0.10)
+panel_lim = c(0,0.25)
+
+p = p_60[[2]] + coord_fixed(xlim=comp_lim, ylim=comp_lim) + no_x() + #facet_grid("sens: 0.60"~"components")+
+  p_60[[3]] + coord_fixed(xlim=panel_lim, ylim=panel_lim) + no_x() + facet_grid("component sens: 60%"~"panel")+
+  p_75[[2]] + coord_fixed(xlim=comp_lim, ylim=comp_lim) + no_x() + #facet_grid("sens: 0.75"~"components")+
+  p_75[[3]] + coord_fixed(xlim=panel_lim, ylim=panel_lim) + no_x() + facet_grid("component sens: 75%"~"panel")+
+  p_90[[2]] + coord_fixed(xlim=comp_lim, ylim=comp_lim) + #facet_grid("sens: 0.90"~"components")+
+  p_90[[3]] + coord_fixed(xlim=panel_lim, ylim=panel_lim) + facet_grid("component sens: 90%"~"panel")+
+  plot_layout(ncol=2, guides="collect")+
+  plot_annotation(tag_levels = "A", caption=sprintf(
+"in all scenarios component test specificity is constant at 99.75%%
+and the prior for specificity is %s
+in the 60%% simulation the prior for sensitivity is %s
+in the 75%% simulation the prior for sensitivity is %s
+in the 90%% simulation the prior for sensitivity is %s
+", format(beta_dist(p=0.9975, n=800)), format(beta_dist(p=0.6, n=26)), format(beta_dist(p=0.75, n=26)), format(beta_dist(p=0.9, n=26))
+  ))&
+  theme(legend.position = "bottom",legend.justification = "center")
+
+ggrrr::gg_save_as(p, here::here("vignettes/latex/s2/fig/simulation_result_same_sens_v2"),size = std_size$full)
+
+
+# Sensitivity mismatch ----
+
+# Sens = 75
+
+scenario4 = multi_panel_example(
+  n_comp = 20,
+  n_controls = 800,
+  n_diseased = 200,
+  comp_spec = 0.9975,
+  comp_sens = 0.75,
+  comp_dist = ipd_distribution("PCV20") %>% pull(x),
+  comp_test = ipd_distribution("PCV20") %>% pull(pneumo.phe_serotype) %>% forcats::as_factor(),
+  exact_controls = TRUE
+)
+
+p_60_75 = analyse_scenario(scenario4, comp_sens = beta_dist(p=0.6, n=26), comp_spec = beta_dist(p=0.9975, n=800), cap=2)
+p_90_75 = analyse_scenario(scenario4, comp_sens = beta_dist(p=0.9, n=26), comp_spec = beta_dist(p=0.9975, n=800), cap=2)
+
+p = 
+  p_60_75[[2]]+ coord_fixed(xlim=comp_lim, ylim=comp_lim)+ no_x()+ 
+  p_60_75[[3]]+ coord_fixed(xlim=panel_lim, ylim=panel_lim)+ no_x()+ facet_grid("component sens prior: 60%"~"panel")+
+  p_90_75[[2]]+ coord_fixed(xlim=comp_lim, ylim=comp_lim)+ 
+  p_90_75[[3]]+ coord_fixed(xlim=panel_lim, ylim=panel_lim)+ facet_grid("component sens prior: 90%"~"panel")+
+  plot_layout(ncol=2,guides="collect")+
+  plot_annotation(tag_levels = "A", caption=
+    "in all scenarios component test specificity is constant at 99.75%, and sensitivity at 75%"
+  )&theme(legend.position = "bottom",legend.justification = "center")
+
+ggrrr::gg_save_as(p, here::here("vignettes/latex/s2/fig/bayesian_sim_mismatch_sens_v2"),size = std_size$two_third)
+
+# Specificity mismatch ----
+
+p_999_9975 = analyse_scenario(scenario4, comp_sens = beta_dist(p=0.75, n=26), comp_spec = beta_dist(p=0.999, n=800), cap=2)
+p_995_9975 = analyse_scenario(scenario4, comp_sens = beta_dist(p=0.75, n=26), comp_spec = beta_dist(p=0.995, n=800), cap=2)
+
+p = 
+  p_995_9975[[2]]+ coord_fixed(xlim=comp_lim, ylim=comp_lim)+ no_x()+ 
+  p_995_9975[[3]]+ coord_fixed(xlim=panel_lim, ylim=panel_lim)+ no_x()+ facet_grid("component spec prior: 99.5%"~"panel")+
+  p_999_9975[[2]]+ coord_fixed(xlim=comp_lim, ylim=comp_lim)+ 
+  p_999_9975[[3]]+ coord_fixed(xlim=panel_lim, ylim=panel_lim)+ facet_grid("component sens prior: 99.9%"~"panel")+
+  plot_layout(ncol=2,guides="collect")+
+  plot_annotation(tag_levels = "A", caption=
+                    "in all scenarios component test specificity is constant at 99.75%, and sensitivity at 75%"
+  )&theme(legend.position = "bottom",legend.justification = "center")
+
+ggrrr::gg_save_as(p, here::here("vignettes/latex/s2/fig/bayesian_sim_mismatch_spec_v2"),size = std_size$two_third)
+
+p = p_60_75[[3]]+ facet_grid("sim: sens 75%; spec 99.75%" ~ "priors: sens 60%; spec 99.75%")+no_x()+
+  p_90_75[[3]]+ facet_grid("sim: sens 75%; spec 99.75%" ~"priors: sens 90%; spec 99.75%")+no_x()+no_y()+
+  p_995_9975[[3]]+facet_grid("sim: sens 75%; spec 99.75%" ~"priors: sens 75%; spec 99.5%")+
+  p_999_9975[[3]]+facet_grid("sim: sens 75%; spec 99.75%" ~"priors: sens 75%; spec 99.9%")+no_y()+
+  plot_layout(ncol=2,guides="collect")+plot_annotation(tag_levels = "A")&theme(legend.position = "bottom",legend.justification = "center")&coord_fixed(xlim=panel_lim, ylim=panel_lim)
+
+ggrrr::gg_save_as(p, here::here("vignettes/latex/s2/fig/bayesian_sim_mismatch_v2"),size = std_size$two_third)
+
 
 # scenario = do_scenario(n_controls=800, n_diseased=26)
 # 
-# # Just use scenario setup to describe sens uncertainty ----
+# # Just use scenario setup to describe sens uncertainty --
 # # TODO: need to figure out what te fit looks like.
 # 
 # scenario_config = scenario %>% select(-id,-boot,-actual,-test) %>% unnest(test_pcv_group) %>% distinct()
@@ -177,7 +402,7 @@ testerror:::demo_qq_plot(tmp %>% filter(n_components != 1))
 # ggplot(serotype_prevalence_2, aes(x=false_neg_rate))+geom_density()
 # ggplot(serotype_prevalence_2, aes(x=false_pos_rate))+geom_density()
 
-# Compile the multiple tests model ----
+# Compile the multiple tests model --
 
 # stan_model_combined = rstan::stan_model(file = here::here("vignettes/multiple-tests.stan"))
 # 
@@ -292,7 +517,7 @@ testerror:::demo_qq_plot(tmp %>% filter(n_components != 1))
 # }
 
 
-# Test the multiple tests model ----
+# Test the multiple tests model --
 # 
 # bayesian_result = scenario %>% 
 #   unnest(test_pcv_group) %>%
@@ -360,237 +585,236 @@ testerror:::demo_qq_plot(tmp %>% filter(n_components != 1))
 # 
 # combined = do_combine_results(bayesian_result)
 
-do_plots = function(combined, show=c("bayes","lang-reiczigel","rogan-gladen")) {
+# do_plots = function(combined, show=c("bayes","lang-reiczigel","rogan-gladen")) {
+# 
+#   comp_tmp = combined$components %>% filter(panel_id == "PCV20")
+#   panel_tmp = combined$panels %>% filter(panel_id == "PCV20")
+#   
+#   sep = 0.002
+#   
+#   # b = "bayes" %in% show
+#   # l = "lang-reiczigel" %in% show
+#   
+#   offset = seq(-(length(show)-1)*sep/2,(length(show)-1)*sep/2,length.out=length(show))
+#   
+#   b = c(offset[which(show=="bayes")],0)[[1]]
+#   l = c(offset[which(show=="lang-reiczigel")],0)[[1]]
+#   r = c(offset[which(show=="rogan-gladen")],0)[[1]]
+#   
+#   points = bind_rows(
+#     comp_tmp %>% transmute(x=actual_prevalence+b/2.5, test_id = test_id, type="bayes", lower = `2.5%`, mid = `50%`, upper=`97.5%`),
+#     comp_tmp %>% transmute(x=actual_prevalence+r/2.5, test_id = test_id, type="rogan-gladen", lower = rogan_gladen.lower, mid = rogan_gladen.median, upper=rogan_gladen.upper),
+#     comp_tmp %>% transmute(x=actual_prevalence+l/2.5, test_id = test_id, type="lang-reiczigel", lower = prevalence.lower, mid = prevalence.median, upper=prevalence.upper)
+#   )
+#   
+#   points2 = bind_rows(
+#     panel_tmp %>% transmute(x=panel_actual_prevalence+b, panel_id = panel_id, type="bayes", lower = `2.5%`, mid = `50%`, upper=`97.5%`),
+#     panel_tmp %>% transmute(x=panel_actual_prevalence+r, panel_id = panel_id, type="rogan-gladen", lower = rogan_gladen.lower, mid = rogan_gladen.median, upper=rogan_gladen.upper),
+#     panel_tmp %>% transmute(x=panel_actual_prevalence+l, panel_id = panel_id, type="lang-reiczigel", lower = prevalence.lower, mid = prevalence.median, upper=prevalence.upper)
+#   )
+#   
+#   points = points %>% filter(type %in% show)
+#   points2 = points2 %>% filter(type %in% show)
+#   
+#   cilim = binom::binom.confint(seq(0,0.25,length.out=51)*1000,rep(1000,51),methods="wilson")
+#   
+#   p1 = ggplot(points, aes(x=x, y= mid, ymin=lower, ymax=upper,colour=type))+
+#     geom_point(size=0.5)+
+#     geom_errorbar(width = sep/2.5, size=0.25)+
+#     coord_fixed(xlim=c(0,0.1),ylim=c(0,0.1))+
+#     #geom_point(aes(y=prev.est), colour="magenta", size=1)+
+#     #geom_errorbar(aes(ymin=apparent.0.025, ymax=apparent.0.975), colour="red",position=position_nudge(x=-0.001/2.5), width = 0, alpha=0.4)+
+#     # geom_point(aes(y=prevalence.median),position=position_nudge(x=-sep/2.5),  size=0.5)+
+#     # geom_errorbar(aes(ymin=prevalence.lower, ymax=prevalence.upper,linetype="lang-reiczigel"),position=position_nudge(x=-sep/2.5), width = 0, alpha=0.4)+
+#     annotate("text", x=0.005, y=0.095, label = combined$params, vjust="inward", hjust="inward")+
+#     annotate("text", x=0.095, y=0.005, label = combined$priors, vjust="inward", hjust="inward")+
+#     geom_point(aes(x=actual_prevalence, y=apparent.0.5), data=comp_tmp, colour="red",shape=4, size=2, inherit.aes = FALSE)+
+#     geom_abline(colour="#8080FF")+
+#     # geom_line(aes(x=x/n,y=upper),data = cilim, colour="#8080FF",linetype="dotted", inherit.aes = FALSE)+
+#     # geom_line(aes(x=x/n,y=lower),data = cilim, colour="#8080FF",linetype="dotted", inherit.aes = FALSE)+
+#     xlab("simulation prevalence")+
+#     ylab("estimated prevalence")+
+#     facet_wrap(~"components")+
+#     guides(colour= guide_legend(title=element_blank()))+
+#     scale_color_grey(start = 0, end = 0.6)+
+#     theme(legend.position = "bottom")
+#   
+#   p2 = ggplot(points2, aes(x=x, y= mid, ymin=lower, ymax=upper,colour=type))+
+#     geom_point(size=0.5)+
+#     geom_errorbar(width = sep, size=0.25)+
+#     coord_fixed(xlim=c(0,0.25),ylim=c(0,0.25))+
+#     #geom_point(aes(y=prev_est.0.5), colour="magenta", size=1)+
+#     #geom_errorbar(aes(ymin=apparent.0.025, ymax=apparent.0.975), colour="red",position=position_nudge(x=-0.001), width = 0, alpha=0.4)+
+#     # geom_point(aes(y=prevalence.median),position=position_nudge(x=-sep),  size=0.5)+
+#     # geom_errorbar(aes(ymin=prevalence.lower, ymax=prevalence.upper, linetype="lang-reiczigel"),position=position_nudge(x=-sep), width = 0, alpha=0.4)+
+#     annotate("text", x=0.01, y=0.24, label = combined$params, vjust="inward", hjust="inward")+
+#     annotate("text", x=0.24, y=0.01, label = combined$priors, vjust="inward", hjust="inward")+
+#     geom_point(aes(x=panel_actual_prevalence, y=apparent.0.5), data=panel_tmp, colour="red",shape=4,  size=2, inherit.aes = FALSE)+
+#     geom_abline(colour="#8080FF")+
+#     # geom_line(aes(x=x/n,y=upper),data = cilim, colour="#8080FF",linetype="dotted", inherit.aes = FALSE)+
+#     # geom_line(aes(x=x/n,y=lower),data = cilim, colour="#8080FF",linetype="dotted", inherit.aes = FALSE)+
+#     xlab("simulation prevalence")+
+#     ylab("estimated prevalence")+
+#     facet_wrap(~"panel")+
+#     guides(colour= guide_legend(title=element_blank()))+
+#     scale_color_grey(start = 0, end = 0.6)+
+#     theme(legend.position = "bottom")
+#   
+#   p3 = p1+p2+patchwork::plot_layout(guides="collect") & theme(legend.position = 'bottom',legend.justification = "center")
+#   # browser()
+#   return(list(p1,p2,p3))
+# }
+# 
+# p = do_plots(combined) #, show="bayes")
+# p
+# 
+# save_as(p[[3]], here::here("vignettes/latex/s2/fig/simulation_result_sens_80_80"),size = std_size$third)
+# 
+# do_bar_plot = function(combined, prev_filter = 0.1, show=c("bayes","lang-reiczigel","rogan-gladen")) {
+#   
+#   tests = # combined$raw_result %>% filter(panel_id == "PCV20") %>% pull(tests) %>% `[[`(1)
+#     avoncap::serotype_data$xr %>% filter(order==1) %>% pull(serotype)
+#   
+#   comp_tmp = combined$components %>% 
+#     filter(group_prevalence == prev_filter) %>%
+#     mutate(test_id = factor(test_id, tests)) %>% filter(panel_id == "PCV20" & !is.na(test_id))
+#   panel_tmp = combined$panels %>% filter(group_prevalence == prev_filter) %>%
+#     mutate(panel_id = factor(panel_id, c("PCV7","PCV13","PCV15","PCV20")))
+#   
+#   points = bind_rows(
+#     comp_tmp %>% transmute(test_id = test_id, type="bayes", lower = `2.5%`*100, mid = `50%`*100, upper=`97.5%`*100),
+#     comp_tmp %>% transmute(test_id = test_id, type="lang-reiczigel", lower = prevalence.lower*100, mid = prevalence.median*100, upper=prevalence.upper*100),
+#     comp_tmp %>% transmute(test_id = test_id, type="rogan-gladen", lower = rogan_gladen.lower*100, mid = rogan_gladen.median*100, upper=rogan_gladen.upper*100)
+#   )
+#   
+#   points2 = bind_rows(
+#     panel_tmp %>% transmute(panel_id = panel_id, type="bayes", lower = `2.5%`*100, mid = `50%`*100, upper=`97.5%`*100),
+#     panel_tmp %>% transmute(panel_id = panel_id, type="lang-reiczigel", lower = prevalence.lower*100, mid = prevalence.median*100, upper=prevalence.upper*100),
+#     panel_tmp %>% transmute(panel_id = panel_id, type="rogan-gladen", lower = rogan_gladen.lower*100, mid = rogan_gladen.median*100, upper=rogan_gladen.upper*100)
+#   )
+#   
+#   points = points %>% filter(type %in% show)
+#   points2 = points2 %>% filter(type %in% show)
+#   
+#   p3 = ggplot(comp_tmp, aes(x=test_id, y=test/total*100))+
+#     geom_bar(stat="identity",fill="grey90", colour="black",size=0.05)+
+#     geom_errorbar(aes(ymin=test/total*100,ymax=test/total*100),colour="red")+
+#     geom_errorbar(aes(ymin=actual/total*100,ymax=actual/total*100),colour="#8080FF")+
+#     geom_point(aes(x=test_id, y=mid, colour=type),data=points,inherit.aes = FALSE,size=0.5,position = position_dodge(width=0.4))+
+#     geom_errorbar(aes(x=test_id, ymin=lower, ymax=upper, colour=type),data=points,inherit.aes = FALSE,width=0,position = position_dodge(width=0.4))+
+#     
+#     ggpp::annotate("text_npc", npcx = 0.05, npcy = 0.95, label = sprintf("prevalence: %1.2g\n\n%s \n\n%s", prev_filter, combined$params, combined$priors), size=6/ggplot2::.pt )+
+#     xlab(NULL)+ylab("prevalence (%)")+coord_cartesian(ylim=c(0,15))+
+#     guides(colour= guide_legend(title=element_blank()))+
+#     scale_color_grey(start = 0, end = 0.6)
+#   
+#   p4 = ggplot(panel_tmp, 
+#               aes(x=panel_id, y=test/total*100))+
+#     geom_bar(stat="identity",fill="grey90", colour="black",size=0.05)+
+#     geom_errorbar(aes(ymin=test/total*100,ymax=test/total*100),colour="red")+
+#     geom_errorbar(aes(ymin=actual/total*100,ymax=actual/total*100),colour="#8080FF")+
+#     geom_point(aes(x=panel_id, y=mid, colour=type),data=points2,inherit.aes = FALSE,size=0.5,position = position_dodge(width=0.4))+
+#     geom_errorbar(aes(x=panel_id, ymin=lower, ymax=upper, colour=type),data=points2,inherit.aes = FALSE,width=0,position = position_dodge(width=0.4))+
+#     
+#     xlab(NULL)+ylab("prevalence (%)")+coord_cartesian(ylim=c(0,15))+
+#     theme(axis.text.x.bottom = element_text(angle=45,vjust = 1,hjust=1))+
+#     guides(colour= guide_legend(title=element_blank()))+
+#     scale_color_grey(start = 0, end = 0.6)
+#   
+#   p5 = p3+p4+no_y()+patchwork::plot_layout(nrow=1,widths = c(5,1),guides="collect")&theme(legend.position = "bottom")
+#   
+#   return(list(p3,p4,p5))
+# }
+# 
+# p2 = do_bar_plot(combined)
+# 
+# save_as(p2[[3]], here::here("vignettes/latex/s2/fig/simulation_result_prev_10"),size = std_size$third)
+# 
+# # Other scenarios --
+# 
+# # intro in supplementary
+# p5 = do_bar_plot(combined, show=NULL)
+# save_as(p5[[3]], here::here("vignettes/latex/s2/fig/simulation_setup_prev_10"),size = std_size$third)
+# 
+# # main paper
+# p5 = do_bar_plot(combined, show="bayes")
+# save_as(p5[[3]]&guides(colour=guide_none()), here::here("vignettes/latex/main/fig/simulation_result_bayes"),size = std_size$third)
 
-  comp_tmp = combined$components %>% filter(panel_id == "PCV20")
-  panel_tmp = combined$panels %>% filter(panel_id == "PCV20")
-  
-  sep = 0.002
-  
-  # b = "bayes" %in% show
-  # l = "lang-reiczigel" %in% show
-  
-  offset = seq(-(length(show)-1)*sep/2,(length(show)-1)*sep/2,length.out=length(show))
-  
-  b = c(offset[which(show=="bayes")],0)[[1]]
-  l = c(offset[which(show=="lang-reiczigel")],0)[[1]]
-  r = c(offset[which(show=="rogan-gladen")],0)[[1]]
-  
-  points = bind_rows(
-    comp_tmp %>% transmute(x=actual_prevalence+b/2.5, test_id = test_id, type="bayes", lower = `2.5%`, mid = `50%`, upper=`97.5%`),
-    comp_tmp %>% transmute(x=actual_prevalence+r/2.5, test_id = test_id, type="rogan-gladen", lower = rogan_gladen.lower, mid = rogan_gladen.median, upper=rogan_gladen.upper),
-    comp_tmp %>% transmute(x=actual_prevalence+l/2.5, test_id = test_id, type="lang-reiczigel", lower = prevalence.lower, mid = prevalence.median, upper=prevalence.upper)
-  )
-  
-  points2 = bind_rows(
-    panel_tmp %>% transmute(x=panel_actual_prevalence+b, panel_id = panel_id, type="bayes", lower = `2.5%`, mid = `50%`, upper=`97.5%`),
-    panel_tmp %>% transmute(x=panel_actual_prevalence+r, panel_id = panel_id, type="rogan-gladen", lower = rogan_gladen.lower, mid = rogan_gladen.median, upper=rogan_gladen.upper),
-    panel_tmp %>% transmute(x=panel_actual_prevalence+l, panel_id = panel_id, type="lang-reiczigel", lower = prevalence.lower, mid = prevalence.median, upper=prevalence.upper)
-  )
-  
-  points = points %>% filter(type %in% show)
-  points2 = points2 %>% filter(type %in% show)
-  
-  cilim = binom::binom.confint(seq(0,0.25,length.out=51)*1000,rep(1000,51),methods="wilson")
-  
-  p1 = ggplot(points, aes(x=x, y= mid, ymin=lower, ymax=upper,colour=type))+
-    geom_point(size=0.5)+
-    geom_errorbar(width = sep/2.5, size=0.25)+
-    coord_fixed(xlim=c(0,0.1),ylim=c(0,0.1))+
-    #geom_point(aes(y=prev.est), colour="magenta", size=1)+
-    #geom_errorbar(aes(ymin=apparent.0.025, ymax=apparent.0.975), colour="red",position=position_nudge(x=-0.001/2.5), width = 0, alpha=0.4)+
-    # geom_point(aes(y=prevalence.median),position=position_nudge(x=-sep/2.5),  size=0.5)+
-    # geom_errorbar(aes(ymin=prevalence.lower, ymax=prevalence.upper,linetype="lang-reiczigel"),position=position_nudge(x=-sep/2.5), width = 0, alpha=0.4)+
-    annotate("text", x=0.005, y=0.095, label = combined$params, vjust="inward", hjust="inward")+
-    annotate("text", x=0.095, y=0.005, label = combined$priors, vjust="inward", hjust="inward")+
-    geom_point(aes(x=actual_prevalence, y=apparent.0.5), data=comp_tmp, colour="red",shape=4, size=2, inherit.aes = FALSE)+
-    geom_abline(colour="#8080FF")+
-    # geom_line(aes(x=x/n,y=upper),data = cilim, colour="#8080FF",linetype="dotted", inherit.aes = FALSE)+
-    # geom_line(aes(x=x/n,y=lower),data = cilim, colour="#8080FF",linetype="dotted", inherit.aes = FALSE)+
-    xlab("simulation prevalence")+
-    ylab("estimated prevalence")+
-    facet_wrap(~"components")+
-    guides(colour= guide_legend(title=element_blank()))+
-    scale_color_grey(start = 0, end = 0.6)+
-    theme(legend.position = "bottom")
-  
-  p2 = ggplot(points2, aes(x=x, y= mid, ymin=lower, ymax=upper,colour=type))+
-    geom_point(size=0.5)+
-    geom_errorbar(width = sep, size=0.25)+
-    coord_fixed(xlim=c(0,0.25),ylim=c(0,0.25))+
-    #geom_point(aes(y=prev_est.0.5), colour="magenta", size=1)+
-    #geom_errorbar(aes(ymin=apparent.0.025, ymax=apparent.0.975), colour="red",position=position_nudge(x=-0.001), width = 0, alpha=0.4)+
-    # geom_point(aes(y=prevalence.median),position=position_nudge(x=-sep),  size=0.5)+
-    # geom_errorbar(aes(ymin=prevalence.lower, ymax=prevalence.upper, linetype="lang-reiczigel"),position=position_nudge(x=-sep), width = 0, alpha=0.4)+
-    annotate("text", x=0.01, y=0.24, label = combined$params, vjust="inward", hjust="inward")+
-    annotate("text", x=0.24, y=0.01, label = combined$priors, vjust="inward", hjust="inward")+
-    geom_point(aes(x=panel_actual_prevalence, y=apparent.0.5), data=panel_tmp, colour="red",shape=4,  size=2, inherit.aes = FALSE)+
-    geom_abline(colour="#8080FF")+
-    # geom_line(aes(x=x/n,y=upper),data = cilim, colour="#8080FF",linetype="dotted", inherit.aes = FALSE)+
-    # geom_line(aes(x=x/n,y=lower),data = cilim, colour="#8080FF",linetype="dotted", inherit.aes = FALSE)+
-    xlab("simulation prevalence")+
-    ylab("estimated prevalence")+
-    facet_wrap(~"panel")+
-    guides(colour= guide_legend(title=element_blank()))+
-    scale_color_grey(start = 0, end = 0.6)+
-    theme(legend.position = "bottom")
-  
-  p3 = p1+p2+patchwork::plot_layout(guides="collect") & theme(legend.position = 'bottom',legend.justification = "center")
-  # browser()
-  return(list(p1,p2,p3))
-}
+## Sens = 60 --
 
-p = do_plots(combined) #, show="bayes")
-p
-
-save_as(p[[3]], here::here("vignettes/latex/s2/fig/simulation_result_sens_80_80"),size = std_size$third)
-
-do_bar_plot = function(combined, prev_filter = 0.1, show=c("bayes","lang-reiczigel","rogan-gladen")) {
-  
-  tests = # combined$raw_result %>% filter(panel_id == "PCV20") %>% pull(tests) %>% `[[`(1)
-    avoncap::serotype_data$xr %>% filter(order==1) %>% pull(serotype)
-  
-  comp_tmp = combined$components %>% 
-    filter(group_prevalence == prev_filter) %>%
-    mutate(test_id = factor(test_id, tests)) %>% filter(panel_id == "PCV20" & !is.na(test_id))
-  panel_tmp = combined$panels %>% filter(group_prevalence == prev_filter) %>%
-    mutate(panel_id = factor(panel_id, c("PCV7","PCV13","PCV15","PCV20")))
-  
-  points = bind_rows(
-    comp_tmp %>% transmute(test_id = test_id, type="bayes", lower = `2.5%`*100, mid = `50%`*100, upper=`97.5%`*100),
-    comp_tmp %>% transmute(test_id = test_id, type="lang-reiczigel", lower = prevalence.lower*100, mid = prevalence.median*100, upper=prevalence.upper*100),
-    comp_tmp %>% transmute(test_id = test_id, type="rogan-gladen", lower = rogan_gladen.lower*100, mid = rogan_gladen.median*100, upper=rogan_gladen.upper*100)
-  )
-  
-  points2 = bind_rows(
-    panel_tmp %>% transmute(panel_id = panel_id, type="bayes", lower = `2.5%`*100, mid = `50%`*100, upper=`97.5%`*100),
-    panel_tmp %>% transmute(panel_id = panel_id, type="lang-reiczigel", lower = prevalence.lower*100, mid = prevalence.median*100, upper=prevalence.upper*100),
-    panel_tmp %>% transmute(panel_id = panel_id, type="rogan-gladen", lower = rogan_gladen.lower*100, mid = rogan_gladen.median*100, upper=rogan_gladen.upper*100)
-  )
-  
-  points = points %>% filter(type %in% show)
-  points2 = points2 %>% filter(type %in% show)
-  
-  p3 = ggplot(comp_tmp, aes(x=test_id, y=test/total*100))+
-    geom_bar(stat="identity",fill="grey90", colour="black",size=0.05)+
-    geom_errorbar(aes(ymin=test/total*100,ymax=test/total*100),colour="red")+
-    geom_errorbar(aes(ymin=actual/total*100,ymax=actual/total*100),colour="#8080FF")+
-    geom_point(aes(x=test_id, y=mid, colour=type),data=points,inherit.aes = FALSE,size=0.5,position = position_dodge(width=0.4))+
-    geom_errorbar(aes(x=test_id, ymin=lower, ymax=upper, colour=type),data=points,inherit.aes = FALSE,width=0,position = position_dodge(width=0.4))+
-    
-    ggpp::annotate("text_npc", npcx = 0.05, npcy = 0.95, label = sprintf("prevalence: %1.2g\n\n%s \n\n%s", prev_filter, combined$params, combined$priors), size=6/ggplot2::.pt )+
-    xlab(NULL)+ylab("prevalence (%)")+coord_cartesian(ylim=c(0,15))+
-    guides(colour= guide_legend(title=element_blank()))+
-    scale_color_grey(start = 0, end = 0.6)
-  
-  p4 = ggplot(panel_tmp, 
-              aes(x=panel_id, y=test/total*100))+
-    geom_bar(stat="identity",fill="grey90", colour="black",size=0.05)+
-    geom_errorbar(aes(ymin=test/total*100,ymax=test/total*100),colour="red")+
-    geom_errorbar(aes(ymin=actual/total*100,ymax=actual/total*100),colour="#8080FF")+
-    geom_point(aes(x=panel_id, y=mid, colour=type),data=points2,inherit.aes = FALSE,size=0.5,position = position_dodge(width=0.4))+
-    geom_errorbar(aes(x=panel_id, ymin=lower, ymax=upper, colour=type),data=points2,inherit.aes = FALSE,width=0,position = position_dodge(width=0.4))+
-    
-    xlab(NULL)+ylab("prevalence (%)")+coord_cartesian(ylim=c(0,15))+
-    theme(axis.text.x.bottom = element_text(angle=45,vjust = 1,hjust=1))+
-    guides(colour= guide_legend(title=element_blank()))+
-    scale_color_grey(start = 0, end = 0.6)
-  
-  p5 = p3+p4+no_y()+patchwork::plot_layout(nrow=1,widths = c(5,1),guides="collect")&theme(legend.position = "bottom")
-  
-  return(list(p3,p4,p5))
-}
-
-p2 = do_bar_plot(combined)
-
-save_as(p2[[3]], here::here("vignettes/latex/s2/fig/simulation_result_prev_10"),size = std_size$third)
-
-# Other scenarios ----
-
-# intro in supplementary
-p5 = do_bar_plot(combined, show=NULL)
-save_as(p5[[3]], here::here("vignettes/latex/s2/fig/simulation_setup_prev_10"),size = std_size$third)
-
-# main paper
-p5 = do_bar_plot(combined, show="bayes")
-save_as(p5[[3]]&guides(colour=guide_none()), here::here("vignettes/latex/main/fig/simulation_result_bayes"),size = std_size$third)
-
-
-## Sens = 60 ----
-
-serotype_tests_60 = do_scenario(
-  spec = 0.9975,n_controls = 800,
-  sens = 0.6,n_diseased = 260
-)
-
-model_60 = serotype_tests_60 %>% 
-  unnest(test_pcv_group) %>%
-  filter(panel_id == "PCV20") %>%
-  group_by(group, panel_id) %>%
-  group_modify(do_bayesian_model, sens=0.6, spec = 0.9975, n_controls=800, n_diseased=26)
-
-p_60 = model_60 %>% 
-  do_combine_results() %>%
-  do_plots()
-
-# p_60
-# save_as(p_60[[3]], here::here("vignettes/latex/s2/fig/simulation_result_sens_80_80"),size = std_size$third)
-
-## Sens = 75 ----
-
-serotype_tests_75 = do_scenario(
-  spec = 0.9975,n_controls = 800,
-  sens = 0.75,n_diseased = 260
-)
-
-model_75 = serotype_tests_75 %>% 
-  unnest(test_pcv_group) %>%
-  filter(panel_id == "PCV20") %>%
-  group_by(group, panel_id) %>%
-  group_modify(do_bayesian_model, sens=0.75, spec = 0.9975, n_controls=800, n_diseased=26)
-
-p_75 = model_75 %>% 
-  do_combine_results() %>%
-  do_plots()
-
-# p_75
-
-## Sens = 90 ----
-
-serotype_tests_90 = do_scenario(
-  spec = 0.9975,n_controls = 800,
-  sens = 0.90,n_diseased = 260
-)
-
-model_90 = serotype_tests_90 %>% 
-  unnest(test_pcv_group) %>%
-  filter(panel_id == "PCV20") %>%
-  group_by(group, panel_id) %>%
-  group_modify(do_bayesian_model, sens=0.90, spec = 0.9975, n_controls=800, n_diseased=26)
-
-p_90 = model_90 %>% 
-  do_combine_results() %>%
-  do_plots()
-
-# p_90
-
-p_90_3 = model_90 %>% 
-  do_combine_results() %>%
-  do_bar_plot()
-
-# p_90_3
-
-## Combination of alternative scenario plots ----
-
-p = p_60[[1]]+ no_x()+ #facet_grid("sens: 0.60"~"components")+
-  p_60[[2]]+ no_x()+ #facet_grid("sens: 0.60"~"panel")+
-  p_75[[1]]+ no_x()+ #facet_grid("sens: 0.75"~"components")+
-  p_75[[2]]+ no_x()+ #facet_grid("sens: 0.75"~"panel")+
-  p_90[[1]]+ #facet_grid("sens: 0.90"~"components")+
-  p_90[[2]]+ #facet_grid("sens: 0.90"~"panel")+
-  plot_layout(ncol=2, guides="collect")+plot_annotation(tag_levels = "A")&theme(legend.position = "bottom")
-
-save_as(p, here::here("vignettes/latex/s2/fig/simulation-result-same-sens"),size = std_size$full)
+# serotype_tests_60 = do_scenario(
+#   spec = 0.9975,n_controls = 800,
+#   sens = 0.6,n_diseased = 260
+# )
+# 
+# model_60 = serotype_tests_60 %>% 
+#   unnest(test_pcv_group) %>%
+#   filter(panel_id == "PCV20") %>%
+#   group_by(group, panel_id) %>%
+#   group_modify(do_bayesian_model, sens=0.6, spec = 0.9975, n_controls=800, n_diseased=26)
+# 
+# p_60 = model_60 %>% 
+#   do_combine_results() %>%
+#   do_plots()
+# 
+# # p_60
+# # save_as(p_60[[3]], here::here("vignettes/latex/s2/fig/simulation_result_sens_80_80"),size = std_size$third)
+# 
+# ## Sens = 75 --
+# 
+# serotype_tests_75 = do_scenario(
+#   spec = 0.9975,n_controls = 800,
+#   sens = 0.75,n_diseased = 260
+# )
+# 
+# model_75 = serotype_tests_75 %>% 
+#   unnest(test_pcv_group) %>%
+#   filter(panel_id == "PCV20") %>%
+#   group_by(group, panel_id) %>%
+#   group_modify(do_bayesian_model, sens=0.75, spec = 0.9975, n_controls=800, n_diseased=26)
+# 
+# p_75 = model_75 %>% 
+#   do_combine_results() %>%
+#   do_plots()
+# 
+# # p_75
+# 
+# ## Sens = 90 --
+# 
+# serotype_tests_90 = do_scenario(
+#   spec = 0.9975,n_controls = 800,
+#   sens = 0.90,n_diseased = 260
+# )
+# 
+# model_90 = serotype_tests_90 %>% 
+#   unnest(test_pcv_group) %>%
+#   filter(panel_id == "PCV20") %>%
+#   group_by(group, panel_id) %>%
+#   group_modify(do_bayesian_model, sens=0.90, spec = 0.9975, n_controls=800, n_diseased=26)
+# 
+# p_90 = model_90 %>% 
+#   do_combine_results() %>%
+#   do_plots()
+# 
+# # p_90
+# 
+# p_90_3 = model_90 %>% 
+#   do_combine_results() %>%
+#   do_bar_plot()
+# 
+# # p_90_3
+# 
+# ## Combination of alternative scenario plots --
+# 
+# p = p_60[[2]]+ no_x()+ facet_grid("sens: 0.60"~"components")+
+#   p_60[[3]]+ no_x()+ facet_grid("sens: 0.60"~"panel")+
+#   p_75[[1]]+ no_x()+ #facet_grid("sens: 0.75"~"components")+
+#   p_75[[2]]+ no_x()+ #facet_grid("sens: 0.75"~"panel")+
+#   p_90[[1]]+ #facet_grid("sens: 0.90"~"components")+
+#   p_90[[2]]+ #facet_grid("sens: 0.90"~"panel")+
+#   plot_layout(ncol=2, guides="collect")+plot_annotation(tag_levels = "A")&theme(legend.position = "bottom")
+# 
+# save_as(p, here::here("vignettes/latex/s2/fig/simulation-result-same-sens"),size = std_size$full)
 
 
 # p2 = 
@@ -621,97 +845,97 @@ save_as(p, here::here("vignettes/latex/s2/fig/simulation-result-same-sens"),size
 # 
 # save_as(p_90[[3]], here::here("vignettes/latex/main/figs/sim-90-example"),size = std_size$third)
 
-# Sensitivity mismatch ----
-
-serotype_tests_60_90 = do_scenario(
-  spec = 0.9975,n_controls = 800,
-  sens = 0.60,n_diseased = 260
-)
-
-model_60_90 = serotype_tests_60_90 %>% 
-  unnest(test_pcv_group) %>%
-  filter(panel_id == "PCV20") %>%
-  group_by(group, panel_id) %>%
-  group_modify(do_bayesian_model, sens=0.90, spec = 0.9975, n_controls=800, n_diseased=26)
-
-p_60_90 = model_60_90 %>%
-  do_combine_results() %>%
-  do_plots()
-
-# p_60_90
-
-serotype_tests_90_60 = do_scenario(
-  spec = 0.9975,n_controls = 800,
-  sens = 0.90,n_diseased = 260
-)
-
-model_90_60 = serotype_tests_90_60 %>% 
-  unnest(test_pcv_group) %>%
-  filter(panel_id == "PCV20") %>%
-  group_by(group, panel_id) %>%
-  group_modify(do_bayesian_model, sens=0.60, spec = 0.9975, n_controls=800, n_diseased=26)
-
-p_90_60 = model_90_60 %>%
-  do_combine_results() %>%
-  do_plots() #show="bayes")
-
+# Sensitivity mismatch --
+# 
+# serotype_tests_60_90 = do_scenario(
+#   spec = 0.9975,n_controls = 800,
+#   sens = 0.60,n_diseased = 260
+# )
+# 
+# model_60_90 = serotype_tests_60_90 %>% 
+#   unnest(test_pcv_group) %>%
+#   filter(panel_id == "PCV20") %>%
+#   group_by(group, panel_id) %>%
+#   group_modify(do_bayesian_model, sens=0.90, spec = 0.9975, n_controls=800, n_diseased=26)
+# 
+# p_60_90 = model_60_90 %>%
+#   do_combine_results() %>%
+#   do_plots()
+# 
+# # p_60_90
+# 
+# serotype_tests_90_60 = do_scenario(
+#   spec = 0.9975,n_controls = 800,
+#   sens = 0.90,n_diseased = 260
+# )
+# 
+# model_90_60 = serotype_tests_90_60 %>% 
+#   unnest(test_pcv_group) %>%
+#   filter(panel_id == "PCV20") %>%
+#   group_by(group, panel_id) %>%
+#   group_modify(do_bayesian_model, sens=0.60, spec = 0.9975, n_controls=800, n_diseased=26)
+# 
+# p_90_60 = model_90_60 %>%
+#   do_combine_results() %>%
+#   do_plots() #show="bayes")
+# 
 # p_90_60
 
 # p = p_60_90[[2]]+ #facet_grid("sens: 0.60"~"panel")+
 #   p_90_60[[2]]+no_y()+ #facet_grid("sens: 0.90"~"panel")+
 #   plot_layout(ncol=2, guides="collect")+plot_annotation(tag_levels = "A")
 
-p = p_60_90[[1]]+p_60_90[[2]]+ #facet_grid("sens: 0.60"~"panel")+
-  p_90_60[[1]]+p_90_60[[2]]+ #facet_grid("sens: 0.90"~"panel")+
-  plot_layout(ncol=2,guides="collect")+plot_annotation(tag_levels = "A")&theme(legend.position = "bottom")
+# p = p_60_90[[1]]+p_60_90[[2]]+ #facet_grid("sens: 0.60"~"panel")+
+#   p_90_60[[1]]+p_90_60[[2]]+ #facet_grid("sens: 0.90"~"panel")+
+#   plot_layout(ncol=2,guides="collect")+plot_annotation(tag_levels = "A")&theme(legend.position = "bottom")
+# 
+# 
+# save_as(p, here::here("vignettes/latex/s2/fig/bayesian-sim-mismatch-sens"),size = std_size$two_third)
 
+# Specificity mismatch --
 
-save_as(p, here::here("vignettes/latex/s2/fig/bayesian-sim-mismatch-sens"),size = std_size$two_third)
-
-# Specificity mismatch ----
-
-serotype_tests_9975_99 = do_scenario(
-  spec = 0.9975,n_controls = 800,
-  sens = 0.80,n_diseased = 260
-)
-
-model_9975_99 = serotype_tests_9975_99 %>% 
-  unnest(test_pcv_group) %>%
-  filter(panel_id == "PCV20") %>%
-  group_by(group, panel_id) %>%
-  group_modify(do_bayesian_model, sens=0.80, spec = 0.99, n_controls=100, n_diseased=26)
-
-p_9975_99 = model_9975_99 %>%
-  do_combine_results() %>%
-  do_plots()
-
-
-
-serotype_tests_99_9975 = do_scenario(
-  spec = 0.99,n_controls = 800,
-  sens = 0.80,n_diseased = 260
-)
-
-model_99_9975 = serotype_tests_99_9975 %>% 
-  unnest(test_pcv_group) %>%
-  filter(panel_id == "PCV20") %>%
-  group_by(group, panel_id) %>%
-  group_modify(do_bayesian_model, sens=0.80, spec = 0.9975, n_controls=100, n_diseased=26)
-
-p_99_9975 = model_99_9975 %>%
-  do_combine_results() %>%
-  do_plots()
-
-p = p_9975_99[[1]]+p_9975_99[[2]]+ #facet_grid("sens: 0.60"~"panel")+
-  p_99_9975[[1]]+p_99_9975[[2]]+ #facet_grid("sens: 0.90"~"panel")+
-  plot_layout(ncol=2,guides="collect")+plot_annotation(tag_levels = "A")&theme(legend.position = "bottom")
-
-save_as(p, here::here("vignettes/latex/s2/fig/bayesian-sim-mismatch-spec"),size = std_size$two_third)
-
-
-p = p_60_90[[2]]+
-  p_90_60[[2]]+p_9975_99[[2]]+p_99_9975[[2]]+ #facet_grid("sens: 0.90"~"panel")+
-  plot_layout(ncol=2,guides="collect")+plot_annotation(tag_levels = "A")&theme(legend.position = "bottom")&coord_cartesian(xlim=c(0,0.25),ylim=c(0,0.4))
-
-save_as(p, here::here("vignettes/latex/s2/fig/bayesian-sim-mismatch"),size = std_size$two_third)
-
+# serotype_tests_9975_99 = do_scenario(
+#   spec = 0.9975,n_controls = 800,
+#   sens = 0.80,n_diseased = 260
+# )
+# 
+# model_9975_99 = serotype_tests_9975_99 %>% 
+#   unnest(test_pcv_group) %>%
+#   filter(panel_id == "PCV20") %>%
+#   group_by(group, panel_id) %>%
+#   group_modify(do_bayesian_model, sens=0.80, spec = 0.99, n_controls=100, n_diseased=26)
+# 
+# p_9975_99 = model_9975_99 %>%
+#   do_combine_results() %>%
+#   do_plots()
+# 
+# 
+# 
+# serotype_tests_99_9975 = do_scenario(
+#   spec = 0.99,n_controls = 800,
+#   sens = 0.80,n_diseased = 260
+# )
+# 
+# model_99_9975 = serotype_tests_99_9975 %>% 
+#   unnest(test_pcv_group) %>%
+#   filter(panel_id == "PCV20") %>%
+#   group_by(group, panel_id) %>%
+#   group_modify(do_bayesian_model, sens=0.80, spec = 0.9975, n_controls=100, n_diseased=26)
+# 
+# p_99_9975 = model_99_9975 %>%
+#   do_combine_results() %>%
+#   do_plots()
+# 
+# p = p_9975_99[[1]]+p_9975_99[[2]]+ #facet_grid("sens: 0.60"~"panel")+
+#   p_99_9975[[1]]+p_99_9975[[2]]+ #facet_grid("sens: 0.90"~"panel")+
+#   plot_layout(ncol=2,guides="collect")+plot_annotation(tag_levels = "A")&theme(legend.position = "bottom")
+# 
+# save_as(p, here::here("vignettes/latex/s2/fig/bayesian-sim-mismatch-spec"),size = std_size$two_third)
+# 
+# 
+# p = p_60_90[[2]]+
+#   p_90_60[[2]]+p_9975_99[[2]]+p_99_9975[[2]]+ #facet_grid("sens: 0.90"~"panel")+
+#   plot_layout(ncol=2,guides="collect")+plot_annotation(tag_levels = "A")&theme(legend.position = "bottom")&coord_cartesian(xlim=c(0,0.25),ylim=c(0,0.4))
+# 
+# save_as(p, here::here("vignettes/latex/s2/fig/bayesian-sim-mismatch"),size = std_size$two_third)
+# 

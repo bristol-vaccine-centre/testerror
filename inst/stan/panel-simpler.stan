@@ -65,8 +65,8 @@ model {
   real p_sample_combined = p_combined * sens_combined + (1 - p_combined) * (1 - spec_combined);
   
   // panel_wide sensitivity and specificity priors.
-  target += n_test * beta_lpdf(spec_combined | tn_panel_spec_prior, fp_panel_spec_prior);
-  target += n_test * beta_lpdf(sens_combined | tp_panel_sens_prior, fn_panel_sens_prior);
+  target += beta_lpdf(spec_combined | tn_panel_spec_prior, fp_panel_spec_prior);
+  target += beta_lpdf(sens_combined | tp_panel_sens_prior, fn_panel_sens_prior);
   
   // group observed positives test results of combined panel.
   // pos_sample_combined[n] ~ binomial(p_sample_combined);
@@ -79,8 +79,8 @@ model {
     real p_sample = p[n] * sens[n] + (1 - p[n]) * (1 - spec[n]);
     
     // panel_wide sensitivity and specificity priors of each component.
-    target += beta_lpdf(spec | tn_spec_prior[n], fp_spec_prior[n]);
-    target += beta_lpdf(sens | tp_sens_prior[n], fn_sens_prior[n]);
+    target += beta_lpdf(spec[n] | tn_spec_prior[n], fp_spec_prior[n]);
+    target += beta_lpdf(sens[n] | tp_sens_prior[n], fn_sens_prior[n]);
     
     // test-wise sensitivity and specificity priors of each component.
     if (k_spec[n]>0) {
