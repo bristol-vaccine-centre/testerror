@@ -15,17 +15,20 @@
 
     \usepackage{authblk}
     \title{Supplementary 1: Sensitivity and specificity of combined panel tests}
-    \author[1]{Robert Challen}
-    \author[1]{Anastasia Chatzilena}
-    \author[1]{George Qian}
-    \author[1]{Glenda Oben}
-    \author[2,3]{Rachel Kwiatkowska}
+    \author[1,2]{Robert Challen}
+    \author[1,2]{Anastasia Chatzilena}
+    \author[1,2]{George Qian}
+    \author[1,2]{Glenda Oben}
+    \author[3,4]{Rachel Kwiatkowska}
     \author[1]{Catherine Hyams}
     \author[1]{Adam Finn}
-    \author[1]{Leon Danon}
+    \author[5]{Krasimira Tsaneva-Atanasova}
+    \author[1,2]{Leon Danon}
     \affil[1]{Bristol Vaccine Centre, University of Bristol. UK.}
-    \affil[2]{Population Health Sciences, University of Bristol. UK.}
-    \affil[3]{NIHR Health Protection Unit in Behavioural Science and Evaluation, University of Bristol. UK.}
+    \affil[2]{Department of Engineering Mathematics, University of Bristol, Bristol, UK.}\\
+    \affil[3]{Population Health Sciences, University of Bristol. UK.}
+    \affil[4]{NIHR Health Protection Unit in Behavioural Science and Evaluation, University of Bristol. UK.}
+    \affil[5]{Department of Mathematics and Statistics, University of Exeter, UK.}
     \date{}                     %% if you don't need date to appear
     \setcounter{Maxaffil}{0}
     \renewcommand\Affilfont{\itshape\small}
@@ -57,7 +60,7 @@
 
 \maketitle
 
-The rationale for this analysis is given in detail in the main paper, but in summary it is to investigate the properties of the result of a panel combination of multiple component tests. The component tests are looking for individual subtypes of a condition which may appear independently of one another, but the presence of any subtype implies the presence of the index condition. Likewise the index condition can be considered to be absent if none of the components are present. If we consider a single patient $k$ and a $N$, condition subtypes then the patients condition status is given by:
+The rationale for this analysis is given in detail in the main paper, but in summary it is to investigate the properties of the result of a panel combination of multiple component tests. The component tests are looking for individual subtypes of a condition which may appear independently of one another, but the presence of any subtype implies the presence of the index condition. Likewise the index condition can be considered to be absent if none of the components are present. If we consider a single patient $k$ and a set of $N$ condition subtypes then the patients condition status is given by:
 
 \begin{equation*}
 \begin{aligned}
@@ -65,7 +68,7 @@ I(A_{N,k}) = 1-\prod_{n \in N}{(1-I(A_n,k))} \\
 \end{aligned}
 \end{equation*}
 
-Where \(I\) is the indicator function and a value of one represents presence and zero is absence.
+Where \(I\) is the indicator function and a value of one represents presence and zero is absence, and \(A_n,k\) is describes the actual status of the disease subtype \(n\) in an individual \(k\).
 
 Such as scenario may occur when considering a single disease, that may be caused by multiple distinct pathogens which are tested for separately, and could, at least in theory, occur together.
 
@@ -76,10 +79,10 @@ may be either positive of negative. The rates of arrival of the patients in a gi
 then we can define \(\alpha_p\) and \(\beta\) such that \(\frac{\alpha_p}{\beta} = prev\) then as in a Bayesian framework with an uninformed prior for \(prev\) the expected number of actual positive cases (\(E(A)\)) arriving in a given time period (\(t\)) is:
 
 \begin{equation*}
-E(A_t) \sim Gamma(\alpha_p, \beta)
+E(A_t) \sim Gamma(\alpha^+, \beta)
 \end{equation*}
 
-Similarly we nay define the expected number of actual negative cases (\(E(\neg A)\)) arriving in a given time period, with \(\alpha^- = \beta-\alpha^+\) and \(\frac{alpha^-}{\beta} = 1-p\) then:
+Similarly we may define the expected number of actual negative cases (\(E(\neg A)\)) arriving in a given time period, with \(\alpha^- = \beta-\alpha^+\) and \(\frac{\alpha^-}{\beta} = 1-p\) then:
 
 \begin{equation*}
 E(\neg A_t) \sim Gamma(\alpha^-, \beta)
@@ -96,13 +99,12 @@ prev &\sim \frac{Gamma(\alpha^+, \beta)}{  Gamma(\alpha^+, \beta) + Gamma(\alpha
 \end{aligned}
 \end{equation*}
 
-Assume we have a sample \(K\) of a binomially distributed quantity with probability of actual disease of \(P(A)\). After a single observation of a number of positives (\(\hat{k}\))
-and given a non-informative Beta prior, the posterior distribution of \(P(A)\) in a Bayesian framework is given by:
+Assume we have a sample \(K\) of a binomially distributed quantity with probability of actual disease prevalence of \(P(A)\). After a single observation of a number of positives within the fixed time period (\(\hat{k}\)) and given a non-informative Beta prior, the posterior distribution of \(P(A)\) in a Bayesian framework is given by:
 
 \begin{equation*}
 \begin{aligned}
-\alpha^+ &= \hat{k} \\
-\alpha^- &= |K|-\hat{k}
+\alpha^+ &= \hat{k}+1 \\
+\alpha^- &= |K|-\hat{k}+1
 \end{aligned}
 \end{equation*}
 
@@ -311,7 +313,7 @@ sens_N &= 1-\frac{
 \mytag{eq:sens-theory}
 \end{equation*}
 
-Alternatively using \eqref{eq:rogan-gladen-neg} we can eliminate \(P(\neg A_n)\) terms, to express an estimate of panel sensitivity (\(\widehat{sens_N}\)) in terms of an set of observations of component test positive results (\(\widehat{AP_n}\)), and associated component test sensitivity and specificity:
+Alternatively using \eqref{eq:rogan-gladen-neg} we can eliminate \(P(\neg A_n)\) terms, to express an estimate of panel sensitivity (\(\widehat{sens_N}\)) in terms of a set of observations of component test positive results (\(\widehat{AP_n}\)), and associated component test sensitivity and specificity:
 
 \begin{equation*}
 \begin{aligned}
@@ -366,7 +368,7 @@ These expressions allow us to create an estimator the ``actual'' prevalence of a
 \mytag{eq:prev-estiamtor}
 \end{equation*}
 
-This expression is the equivalence for the Rogan-Gladen estimate for panel tests and has a similar set of caveats and requirement for truncation of the prevalence estimate at high and low values of apparent prevalence.
+This expression is equivalent to the Rogan-Gladen estimate for panel tests and has a similar set of caveats and requirement for truncation of the prevalence estimate at high and low values of apparent prevalence.
 
 \section{Characterisation}
 
@@ -445,7 +447,7 @@ Panel C shows the relationship between the apparent prevalence of the combined p
 \begin{figure}[h!]
 \centering
   \includegraphics{fig/qq-prevalence-prediction-v-simulation.png}
-  \caption{Apparent prevalence (uncorrected estimate) and Rogan-Gladen (corrected estimate) as compared to simulation prevalence. Panels A+B show results each of the 4400 component tests in the 800 simulations (various component test sensitivities, specificities). Panels C+D the results of the 800 panels (2-9 components per panel, various component distributions).}
+  \caption{Apparent prevalence (uncorrected estimate) and Rogan-Gladen (corrected estimate) as compared to simulation prevalence. Panels A+B show results each of the 4400 single component tests in the 800 simulations (various component test sensitivities, specificities). Panels C+D the results of the 800 combined panels (2-9 components per panel, various component distributions).}
 \label{fig:A3}
 \end{figure}
 
@@ -487,10 +489,6 @@ The implication of this is that when interpreting panel test results, we must ta
 
 We have derived expressions that can estimate panel sensitivity and specificity and taken together with the panel test positivity, we have demonstrated that a good central estimate of prevalence can be recovered from a simulation.
 
-Propagation of uncertainty in these estimates is not trivial and this is addressed in the next section.
+Propagation of uncertainty in these estimates is not trivial and this is addressed in Supplementary Appendix 2.
 
-
-\bibliography{refs}
-
-%\cite{wallingaHowGenerationIntervals2007}
 \end{document}

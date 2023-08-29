@@ -15,17 +15,20 @@
 
     \usepackage{authblk}
     \title{Supplementary 2: Propagation of uncertainty of combined panel tests}
-    \author[1]{Robert Challen}
-    \author[1]{Anastasia Chatzilena}
-    \author[1]{George Qian}
-    \author[1]{Glenda Oben}
-    \author[2,3]{Rachel Kwiatkowska}
+    \author[1,2]{Robert Challen}
+    \author[1,2]{Anastasia Chatzilena}
+    \author[1,2]{George Qian}
+    \author[1,2]{Glenda Oben}
+    \author[3,4]{Rachel Kwiatkowska}
     \author[1]{Catherine Hyams}
     \author[1]{Adam Finn}
-    \author[1]{Leon Danon}
+    \author[5]{Krasimira Tsaneva-Atanasova}
+    \author[1,2]{Leon Danon}
     \affil[1]{Bristol Vaccine Centre, University of Bristol. UK.}
-    \affil[2]{Population Health Sciences, University of Bristol. UK.}
-    \affil[3]{NIHR Health Protection Unit in Behavioural Science and Evaluation, University of Bristol. UK.}
+    \affil[2]{Department of Engineering Mathematics, University of Bristol, Bristol, UK.}\\
+    \affil[3]{Population Health Sciences, University of Bristol. UK.}
+    \affil[4]{NIHR Health Protection Unit in Behavioural Science and Evaluation, University of Bristol. UK.}
+    \affil[5]{Department of Mathematics and Statistics, University of Exeter, UK.}
     \date{}                     %% if you don't need date to appear
     \setcounter{Maxaffil}{0}
     \renewcommand\Affilfont{\itshape\small}
@@ -85,14 +88,14 @@ In Fig~\ref{fig:B1} these relationships are plotted for s hypothetical test with
 
 The uncertainty in true prevalence, from an observation of apparent prevalence, is also dependent on uncertainty in sensitivity and specificity. This was quantified by Lang and Reiczigel (2014)\cite{lang2014,flor2020} in a frequentist framework and Gelman (2020)\cite{gelman2020,flor2020} in a Bayesian one, to estimate confidence intervals of the true prevalence given uncertainty of both test sensitivity and specificity.
 
-In this appendix we extend these methods to the situation of multiplex testing where uncertainty of sensitivity and specificity may apply to multiple components of a single test and where resulting test error is compounded.
+In this supplementary we extend these methods to the situation of multiplex testing where uncertainty of sensitivity and specificity may apply to multiple components of a single test and where resulting test error is compounded.
 
 \section{Methods}
 \subsection{Simulation}
 
 We previously described a distribution of serotypes in invasive pneumococcal disease (IPD)\cite{hyams2023a}. To test the methods described here we used the IPD distribution and simulated a set of synthetic patients with known rates of disease super-types and subtypes, with a single example as shown in Fig~\ref{fig:B2}. These synthetic patients were assigned component multiplex test results (in this case representing individual pneumococcal serotypes), assuming specific values of sensitivity and specificity. The simulated test result of the individual serotypes were then aggregated into four panels: a PCV7 group, a PCV13 group, a PCV15 group and a PCV20 group. The simulation was repeated for a range of defined prevalence levels, from 2.5\% to 20\%. In default scenarios component sensitivity was set at 80\% and specificity kept at 99.75\%, or varied between 60\%,75\% and 90\% (sensitivity) and between 99.75\% and 90\% (specificity).
 
-In the formal description of the simulation that follows \(N\) describes the 4 PCV panels, \(n\) each individual component serotype. The simulation includes \(k\) synthetic patients (1000 was used in all cases), and their simulated actual pneumococcal serotype status is represented by \(A_{n,k}\). The simulation of observed test result taking into account error is \(O_{n,k}\). Each serotype has a frequency (\(freq_n\)) which is scaled by a empirically determined factor (\(scale\)) to make sure the simulation has the desired prevalence of PCV20 (\(prev_{PCV20}\)).
+In the formal description of the simulation that follows \(N\) describes the 4 PCV panels, \(n\) each individual component serotype. The simulation includes \(k\) synthetic patients (1000 was used in all cases), and their simulated actual pneumococcal serotype status is represented by \(A_{n,k}\). The simulation of observed test result taking into account error is \(O_{n,k}\). Each serotype has a frequency (\(freq_n\)) which is scaled by an empirically determined factor (\(scale\)) to make sure the simulation has the desired prevalence of PCV20 (\(prev_{PCV20}\)).
 
 \begin{equation*}
 \begin{aligned}
@@ -114,7 +117,7 @@ O_{N,k} &= 1-\prod_{n \in N}{1-O_{n,k}} \\
 \end{aligned}
 \end{equation*}
 
-Methods for propagating uncertainty described below (Bayesian, Lang-Reiczigel, and resampled Rogan-Gladen) were tested using matching, and mismatching prior assumptions for component sensitivity and specificity including uncertainty, and the resulting predictions for true prevalence compared to the simulated true prevalence. As there are a large number of free parameters, and some of the methods computationally expensive, only a restricted number of representative scenarios were tested.
+Methods for propagating uncertainty described below (Bayesian, Lang-Reiczigel, and resampled Rogan-Gladen) were tested using matching, and mismatching prior assumptions for component sensitivity and specificity including uncertainty, and the resulting predictions for true prevalence compared to the simulated true prevalence. As there are a large number of free parameters, and some of the methods are computationally expensive, only a restricted number of representative scenarios were tested.
 
 \begin{figure}[h!]
 \centering
@@ -125,11 +128,11 @@ Methods for propagating uncertainty described below (Bayesian, Lang-Reiczigel, a
 
 \subsection{Rogan Gladen with resampling}
 
-From Fig\ref{fig:B1} there are three sources of uncertainty in estimates of true prevalence, there is uncertainty in test sensitivity, test specificity and observed test positivity. In the panel test there are three per component test which are combined in a non-linear fashion. A simple empirical method involves creating a set of randomly sampled component test sensitivity, specificity and apparent prevalence (\(J\)). Uncertainty in sensitivity is expressed as a Beta distributed quantity defined in terms of a disease positive control group, which consists of true positives (\(TP_{disease^+}\)) and false negatives (\(FN_{disease^+}\)). Specificity on the other hand is defined in terms of a disease negative control group, consisting of true negatives (\(TN_{disease^-}\)) and false positives (\(FP_{disease^-}\)). Apparent prevalence is assumed to originate from a binomial sample of size \(k\) representing the number of patients tested.
+As illustrated in Fig\ref{fig:B1} there are three sources of uncertainty in estimates of true prevalence, there is uncertainty in test sensitivity, test specificity and observed test positivity. In the panel test there are three per component test which are combined in a non-linear fashion. A simple empirical method involves creating a set of randomly sampled component test sensitivity, specificity and apparent prevalence (\(J\)). Uncertainty in sensitivity is expressed as a Beta distributed quantity defined in terms of a disease positive control group, which consists of true positives (\(TP_{disease^+}\)) and false negatives (\(FN_{disease^+}\)). Specificity on the other hand is defined in terms of a disease negative control group, consisting of true negatives (\(TN_{disease^-}\)) and false positives (\(FP_{disease^-}\)). Apparent prevalence is assumed to originate from a binomial sample of size \(k\) representing the number of patients tested.
 
 With the sampled set \(J\) we can directly apply the Rogan-Gladen estimator to derive a set of estimates of component prevalence including uncertainty. The empirical quantiles of these can be used as estimators of component prevalence.
 
-Using the set \(J\) we also calculate panel test sensitivity and specificity using the methods described supplementary S1, and use these, and panel apparent prevalence in a Rogan-Gladen estimator \cite{rogan1978} to create a set of estimates for true prevalence of the panel. The empirical quantiles and mean of this are taken as estimators for the true panel prevalence including uncertainty.
+Using the set \(J\) we also calculate panel test sensitivity and specificity using the methods described in supplementary S1, and use these, and panel apparent prevalence in a Rogan-Gladen estimator \cite{rogan1978} to create a set of estimates for true prevalence of the panel. The empirical quantiles and mean of this are taken as estimators for the true panel prevalence including uncertainty.
 
 \begin{equation*}
 \begin{aligned}
@@ -155,7 +158,7 @@ Confidence intervals are determined from the empirical quantiles of \(prev_{N,j}
 
 \subsection{Lang Reiczigel}
 
-The Lang-Reiczigel estimator\cite{lang2014} includes uncertainty in test sensitivity and specificity and this can be directly used to estimate the prevalence of component tests. There may be in published data on panel test sensitivity and specificity, which can be adopted to use directly with a Lang-Reiczigel estimator. However this is not often available. In our example here, we combine component tests in multiple ways to generate 4 different PCV groups, each of which act as having their own sensitivity and specificity. Such combinations are unlikely to have published sensitivity and specificity. It should also be considered that panel test specificity is a function of component prevalence so is not generalisable between different sampled populations.
+The Lang-Reiczigel estimator\cite{lang2014} includes uncertainty in test sensitivity and specificity and this can be directly used to estimate the uncertainty in prevalence of component tests. There may be in published data on panel test sensitivity and specificity, which can be adopted to use directly with a Lang-Reiczigel estimator. However this is not often available. In our example here, we combine component tests in multiple ways to generate 4 different PCV groups, each of which act as having their own sensitivity and specificity. Such combinations are unlikely to have published sensitivity and specificity. It should also be considered that panel test specificity is a function of component prevalence so is not generalisable between different sampled populations.
 
 To deal with this we again express uncertainty in sensitivity and specificity as Beta distributions and proceed to generate a set of samples as before. From these we derive a set of panel test specificity and sensitivity estimates as before:
 
@@ -194,7 +197,7 @@ n_{Sp} &= \frac{
 
 These parameterised uncertain panel test sensitivity and specificity estimates are applied to Lang-Reiczigel equations (4 and 11-19)\cite{lang2014}, to generate central estimates (which are calculated using the Rogan-Gladen formula) and confidence limits. Their method is not replicated here.
 
-As the empirical distribution of panel test sensitivity and specificity is approximate by a Beta distribution we may expect additional uncertainty in this method, compared to resampling, however the central estimates are both generated using Rogan-Gladen methods so should be similar.
+As the empirical distribution of panel test sensitivity and specificity is approximated by a Beta distribution we may expect additional uncertainty in this method, compared to resampling, however the central estimates are both generated using Rogan-Gladen methods so should be similar.
 
 \subsection{Bayesian model}
 
@@ -240,7 +243,7 @@ Maximising the log-likelihood of the combined model allows for simultaneous esti
 
 \section{Results}
 
-From Fig~\ref{fig:B1} we expect overestimation at low prevalence and underestimation at high prevalence. For the components this underestimation is clearly seen (Fig~\ref{fig:B3} left subfigure). Correction takes place and all methods produce estimates of true prevalence that are very close to the true value (blue line). For panel test results (Fig~\ref{fig:B1} right subfigure) the underestimation is much clearer as the panel specificity is lower that that of the individual components. Again all correction methods result in an adjusted estimate closer to the true panel prevalence.
+From Fig~\ref{fig:B1} we expect overestimation at low prevalence and underestimation at high prevalence. For the components this underestimation is clearly seen (Fig~\ref{fig:B3} left subfigure). Correction takes place and all methods produce estimates of true prevalence that are very close to the true value (blue line). For panel test results (Fig~\ref{fig:B3} right subfigure) the underestimation is much clearer as the panel specificity is lower that that of the individual components. Again all correction methods result in an adjusted estimate closer to the true panel prevalence.
 
 \begin{figure}[h!]
 \centering
@@ -258,7 +261,7 @@ In Fig~\ref{fig:B4}, left panels (A,C,E), the scenario is repeated for a range o
 \label{fig:B4}
 \end{figure}
 
-In the results thus far the adjustment has been done using prior estimates of sensitivity and specificity that are the same as those employed in the simulation. If however our prior assumptions around sensitivity are too high compared to simulation, the compensation will tend to push corrected true prevalence estimates too low (subfigure A in Fig~\ref{fig:B5}). Conversely if prior sensitivity is an overestimate, corrected true prevalence estimates will be too high (Fig~\ref{fig:B5} subfigure B). The accuracy of adjustment is more heavily influenced by prior assumptions of test specificity. Assuming too low a specificity causes frequentist methods to interpret all positives as false positives and in the majority of situations collapse estimates of true prevalence to zero (Fig~\ref{fig:B5}, subfigure C), Bayesian approaches are more able to compensate in this scenario, as the implausible combination of low test positives and low specificity is excluded. In the situation where specificity is assumed to be much higher than it is, the considerable false positive rate is misinterpreted as true positives and all methods fail to adjust (Fig~\ref{fig:B5}, subfigure D). These misspecifications are very large and in reality some degree of informed prior for sensitivity is required but more importantly for specificity.
+In the results thus far the adjustment has been done using prior estimates of sensitivity and specificity that are the same as those employed in the simulation. If however our prior assumptions around sensitivity are too high compared to simulation, the compensation will tend to push corrected true prevalence estimates too low (subfigure A in Fig~\ref{fig:B5}). Conversely if prior sensitivity is an overestimate, corrected true prevalence estimates will be too high (Fig~\ref{fig:B5} subfigure B). The accuracy of adjustment is more heavily influenced by prior assumptions of test specificity. Assuming too low a specificity causes frequentist methods to interpret all positives as false positives and in the majority of situations collapse estimates of true prevalence to zero (Fig~\ref{fig:B5}, subfigure C), Bayesian approaches are better in compensating in this scenario, as the implausible combination of low test positives and low specificity is excluded. In the situation where specificity is assumed to be much higher than it is, the considerable false positive rate is misinterpreted as true positives and all methods fail to adjust (Fig~\ref{fig:B5}, subfigure D). These misspecifications are very large and in reality some degree of informed prior for sensitivity is required but more importantly for specificity.
 
 \begin{figure}[h!]
 \centering
@@ -269,7 +272,7 @@ In the results thus far the adjustment has been done using prior estimates of se
 
 \section{Discussion and Conclusions}
 
-We present three methods for correcting the bias in prevalence estimates in multiplex panel tests. These are implemented in an R package ''testerror`` \cite{challen2023}. These methods are all able to correct apparent prevalence estimates of components and panels with uncertain test sensitivity and specificity. No method is robust to misspecification, although Bayesian approaches can exclude some parameter space, particularly that of low specificity, the main adjustment requires accurate, albeit uncertain, assessment of test parameters.
+We present three methods for correcting the bias in prevalence estimates in multiplex panel tests. These are implemented in an R package ''testerror`` \cite{challen2023}. These methods are all able to correct apparent prevalence estimates of components and panels with uncertain test sensitivity and specificity. No method is robust to misspecification, although Bayesian approaches can exclude some combinations of sensitivity and specificity based on the observed positive tests, (particularly combinations with comparatively low specificity, which would tend to make observations with low number of positives unlikely), the main adjustment requires accurate, albeit uncertain, assessment of test parameters.
 
 \bibliography{refs}
 
