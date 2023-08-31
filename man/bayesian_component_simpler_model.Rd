@@ -18,11 +18,12 @@ bayesian_component_simpler_model(
   fmt = "\%1.2f\%\% [\%1.2f\%\% — \%1.2f\%\%]",
   chains = 4,
   warmup = 1000,
-  iter = 2000
+  iter = 2000,
+  cache_result = TRUE
 )
 }
 \arguments{
-\item{pos_obs}{a vector of the number of positive observations for each component test}
+\item{pos_obs}{the number of positive observations for a given test}
 
 \item{n_obs}{the number of observations for a given test}
 
@@ -62,6 +63,9 @@ control group.}
 
 \item{iter}{A positive integer specifying the number of iterations for each 
     chain (including warmup). The default is 2000.}
+
+\item{cache_result}{save the result of the sampling in memory for the current
+session}
 }
 \value{
 a list of dataframes containing the prevalence, sensitivity, and

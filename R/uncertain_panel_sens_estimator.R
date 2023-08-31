@@ -29,14 +29,15 @@ uncertain_panel_sens_estimator = function(
 ) {
   
   
-  pkgutils::recycle(
+  n = pkgutils::recycle(
     pos_obs, n_obs, false_pos_controls, n_controls, 
     false_neg_diseased, n_diseased, sens, spec
   )
   
+  if (n<2) stop("Panel results require more than one test")
+  
   pkgutils::check_integer(pos_obs, n_obs)
   pkgutils::check_integer(false_pos_controls, n_controls, false_neg_diseased, n_diseased)
-  
   
   sens = update_posterior(sens, neg=false_neg_diseased, n=n_diseased)
   spec = update_posterior(spec, neg=false_pos_controls, n=n_controls)
@@ -44,8 +45,8 @@ uncertain_panel_sens_estimator = function(
   ap = rep(pos_obs/n_obs,samples)
   ap = matrix(ap,nrow = samples,byrow = TRUE)
   
-  if (inherits(spec,"beta_dist")) spec=list(spec)
-  if (inherits(sens,"beta_dist")) sens=list(sens)
+  # spec=as.beta_dist_list(spec)
+  # sens=as.beta_dist_list(sens)
   
   spec_mat = sapply(1:length(spec), function(i) spec[[i]]$r(samples))
   sens_mat = sapply(1:length(sens), function(i) sens[[i]]$r(samples))

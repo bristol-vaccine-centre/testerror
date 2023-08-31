@@ -26,7 +26,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">testerror</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.4</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -94,14 +94,14 @@ estimate:</p>
 <span><span class="co"># The posterior of the conjugate beta distribution after one observation with </span></span>
 <span><span class="co"># no prior assumptions:</span></span>
 <span><span class="fu"><a href="../reference/beta_dist.html">beta_dist</a></span><span class="op">(</span>shape1<span class="op">=</span> <span class="fl">80</span>, n <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 0.802 [0.717–0.872] (N=100.00)</span></span>
+<span><span class="co">#&gt; 80.2% [71.7%—87.2%] (N=100.0)</span></span>
 <span><span class="fu"><a href="../reference/beta_dist.html">beta_dist</a></span><span class="op">(</span>shape2<span class="op">=</span> <span class="fl">80</span>, n <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 0.198 [0.128–0.283] (N=100.00)</span></span></code></pre></div>
+<span><span class="co">#&gt; 19.8% [12.8%—28.3%] (N=100.0)</span></span></code></pre></div>
 <p>whereas if this was based on only 10 positives the confidence
 intervals would be much wider:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/beta_dist.html">beta_dist</a></span><span class="op">(</span>shape1<span class="op">=</span><span class="fl">8</span>,n<span class="op">=</span><span class="fl">10</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 0.820 [0.518–0.972] (N=10.00)</span></span></code></pre></div>
+<span><span class="co">#&gt; 82.0% [51.8%—97.2%] (N=10.0)</span></span></code></pre></div>
 <p><code>beta_dist</code> creates an S3 object that can be converted to
 a tibble easily. Using a beta distribution to model the confidence
 limits of a binomial is somewhat inaccurate a extremes, unless the beta
@@ -141,7 +141,7 @@ quantity provided as median with quantiles. We can fit a beta
 distribution to these quantiles:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/beta_params.html">beta_params</a></span><span class="op">(</span>median <span class="op">=</span> <span class="fl">0.740</span>, lower <span class="op">=</span> <span class="fl">0.666</span>, upper <span class="op">=</span> <span class="fl">0.823</span>, confint <span class="op">=</span> <span class="fl">0.95</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 0.746 [0.663–0.819] (N=118.15)</span></span></code></pre></div>
+<span><span class="co">#&gt; 74.6% [66.3%—81.9%] (N=118.1)</span></span></code></pre></div>
 <p>Sometimes we may want to estimate from data. In this case we can
 simply fit a convex beta to data using moments. This will always work if
 the input is between 0 and 1 but may be inappropriate depending on the
@@ -161,15 +161,15 @@ shape of the distribution.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.3978281</span></span>
+<span><span class="co">#&gt; [1] 0.4001068</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">b</span><span class="op">$</span><span class="fu">r</span><span class="op">(</span><span class="fl">1000</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.4012958</span></span>
+<span><span class="co">#&gt; [1] 0.4045186</span></span>
 <span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.1149606</span></span>
+<span><span class="co">#&gt; [1] 0.1156467</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd</a></span><span class="op">(</span><span class="va">b</span><span class="op">$</span><span class="fu">r</span><span class="op">(</span><span class="fl">1000</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.1130096</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.1161022</span></span></code></pre></div>
   </main>
 </div>
 

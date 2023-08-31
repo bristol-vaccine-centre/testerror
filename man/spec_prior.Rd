@@ -10,5 +10,5 @@ spec_prior()
 a \code{beta_dist}
 }
 \description{
-If undefined this is 1.000 \link{0.710–1.000} (N=1.00). This can be set with \verb{options(testerror.spec_prior = beta_dist(p=??, n=??))}
+If undefined this is 0.98 (0.71 - 1.00). This can be set with \verb{options(testerror.spec_prior = beta_dist(p=??, n=??))}
 }

@@ -169,7 +169,9 @@ corr2 = true_panel_prevalence(
    n_diseased = sim_control$n_diseased,
    method = "lang-reiczigel"
 )
+```
 
+```{r}
 corr3 = true_panel_prevalence(
   test_results = sim_result,
   false_pos_controls = sim_control$false_pos_controls,
@@ -177,7 +179,7 @@ corr3 = true_panel_prevalence(
   false_neg_diseased = sim_control$false_neg_diseased,
   n_diseased = sim_control$n_diseased,
   method = "bayes",
-  model_type = "simpler"
+  model_type = "logit"
 )
 
 testerror:::demo_bar_plot(tmp$summary %>% dplyr::inner_join(bind_rows(corr,corr2,corr3),by="test"))

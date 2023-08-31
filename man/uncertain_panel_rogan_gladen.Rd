@@ -17,6 +17,7 @@ uncertain_panel_rogan_gladen(
   sens = sens_prior(),
   spec = spec_prior(),
   confint = 0.95,
+  fmt = "\%1.2f\%\% [\%1.2f\%\% — \%1.2f\%\%]",
   samples = 1000
 )
 }
@@ -46,7 +47,6 @@ control group.}
 \item{...}{
   Arguments passed on to \code{\link[=uncertain_rogan_gladen]{uncertain_rogan_gladen}}
   \describe{
-    \item{\code{fmt}}{a \code{sprintf} formatting string accepting 3 numbers}
     \item{\code{seed}}{set seed for reproducibility}
   }}
 
@@ -55,6 +55,8 @@ control group.}
 \item{spec}{the prior specificity of the test as a \code{beta_dist}.}
 
 \item{confint}{confidence interval limits}
+
+\item{fmt}{a \code{sprintf} formatting string accepting 3 numbers}
 
 \item{samples}{number fo random draws of sensitivity and specificity}
 }

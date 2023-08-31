@@ -62,21 +62,14 @@ beta_params = function( median, lower, upper, confint = 0.95, widen = 1, limit=1
 beta_fit = function(samples, na.rm=FALSE) {
   if (any(samples<0 | samples>1)) stop("samples out of range")
   if (na.rm) samples = stats::na.omit(samples)
-  # tmp = try(suppressWarnings(
-  #   MASS::fitdistr(x = samples,densfun = "beta", start = list(shape1 = mean(samples),shape2 = 1-mean(samples)))
-  # ),silent = TRUE)
-  # if (isa(tmp,"try-error")) {
-    v = stats::sd(samples)^2
-    e = mean(samples)
-    return(beta_dist(
-      shape1=((e*(1-e))/v-1)*e,
-      shape2=((e*(1-e))/v-1)*(1-e)
-    ))
-  # } else {
-  #   return(
-  #     beta_dist(tmp$estimate["shape1"],tmp$estimate["shape2"])
-  #   )
-  # }
+  
+  v = stats::sd(samples)^2
+  e = mean(samples)
+  return(beta_dist(
+    shape1=((e*(1-e))/v-1)*e,
+    shape2=((e*(1-e))/v-1)*(1-e)
+  ))
+
 }
 
 #' Generate a beta distribution out of probabilities, or positive and negative counts
@@ -164,11 +157,13 @@ beta_dist = function(..., p=NULL, q=NULL, n=NULL, shape1=NULL, shape2=NULL) {
   #   }
   # }
   
-  if (len > 1) {
-    tmp = lapply(1:len, function(i) beta_dist(..., p = p[[i]], q=q[[i]], n=n[[i]], shape1=shape1[[i]], shape2=shape2[[i]]))
-    return(structure(tmp, class=c("beta_dist_list",class(tmp))))
-  }
-  
+  return(as.beta_dist(shape1, shape2))
+}
+
+
+as.beta_dist = function(shape1,shape2) {
+  n=pkgutils::recycle(shape1,shape2)
+  if (n>1) return(as.beta_dist_list(shape1,shape2))
   return(structure(
     list(
       shape1 = shape1,
@@ -181,6 +176,32 @@ beta_dist = function(..., p=NULL, q=NULL, n=NULL, shape1=NULL, shape2=NULL) {
     ),
     class = "beta_dist"))
 }
+
+as.beta_dist_list = function(x, ...) {
+  UseMethod("as.beta_dist_list", x)
+}
+
+as.beta_dist_list.beta_dist_list = function(x, ...) {
+  return(x)
+}
+
+as.beta_dist_list.beta_dist = function(x, ...) {
+  return(as.beta_dist_list.list(list(x)))
+}
+
+as.beta_dist_list.list = function(x, ...) {
+  tmp = class(x)
+  if (!all(sapply(x, isa, "beta_dist"))) stop("list is not only of `beta_dist` objects")
+  class(x)<-unique(c("beta_dist_list","beta_dist",tmp))
+  return(x)
+}
+
+as.beta_dist_list.numeric = function(x, shape2, ...) {
+  n=pkgutils::recycle(x,shape2)
+  tmp = lapply(1:n, function(i) as.beta_dist(shape1=x[[i]], shape2=shape2[[i]]))
+  return(as.beta_dist_list.list(tmp))
+}
+
 
 #' Update the posterior of a `beta_dist`
 #'
@@ -208,7 +229,7 @@ update_posterior.beta_dist = function(x, ..., pos=NULL, neg=NULL, n=NULL) {
   
   if (length(pos) > 1) {
     tmp = lapply(seq_along(pos), function(i) {update_posterior.beta_dist(x, pos=pos[[i]], neg=neg[[i]], n=n[[i]])})
-    return(structure(tmp, class=c("beta_dist_list",class(tmp))))
+    return(structure(tmp, class=c("beta_dist_list","beta_dist",class(tmp))))
   }
   
   return(beta_dist(shape1=x$shape1+pos, shape2=x$shape2+neg))
@@ -224,20 +245,21 @@ update_posterior.beta_dist_list = function(x, ..., pos=NULL, neg=NULL, n=NULL) {
   tmp = lapply(seq_along(x), function(i) {
     update_posterior(x[[i]], pos = pos[[i]], neg = neg[[i]], n = n[[i]])
   })
-  return(structure(tmp, class=c("beta_dist_list",class(tmp))))
+  return(structure(tmp, class=c("beta_dist_list","beta_dist",class(tmp))))
 }
 
 #' Repeat a `beta_dist`
 #'
 #' @param x a `beta_dist`
 #' @param times n
+#' @param ... not used
 #'
 #' @return a `beta_dist_list`
 #' @export
-rep.beta_dist = function(x, times) {
+rep.beta_dist = function(x, times, ...) {
   if (times==1) return(x)
-  tmp = rep(list(x), times)
-  return(structure(tmp, class=c("beta_dist_list",class(tmp))))
+  tmp = rep(list(x), times=times, ...)
+  return(as.beta_dist_list.list(tmp))
 }
 
 #' convert a list of betas to a tibble
@@ -276,6 +298,10 @@ as_tibble.beta_dist = function(x, prefix=NULL, confint = 0.95, ...) {
   return(tmp)
 }
 
+.default_beta_dist_format = function() {
+  return(getOption("beta_dist.format",default = "{sprintf('%1.1f%% [%1.1f%%\u2014%1.1f%%] (N=%1.1f)',median*100,lower*100,upper*100,conc)}"))
+}
+
 #' Format a beta distribution
 #' 
 #' @param x the beta distribution
@@ -287,7 +313,7 @@ as_tibble.beta_dist = function(x, prefix=NULL, confint = 0.95, ...) {
 #' @export
 #' @examples 
 #' format(beta_dist(shape1=3,shape2=6), "{format(mean*100, digits=3)}%")
-format.beta_dist = function(x, glue = "{sprintf('%1.1f%% [%1.1f%%\u2013%1.1f%%] (N=%1.1f)',median*100,lower*100,upper*100,conc)}", ...) {
+format.beta_dist = function(x, glue = .default_beta_dist_format(), ...) {
   tmp = as_tibble.beta_dist(x)
   glue::glue_data(tmp, glue)
   # suppressWarnings(do.call(sprintf, c(list(fmt = fmt), x$shape1/ (x$shape1 + x$shape2), 
@@ -298,7 +324,7 @@ format.beta_dist = function(x, glue = "{sprintf('%1.1f%% [%1.1f%%\u2013%1.1f%%] 
 #' Format a beta distribution list
 #' 
 #' @param x the beta distribution list
-#' @param ... not used
+#' @inheritDotParams format.beta_dist
 #' 
 #' @return nothing
 #'
@@ -319,6 +345,18 @@ length.beta_dist = function(x, ...) {
   return(1)
 }
 
+#' Detect the length of a beta distribution list
+#' 
+#' @param x the beta distribution list
+#' @param ... not used
+#' 
+#' @return the length of the list
+#'
+#' @export
+length.beta_dist_list = function(x, ...) {
+  return(sum(sapply(x, length)))
+}
+
 #' Print a beta distribution
 #' 
 #' @param x the beta distribution
@@ -328,6 +366,17 @@ length.beta_dist = function(x, ...) {
 print.beta_dist = function(x, ...) {
   cat(format(x, ...), "\n")
 }
+
+#' Print a beta distribution
+#' 
+#' @param x the beta distribution
+#' @param ... not used
+#' @return nothing
+#' @export
+print.beta_dist_list = function(x, ...) {
+  cat(paste0(format(x, ...), collapse="\n"),"\n")
+}
+
 
 #' Get a parameter of the `beta_dist`
 #'
@@ -377,7 +426,7 @@ uninformed_prior = function() {
 
 #' The default prior for specificity
 #'
-#' If undefined this is `r format(beta_dist(p=0.7, n=2))`. This can be set with `options(testerror.sens_prior = beta_dist(p=??, n=??))`
+#' If undefined this is `r format(beta_dist(p=0.7, n=2), "{sprintf('%1.2f (%1.2f - %1.2f)',mean,lower,upper)}")`. This can be set with `options(testerror.sens_prior = beta_dist(p=??, n=??))`
 #'
 #' @return a `beta_dist`
 #' @export
@@ -387,7 +436,7 @@ sens_prior = function() {
 
 #' The default prior for specificity
 #'
-#' If undefined this is `r format(beta_dist(p=0.98, n=1))`. This can be set with `options(testerror.spec_prior = beta_dist(p=??, n=??))`
+#' If undefined this is `r format(beta_dist(p=0.98, n=1), "{sprintf('%1.2f (%1.2f - %1.2f)',mean,lower,upper)}")`. This can be set with `options(testerror.spec_prior = beta_dist(p=??, n=??))`
 #'
 #' @return a `beta_dist`
 #' @export

@@ -12,7 +12,7 @@ an estimate of true prevalence from a given value of apparent prevalence."><!-- 
     
     <a class="navbar-brand me-2" href="../index.html">testerror</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.4</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -75,6 +75,8 @@ an estimate of true prevalence from a given value of apparent prevalence.</p>
 <span>  <span class="va">...</span>,</span>
 <span>  spec <span class="op">=</span> <span class="fu"><a href="spec_prior.html">spec_prior</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  sens <span class="op">=</span> <span class="fu"><a href="sens_prior.html">sens_prior</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  confint <span class="op">=</span> <span class="fl">0.95</span>,</span>
+<span>  fmt <span class="op">=</span> <span class="st">"%1.2f%% [%1.2f%% — %1.2f%%]"</span>,</span>
 <span>  samples <span class="op">=</span> <span class="fl">1000</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -120,11 +122,8 @@ control group.</p></dd>
 
 
 <dt>...</dt>
-<dd><p>Arguments passed on to <code><a href="prevalence_lang_reiczigel.html">prevalence_lang_reiczigel</a></code></p><dl><dt><code>confint</code></dt>
-<dd><p>confidence interval limits</p></dd>
-
-    <dt><code>fmt</code></dt>
-<dd><p>a <code>sprintf</code> formatting string accepting 3 numbers</p></dd>
+<dd><p>Arguments passed on to <code><a href="prevalence_lang_reiczigel.html">prevalence_lang_reiczigel</a></code></p><dl><dt><code></code></dt>
+<dd></dd>
 
   
 </dl></dd>
@@ -136,6 +135,14 @@ control group.</p></dd>
 
 <dt>sens</dt>
 <dd><p>the prior sensitivity of the test as a <code>beta_dist</code>.</p></dd>
+
+
+<dt>confint</dt>
+<dd><p>confidence interval limits</p></dd>
+
+
+<dt>fmt</dt>
+<dd><p>a <code>sprintf</code> formatting string accepting 3 numbers</p></dd>
 
 
 <dt>samples</dt>

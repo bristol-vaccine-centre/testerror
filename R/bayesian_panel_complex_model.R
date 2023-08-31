@@ -22,7 +22,7 @@
 #'   specificity estimates, and a `stanfit` object with the raw fit data
 #' @export
 bayesian_panel_complex_model = function(
-    test_results = testerror:::.input_data,
+    test_results = testerror::.input_data,
     false_pos_controls = NULL,
     n_controls = NULL,
     false_neg_diseased = NULL,
@@ -42,10 +42,14 @@ bayesian_panel_complex_model = function(
 ) {
   test_results = interfacer::ivalidate(test_results, ..., .prune=TRUE)
   
+  if (is.null(sens)) sens = uniform_prior()
+  if (is.null(spec)) spec = uniform_prior()
+  
   n = pkgutils::recycle(false_pos_controls, n_controls,
                         false_neg_diseased, n_diseased, sens, spec)
   pkgutils::check_integer(false_pos_controls, n_controls, false_neg_diseased, n_diseased)
   
+
   
   # Summarise by test to get a per patient panel result propagating NAs
   panel_results = test_results %>% 

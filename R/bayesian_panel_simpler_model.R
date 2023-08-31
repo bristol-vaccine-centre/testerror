@@ -40,7 +40,8 @@ bayesian_panel_simpler_model = function(
     cache_result = TRUE
 ) {
   
-  
+  if (is.null(sens)) sens = uniform_prior()
+  if (is.null(spec)) spec = uniform_prior()
   
   n = pkgutils::recycle(pos_obs, n_obs, false_pos_controls, n_controls,
                         false_neg_diseased, n_diseased, sens, spec)
@@ -49,21 +50,22 @@ bayesian_panel_simpler_model = function(
   
   standata = list()
   
+  standata$n_test = n
   standata$k_sample = n_obs
   standata$pos_sample = pos_obs
   
   standata$k_sample_combined = panel_n_obs
   standata$pos_sample_combined = panel_pos_obs
   
-  n_test = length(standata$pos_sample)
-  standata$n_test = n
+  #n_test = length(standata$pos_sample)
+  #standata$n_test = n
   
   # Beta(1,1) = U(0,1)
   
   standata = c(
     standata,
     .standata_priors(
-      n_test = n_test,
+      n_test = n,
       false_pos_controls = false_pos_controls,
       n_controls = n_controls,
       false_neg_diseased = false_neg_diseased,

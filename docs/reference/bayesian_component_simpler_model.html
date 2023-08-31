@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">testerror</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.4</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -74,14 +74,15 @@
 <span>  fmt <span class="op">=</span> <span class="st">"%1.2f%% [%1.2f%% — %1.2f%%]"</span>,</span>
 <span>  chains <span class="op">=</span> <span class="fl">4</span>,</span>
 <span>  warmup <span class="op">=</span> <span class="fl">1000</span>,</span>
-<span>  iter <span class="op">=</span> <span class="fl">2000</span></span>
+<span>  iter <span class="op">=</span> <span class="fl">2000</span>,</span>
+<span>  cache_result <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
     <dl><dt>pos_obs</dt>
-<dd><p>a vector of the number of positive observations for each component test</p></dd>
+<dd><p>the number of positive observations for a given test</p></dd>
 
 
 <dt>n_obs</dt>
@@ -147,6 +148,11 @@ control group.</p></dd>
 <dt>iter</dt>
 <dd><p>A positive integer specifying the number of iterations for each 
     chain (including warmup). The default is 2000.</p></dd>
+
+
+<dt>cache_result</dt>
+<dd><p>save the result of the sampling in memory for the current
+session</p></dd>
 
 </dl></div>
     <div class="section level2">

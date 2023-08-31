@@ -27,4 +27,5 @@ Generate a beta distribution out of probabilities, or positive and negative coun
 }
 \examples{
 beta_dist(shape1 = c(1,2,3),shape2 = c(3,2,1))
+beta_dist(p = 0.7, n = 2)
 }

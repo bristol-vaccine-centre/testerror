@@ -1,6 +1,5 @@
 #' Bayesian simpler model true prevalence for component
 #'
-#' @param pos_obs a vector of the number of positive observations for each component test
 #' @inheritParams uncertain_rogan_gladen
 #' @inheritParams rstan::sampling
 #' @param cache_result save the result of the sampling in memory for the current 
@@ -27,6 +26,9 @@ bayesian_component_simpler_model = function(
     cache_result = TRUE
 ) {
   
+  if (is.null(sens)) sens = uniform_prior()
+  if (is.null(spec)) spec = uniform_prior()
+  
   n = pkgutils::recycle(pos_obs, n_obs, false_pos_controls, n_controls,
                         false_neg_diseased, n_diseased, sens, spec)
   pkgutils::check_integer(pos_obs, n_obs)
@@ -37,24 +39,17 @@ bayesian_component_simpler_model = function(
   standata$k_sample = array(n_obs, dim=n)
   standata$pos_sample = array(pos_obs, dim=n)
   
-  if (is.null(false_pos_controls)) {
-    false_pos_controls = rep(0,n)
-    n_controls = rep(0,n)
-  }
-  if (is.null(false_neg_diseased)) {
-    false_neg_diseased = rep(0,n)
-    n_diseased = rep(0,n)
-  }
-  
-  standata$fp_spec = array(false_pos_controls, dim=n)
-  standata$k_spec = array(n_controls, dim=n)
-  standata$fn_sens = array(false_neg_diseased, dim=n)
-  standata$k_sens = array(n_diseased, dim=n)
-  
-  standata$tp_sens_prior = array(get_beta_shape(sens, "shape1"), dim=n)
-  standata$fn_sens_prior = array(get_beta_shape(sens, "shape2"), dim=n)
-  standata$tn_spec_prior = array(get_beta_shape(spec, "shape1"), dim=n)
-  standata$fp_spec_prior = array(get_beta_shape(spec, "shape2"), dim=n)
+  standata = c(
+    standata,
+    .standata_priors(
+      n_test = n,
+      false_pos_controls = false_pos_controls,
+      n_controls = n_controls,
+      false_neg_diseased = false_neg_diseased,
+      n_diseased = n_diseased,
+      sens = sens, 
+      spec = spec
+    ))
   
   # https://callr.r-lib.org/
   # https://www.jchau.org/2021/02/02/tracking-stan-sampling-progress-shiny/
@@ -62,7 +57,7 @@ bayesian_component_simpler_model = function(
   
   if (!cache_result) {
     memoise::drop_cache(.sampling_cached)(
-      .get_stan_model("panel-simpler"),
+      .get_stan_model("component-simpler"),
       data = standata,
       chains = chains,
       warmup = warmup,

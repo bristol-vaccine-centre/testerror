@@ -372,7 +372,7 @@ serotype_prevalence = pcv7 %>%
     false_pos_rate = 2/800, # + rlnorm(n(), log(0.005), 0.5),
     n_controls = 800
   ) %>%
-  cross_join(
+  dplyr::cross_join(
     tibble(
       group_prevalence = seq(0.025, 0.2, 0.025),
       group = sprintf("panel prev: %1.3f",seq(0.025, 0.2, 0.025))

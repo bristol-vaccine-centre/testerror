@@ -36,6 +36,7 @@
 #'   disease-free control group.
 #' @param bonferroni the number of simultaneous tests considered.
 #' @param ... not used
+#' @param spec a prior value for specificity as a `beta`
 #'
 #' @return a vector of test positive counts which are the lowest significant value
 #' that could be regarded as not due to chance.
@@ -47,8 +48,12 @@
 #' fp_signif_level(c(1000,800,600,400), false_pos_controls = 1:4, n_controls=800)
 fp_signif_level = function(n_obs, false_pos_controls, n_controls, bonferroni = NULL, ..., spec = NULL) {
   
-  pkgutils::recycle(n_obs, false_pos_controls, n_controls)
+  if (is.null(spec)) spec = uninformed_prior()
+    
+  pkgutils::recycle(n_obs, false_pos_controls, n_controls, spec)
   true_neg_controls = n_controls - false_pos_controls
+  
+  
   
   if (is.null(bonferroni)) bonferroni = 1
   
@@ -58,7 +63,11 @@ fp_signif_level = function(n_obs, false_pos_controls, n_controls, bonferroni = N
   corrected = sapply(1:length(false_pos_controls),
     function(i) {
       # A fully non-informative prior fails if pos_controls = 0 here so we use a very close to zero prior of beta(0.0001,0.0001)
-      cdf = extraDistr::pbbinom(q=0:(n_obs[[i]]%/%10), n_obs[[i]], alpha = false_pos_controls[[i]]+0.0001, beta = true_neg_controls[[i]]+0.0001)
+      cdf = extraDistr::pbbinom(
+        q=0:(n_obs[[i]]%/%10), n_obs[[i]], 
+        alpha = false_pos_controls[[i]]+get_beta_shape(spec,type = "shape1"), 
+        beta = true_neg_controls[[i]]+get_beta_shape(spec,type = "shape2")
+      )
       names(cdf) = 0:(n_obs[[i]]%/%10)
       min(which(cdf > 1-(0.05/bonferroni)))-1
     })

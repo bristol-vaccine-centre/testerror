@@ -26,7 +26,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">testerror</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.4</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -189,9 +189,9 @@ to estimate uncertainty.</p>
 <span><span class="va">spec</span> <span class="op">=</span> <span class="fu"><a href="../reference/beta_params.html">beta_params</a></span><span class="op">(</span>median <span class="op">=</span> <span class="fl">0.972</span>, lower<span class="op">=</span>  <span class="fl">0.927</span>, upper <span class="op">=</span> <span class="fl">0.998</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">sens</span></span>
-<span><span class="co">#&gt; 0.746 [0.663–0.819] (N=118.15)</span></span>
+<span><span class="co">#&gt; 74.6% [66.3%—81.9%] (N=118.1)</span></span>
 <span><span class="va">spec</span></span>
-<span><span class="co">#&gt; 0.974 [0.926–0.995] (N=87.41)</span></span></code></pre></div>
+<span><span class="co">#&gt; 97.4% [92.6%—99.5%] (N=87.4)</span></span></code></pre></div>
 <p>For demonstration purposes we look at the true prevalence for every
 value of apparent prevalence between 0 and 150 positives in an set of
 1000 tests, using the 3 methods:</p>
@@ -204,7 +204,8 @@ value of apparent prevalence between 0 and 150 positives in an set of
 <span>  n_obs <span class="op">=</span> <span class="va">n</span>,</span>
 <span>  sens <span class="op">=</span> <span class="va">sens</span>,</span>
 <span>  spec <span class="op">=</span> <span class="va">spec</span>,</span>
-<span>  method <span class="op">=</span> <span class="st">"bayes"</span></span>
+<span>  method <span class="op">=</span> <span class="st">"bayes"</span>,</span>
+<span>  model_type <span class="op">=</span> <span class="st">"logit"</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">tmp2</span> <span class="op">=</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
@@ -285,8 +286,17 @@ used to simulate the “observed” data.</p>
 <span>  n_controls <span class="op">=</span> <span class="va">ex1</span><span class="op">$</span><span class="va">performance</span><span class="op">$</span><span class="va">n_controls</span>,</span>
 <span>  false_neg_diseased <span class="op">=</span> <span class="va">ex1</span><span class="op">$</span><span class="va">performanc</span><span class="op">$</span><span class="va">false_neg_diseased</span>,</span>
 <span>  n_diseased <span class="op">=</span> <span class="va">ex1</span><span class="op">$</span><span class="va">performance</span><span class="op">$</span><span class="va">n_diseased</span>,</span>
-<span>  method <span class="op">=</span> <span class="st">"bayes"</span></span>
+<span>  method <span class="op">=</span> <span class="st">"bayes"</span>,</span>
+<span>  model_type <span class="op">=</span> <span class="st">"logit"</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: There were 3 warnings in `dplyr::mutate()`.</span></span>
+<span><span class="co">#&gt; The first warning was:</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> In argument: `true_prevalence(...)`.</span></span>
+<span><span class="co">#&gt; Caused by warning:</span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> There were 22 divergent transitions after warmup. See</span></span>
+<span><span class="co">#&gt; https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span></span>
+<span><span class="co">#&gt; to find out why this is a problem and how to eliminate them.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Run `dplyr::last_dplyr_warnings()` to see the 2 remaining warnings.</span></span>
 <span></span>
 <span><span class="va">res2</span> <span class="op">=</span> <span class="va">ex1</span><span class="op">$</span><span class="va">summary</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="../reference/true_prevalence.html">true_prevalence</a></span><span class="op">(</span></span>
 <span>  pos_obs <span class="op">=</span> <span class="va">observed_pos</span>,</span>

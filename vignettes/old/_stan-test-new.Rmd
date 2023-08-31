@@ -385,7 +385,7 @@ do_scenario = function(
       false_pos_rate = 1-spec, # + rlnorm(n(), log(0.005), 0.5),
       n_controls = n_controls
     ) %>%
-    cross_join(
+    dplyr::cross_join(
       tibble(
         group_prevalence = seq(0.025, 0.2, 0.025),
         group = sprintf("panel prev: %1.3f",seq(0.025, 0.2, 0.025))

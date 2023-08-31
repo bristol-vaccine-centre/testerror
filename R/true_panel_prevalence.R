@@ -8,8 +8,12 @@
 #'
 #' @param test_results `r interfacer::idocument(true_panel_prevalence, test_results)`
 #' @inheritParams uncertain_rogan_gladen
+#' @inheritDotParams uncertain_panel_rogan_gladen -pos_obs -n_obs -panel_pos_obs -panel_n_obs
+#' @inheritDotParams prevalence_panel_lang_reiczigel -pos_obs -n_obs -panel_pos_obs -panel_n_obs
 #' @inheritDotParams bayesian_panel_complex_model
+#' @inheritDotParams bayesian_panel_true_prevalence_model 
 #' @inheritDotParams bayesian_panel_simpler_model -pos_obs -n_obs -test_names -panel_pos_obs -panel_n_obs
+#' @inheritDotParams bayesian_panel_logit_model -pos_obs -n_obs -test_names -panel_pos_obs -panel_n_obs
 #' @param panel_name the name of the panel for combined result
 #' @param method one of:
 #' * "lang-reiczigel": Frequentist confidence limits
@@ -31,7 +35,7 @@
 #'   method = "rogan-gladen"
 #' )
 true_panel_prevalence = function(
-    test_results = testerror:::.input_data,
+    test_results = testerror::.input_data,
     false_pos_controls = NULL,
     n_controls = NULL,
     false_neg_diseased = NULL,
@@ -124,7 +128,7 @@ true_panel_prevalence = function(
       interfacer::ireturn(dplyr::bind_rows(comp,panel) %>% dplyr::mutate(
         pos_obs = c(test_counts$pos_obs,panel_counts$panel_pos_obs),
         n_obs = c(test_counts$n_obs,panel_counts$panel_n_obs)
-      ), testerror:::.output_data)
+      ), testerror::.output_data)
     )
     
   } else if (stringr::str_starts(method,"r")) {
@@ -173,13 +177,13 @@ true_panel_prevalence = function(
       interfacer::ireturn(dplyr::bind_rows(comp,panel) %>% dplyr::mutate(
         pos_obs = c(test_counts$pos_obs,panel_counts$panel_pos_obs),
         n_obs = c(test_counts$n_obs,panel_counts$panel_n_obs)
-      ), testerror:::.output_data)
+      ), testerror::.output_data)
     )
   } else if (stringr::str_starts(method,"b")) {
     
     # Some bayesian models can have both data and priors specified for
-    if (is.null(sens)) sens = uniform_prior()
-    if (is.null(spec)) spec = uniform_prior()
+    # if (is.null(sens)) sens = uniform_prior()
+    # if (is.null(spec)) spec = uniform_prior()
     # if (is.null(sens)) sens = uninformed_prior()
     # if (is.null(spec)) spec = uninformed_prior()
     # if (is.null(sens)) sens = sens_prior()
@@ -216,7 +220,7 @@ true_panel_prevalence = function(
           pos_obs = c(test_counts$pos_obs,panel_counts$panel_pos_obs),
           n_obs = c(test_counts$n_obs,panel_counts$panel_n_obs)
         ), 
-        testerror:::.output_data)
+        testerror::.output_data)
     )
     
   } 
@@ -224,13 +228,23 @@ true_panel_prevalence = function(
 }
 
 
-# decide which model to dispatch to.
-bayesian_panel_true_prevalence_model = function(..., model_type = c("simpler","complex")) {
+#' Execute one of a set of bayesian models
+#'
+#' @inheritDotParams bayesian_panel_complex_model
+#' @inheritDotParams bayesian_panel_simpler_model
+#' @inheritDotParams bayesian_panel_logit_model
+#' @param model_type The bayesian model used - `r pkgutils::doc_formals(bayesian_panel_true_prevalence_model, model_type)`
+#'
+#' @return `r .output_data`
+#' @export
+bayesian_panel_true_prevalence_model = function(..., model_type = c("logit","simpler","complex")) {
   model_type = match.arg(model_type)
   if (stringr::str_starts(model_type,"c")) {
     bayesian_panel_complex_model(...)
   } else if (stringr::str_starts(model_type,"s")) {
     bayesian_panel_simpler_model(...)
+  } else if (stringr::str_starts(model_type,"l")) {
+    bayesian_panel_logit_model(...)
   } else {
     stop("unknown stan model: ",model_type)
   }

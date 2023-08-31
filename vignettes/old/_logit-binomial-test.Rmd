@@ -1,0 +1,405 @@
+---
+title: "Logit binomial models for extreme values"
+output: html_document
+date: "2023-03-19"
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(rstan)
+knitr::opts_chunk$set(echo = TRUE)
+devtools::load_all()
+here::i_am("vignettes/logit-binomial-test.Rmd")
+source(here::here("vignettes/vignette-utils.R"))
+options(mc.cores = parallel::detectCores())
+```
+
+# The basic gelman model
+
+```{stan output.var="stan_model"}
+data {
+  int<lower = 0> y_sample;
+  int<lower = 0> n_sample;
+  int<lower = 0> y_spec;
+  int<lower = 0> n_spec;
+  int<lower = 0> y_sens;
+  int<lower = 0> n_sens;
+}
+parameters {
+  real<lower=0, upper = 1> p;
+  real<lower=0, upper = 1> spec;
+  real<lower=0, upper = 1> sens;
+}
+model {
+  real p_sample = p * sens + (1 - p) * (1 - spec);
+  y_sample ~ binomial(n_sample, p_sample);
+  y_spec ~ binomial(n_spec, spec);
+  y_sens ~ binomial(n_sens, sens);
+}
+```
+
+```{r}
+# data
+est_data = list(
+  y_sample = 5,
+  n_sample = 1000,
+  y_spec = 800-2,
+  n_spec = 800,
+  y_sens = 25*0.8,
+  n_sens = 25
+)
+
+```
+
+```{r}
+
+
+fit1 = rstan::sampling(
+  stan_model,
+  data = est_data,
+  chains = 4,
+  warmup = 2000,          # number of warmup iterations per chain
+  iter = 4000,            # total number of iterations per chain
+  show_messages = FALSE
+)
+
+# print(fit1)
+  
+```
+
+```{r}
+pairs(fit1, pars=c("p","sens","spec"))
+
+draws = as.data.frame(fit1)
+# draws %>% summarise(across(-lp__, ~ sprintf("%1.3f [%1.3f \u2014 %1.3f]", quantile(.x,0.5), quantile(.x,0.025), quantile(.x,0.975))))
+
+summ <- summary(fit1, pars = c("p","sens","spec"))$summary
+tibble(
+  param = rownames(summ),
+  cred_int = sprintf("%1.3f [%1.3f \u2014 %1.3f]", summ[,"50%"], summ[,"2.5%"], summ[,"97.5%"])  
+)
+
+```
+
+# Model with logit parameters
+
+```{stan output.var="stan_model_logit"}
+data {
+  int<lower = 0> y_sample;
+  int<lower = 0> n_sample;
+  int<lower = 0> y_spec;
+  int<lower = 0> n_spec;
+  int<lower = 0> y_sens;
+  int<lower = 0> n_sens;
+  real logit_spec_prior;
+  real logit_sens_prior;
+  real logit_p_prior;
+  real<lower = 0> logit_spec_prior_scale;
+  real<lower = 0> logit_sens_prior_scale;
+  real<lower = 0> logit_p_prior_scale;
+}
+parameters {
+  // real mu_logit_p;
+  // real mu_logit_spec;
+  // real mu_logit_sens;
+  // real<lower = 0> sigma_logit_p;
+  // real<lower = 0> sigma_logit_spec;
+  // real<lower = 0> sigma_logit_sens;
+  // real<offset = mu_logit_p, multiplier = sigma_logit_p> logit_p;
+  // real<offset = mu_logit_spec, multiplier = sigma_logit_spec> logit_spec;
+  // real<offset = mu_logit_sens, multiplier = sigma_logit_sens> logit_sens;
+  real<offset = logit_p_prior, multiplier = logit_p_prior_scale> logit_p;
+  real<offset = logit_spec_prior, multiplier = logit_spec_prior_scale> logit_spec;
+  real<offset = logit_sens_prior, multiplier = logit_sens_prior_scale> logit_sens;
+}
+transformed parameters {
+  real<lower=0, upper = 1> p = inv_logit(logit_p);
+  real<lower=0, upper = 1> spec = inv_logit(logit_spec);
+  real<lower=0, upper = 1> sens = inv_logit(logit_sens);
+}
+model {
+  real p_sample = p * sens + (1 - p) * (1 - spec);
+  target += binomial_lpmf(y_sample | n_sample, p_sample);
+  target += binomial_lpmf(y_spec | n_spec, spec);
+  target += binomial_lpmf(y_sens | n_sens, sens);
+  // target += normal_lpdf(logit_p | mu_logit_p, sigma_logit_p);
+  // target += normal_lpdf(logit_spec | mu_logit_spec, sigma_logit_spec);
+  // target += normal_lpdf(logit_sens | mu_logit_sens, sigma_logit_sens);
+  // target += normal_lpdf(sigma_logit_p | 0, logit_p_prior_scale);
+  // target += normal_lpdf(sigma_logit_spec | 0, logit_spec_prior_scale);
+  // target += normal_lpdf(sigma_logit_sens | 0, logit_sens_prior_scale);
+  // target += normal_lpdf(mu_logit_p | logit_p_prior, 2); // weak prior on mean of distribution of spec
+  // target += normal_lpdf(mu_logit_spec | logit_spec_prior, 2); // weak prior on mean of distribution of spec
+  // target += normal_lpdf(mu_logit_sens | logit_sens_prior, 2); // weak prior on mean of distribution of sens
+  target += normal_lpdf(logit_p | logit_p_prior, logit_p_prior_scale);
+  target += normal_lpdf(logit_spec | logit_spec_prior, logit_spec_prior_scale);
+  target += normal_lpdf(logit_sens | logit_sens_prior, logit_sens_prior_scale);
+}
+
+```
+
+```{r}
+
+logit = function(x) log(x/(1-x))
+inv_logit = function(y) 1/(1+exp(-y))
+
+tmp_sens = beta_dist(shape1 = 20,shape2 = 5)
+tmp_l_sens = as.list(logitnorm::twCoefLogitnorm(tmp_sens$q(0.5), tmp_sens$q(0.975)))
+
+tmp_spec = beta_dist(shape1 = 798,shape2 = 2)
+tmp_l_spec = as.list(logitnorm::twCoefLogitnorm(tmp_spec$q(0.5), tmp_spec$q(0.975)))
+
+tmp_p = update_posterior(uniform_prior(),pos = 0,n=1000)
+tmp_l_p = as.list(logitnorm::twCoefLogitnorm(tmp_p$q(0.5), tmp_p$q(0.975)))
+
+# data
+est_data_2 = list(
+  y_sample = tmp_p$shape1-1,
+  n_sample = tmp_p$conc-2,
+  # y_spec = 800-2,
+  # n_spec = 800,
+  # y_sens = 25*0.8,
+  # n_sens = 25,
+  y_spec = 0,
+  n_spec = 0,
+  y_sens = 0,
+  n_sens = 0,
+  logit_spec_prior = tmp_l_spec$mu,
+  logit_sens_prior = tmp_l_sens$mu,
+  logit_p_prior = tmp_l_p$mu,
+  logit_spec_prior_scale = tmp_l_spec$sigma,
+  logit_sens_prior_scale = tmp_l_sens$sigma,
+  logit_p_prior_scale = tmp_l_p$sigma*10
+)
+
+fit2 = rstan::sampling(
+  stan_model_logit,
+  data = est_data_2,
+  chains = 4,
+  warmup = 2000,          # number of warmup iterations per chain
+  iter = 4000,            # total number of iterations per chain
+  show_messages = FALSE
+)
+
+# print(fit1)
+
+pairs(fit2, pars=c("p","sens","spec"))
+
+summ <- summary(fit2, pars = c("p","sens","spec"))$summary
+tibble(
+  param = rownames(summ),
+  cred_int = sprintf("%1.3f [%1.3f \u2014 %1.3f]", summ[,"50%"], summ[,"2.5%"], summ[,"97.5%"])  
+)
+
+```
+
+
+## Check beta prior versus binomial observation
+
+```{r}
+tmp = tibble(
+  x = 0:100,
+  binom = dbinom(0:100,100,0.25),
+  beta = dbeta(0:100/100, 25, 75)
+)
+
+ggplot(tmp, aes(x=x))+
+  geom_point(aes(y=binom*100),colour="red")+
+  geom_point(aes(y=beta),colour="blue")
+
+integrate(dbeta, 0, 1, shape1=25, shape2=75)
+
+```
+
+```{stan output.var="stan_model_beta"}
+data {
+  int<lower = 0> y_sample;
+  int<lower = 0> n_sample;
+  real<lower = 0> shp1_spec;
+  real<lower = 0> shp2_spec;
+  real<lower = 0> shp1_sens;
+  real<lower = 0> shp2_sens;
+}
+parameters {
+  real<lower=0, upper = 1> p;
+  real<lower=0, upper = 1> spec;
+  real<lower=0, upper = 1> sens;
+}
+model {
+  real p_sample = p * sens + (1 - p) * (1 - spec);
+  y_sample ~ binomial(n_sample, p_sample);
+  spec ~ beta(shp1_spec, shp2_spec);
+  sens ~ beta(shp1_sens, shp2_sens);
+}
+```
+
+```{r}
+# data
+est_data_3 = list(
+  y_sample = 5,
+  n_sample = 1000,
+  shp1_spec = 800-2,
+  shp2_spec = 2,
+  shp1_sens = 25*0.8,
+  shp2_sens = 25*0.2
+)
+
+```
+
+```{r}
+fit3 = rstan::sampling(
+  stan_model_beta,
+  data = est_data_3,
+  chains = 4,
+  warmup = 2000,          # number of warmup iterations per chain
+  iter = 4000,            # total number of iterations per chain
+  show_messages = FALSE
+)
+
+# print(fit1)
+  
+```
+
+```{r}
+pairs(fit3, pars=c("p","sens","spec"))
+
+draws = as.data.frame(fit3)
+# draws %>% summarise(across(-lp__, ~ sprintf("%1.3f [%1.3f \u2014 %1.3f]", quantile(.x,0.5), quantile(.x,0.025), quantile(.x,0.975))))
+
+summ <- summary(fit3, pars = c("p","sens","spec"))$summary
+tibble(
+  param = rownames(summ),
+  cred_int = sprintf("%1.3f [%1.3f \u2014 %1.3f]", summ[,"50%"], summ[,"2.5%"], summ[,"97.5%"])  
+)
+
+```
+
+
+## Both
+
+```{stan output.var="stan_model_combi"}
+data {
+  int<lower = 0> y_sample;
+  int<lower = 0> n_sample;
+  real<lower = 0> shp1_spec;
+  real<lower = 0> shp2_spec;
+  real<lower = 0> shp1_sens;
+  real<lower = 0> shp2_sens;
+  int<lower = 0> y_spec;
+  int<lower = 0> n_spec;
+  int<lower = 0> y_sens;
+  int<lower = 0> n_sens;
+}
+parameters {
+  real<lower=0, upper = 1> p;
+  real<lower=0, upper = 1> spec;
+  real<lower=0, upper = 1> sens;
+}
+model {
+  real p_sample = p * sens + (1 - p) * (1 - spec);
+  y_sample ~ binomial(n_sample, p_sample);
+  spec ~ beta(shp1_spec, shp2_spec);
+  sens ~ beta(shp1_sens, shp2_sens);
+  y_spec ~ binomial(n_spec, spec);
+  y_sens ~ binomial(n_sens, sens);
+}
+```
+
+```{r}
+# data
+est_data_4 = list(
+  y_sample = 5,
+  n_sample = 1000,
+  shp1_spec = 800-2,
+  shp2_spec = 2,
+  shp1_sens = 25*0.8,
+  shp2_sens = 25*0.2,
+  y_spec = 0,
+  n_spec = 0,
+  y_sens = 0,
+  n_sens = 0
+)
+
+```
+
+```{r}
+fit4 = rstan::sampling(
+  stan_model_combi,
+  data = est_data_4,
+  chains = 4,
+  warmup = 2000,          # number of warmup iterations per chain
+  iter = 4000,            # total number of iterations per chain
+  show_messages = FALSE
+)
+
+# print(fit1)
+  
+```
+
+
+
+
+```{r}
+pairs(fit4, pars=c("p","sens","spec"))
+
+draws = as.data.frame(fit4)
+# draws %>% summarise(across(-lp__, ~ sprintf("%1.3f [%1.3f \u2014 %1.3f]", quantile(.x,0.5), quantile(.x,0.025), quantile(.x,0.975))))
+
+summ <- summary(fit4, pars = c("p","sens","spec"))$summary
+tibble(
+  param = rownames(summ),
+  cred_int = sprintf("%1.3f [%1.3f \u2014 %1.3f]", summ[,"50%"], summ[,"2.5%"], summ[,"97.5%"])  
+)
+
+```
+
+
+
+
+
+```{r}
+# data
+est_data_5 = list(
+  y_sample = 5,
+  n_sample = 1000,
+  shp1_spec = 1,
+  shp2_spec = 1,
+  shp1_sens = 1,
+  shp2_sens = 1,
+  y_spec = 800-2,
+  n_spec = 800,
+  y_sens = 25*0.8,
+  n_sens = 25
+)
+
+```
+
+```{r}
+fit5 = rstan::sampling(
+  stan_model_combi,
+  data = est_data_5,
+  chains = 4,
+  warmup = 2000,          # number of warmup iterations per chain
+  iter = 4000,            # total number of iterations per chain
+  show_messages = FALSE
+)
+
+# print(fit1)
+  
+```
+
+```{r}
+pairs(fit5, pars=c("p","sens","spec"))
+
+draws = as.data.frame(fit5)
+# draws %>% summarise(across(-lp__, ~ sprintf("%1.3f [%1.3f \u2014 %1.3f]", quantile(.x,0.5), quantile(.x,0.025), quantile(.x,0.975))))
+
+summ <- summary(fit5, pars = c("p","sens","spec"))$summary
+tibble(
+  param = rownames(summ),
+  cred_int = sprintf("%1.3f [%1.3f \u2014 %1.3f]", summ[,"50%"], summ[,"2.5%"], summ[,"97.5%"])  
+)
+
+```
+
+

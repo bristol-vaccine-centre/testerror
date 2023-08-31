@@ -36,12 +36,12 @@ binax_n = 786
 binax_sens = beta_params(median = 0.740, lower = 0.666, upper = 0.823, widen = 5)
 binax_spec = beta_params(median = 0.972, lower=  0.927, upper = 0.998)
 
-tmp1 = testerror::bayesian_component_simpler_model(
+tmp1 = testerror::bayesian_true_prevalence_model(
   pos_obs = binax_pos,
   n_obs = binax_n,
   sens = binax_sens,
   spec = binax_spec,
-  method = "bayes"
+  model_type = "logit"
 )
 
 binax_summ = tmp1$summary %>%
@@ -109,7 +109,7 @@ With this we can use a bayesian model to construct adjusted estimates
 
 ```{r}
 
-corr3 = testerror::bayesian_panel_simpler_model(
+corr3 = testerror::bayesian_panel_true_prevalence_model(
   panel_pos_obs = uad1_pos,
   panel_n_obs = uad1_n,
   panel_name = "PCV13",
@@ -123,7 +123,8 @@ corr3 = testerror::bayesian_panel_simpler_model(
   false_neg_diseased = uad1_controls$false_neg_diseased,
   n_diseased = uad1_controls$n_diseased,
   
-  panel_sens = uad1_sens
+  panel_sens = uad1_sens,
+  model_type = "logit"
 )
 ```
 
@@ -158,7 +159,7 @@ kak_uad1_spec = beta_params(median = 0.954, lower = 0.917, upper = 0.978) %>%
   # data from Pride et al
   update_posterior(17,17)
 
-corr4 = testerror::bayesian_panel_simpler_model(
+corr4 = testerror::bayesian_panel_true_prevalence_model(
   panel_pos_obs = uad1_pos,
   panel_n_obs = uad1_n,
   panel_name = "PCV13",
@@ -173,7 +174,8 @@ corr4 = testerror::bayesian_panel_simpler_model(
   n_diseased = uad1_controls$n_diseased,
   
   panel_sens = kak_uad1_sens,
-  panel_spec = kak_uad1_spec
+  panel_spec = kak_uad1_spec,
+  model_type="logit"
 )
 
 corr4$summary %>% 

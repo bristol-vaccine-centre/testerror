@@ -27,8 +27,7 @@ tmp = crossing(
   ap = prev*sens+(1-prev)*(1-spec),
   p_test = dbinom(test, prob = ap, size=max(test)),
   test_n = test/max(test)
-) %>%
-glimpse()
+)
 
 app$layers <- c(geom_tile(aes(x=prev, y=test_n, fill = p_test),data = tmp, inherit.aes = FALSE), app$layers)
 app$layers[[2]]$aes_params$colour = "grey40"
@@ -46,6 +45,7 @@ panels = ipd_distribution() %>% unnest(pcv_group) %>%
 
 scenario = panel_example(
   n_comp = 20,
+  n_samples = 4000,
   n_controls = 800,
   n_diseased = 200,
   comp_spec = 0.9975,
@@ -119,8 +119,8 @@ ggrrr::gg_save_as(p,  here::here("vignettes/latex/s2/fig/simulation_result_prev_
 
 ## Main paper figure 2 ----
 
-p1 = demo_bar_plot(sim_out_1 %>% filter(n_components==1 & panel_group=="PCV20" & prevalence.method=="bayes (binom)"))
-p2 = demo_bar_plot(sim_out_1 %>% filter(n_components>1 & prevalence.method=="bayes (binom)"))
+p1 = demo_bar_plot(sim_out_1 %>% filter(n_components==1 & panel_group=="PCV20" & stringr::str_starts(prevalence.method,"bayes")))
+p2 = demo_bar_plot(sim_out_1 %>% filter(n_components>1 & stringr::str_starts(prevalence.method,"bayes")))
 
 p = p1+theme(axis.title.y.right = element_blank(),axis.text.y.right = element_blank())+xlab(NULL)+
   p2+theme(axis.title.y.left = element_blank(),axis.text.y.left = element_blank())+xlab(NULL)+
@@ -135,11 +135,13 @@ ggrrr::gg_save_as(p,  here::here("vignettes/latex/main/fig/simulation_result_bay
 scenario2 = multi_panel_example(
   n_comp = 20,
   n_controls = 800,
-  n_diseased = 200,
+  n_diseased = 26,
+  n_samples = 4000,
   comp_spec = 0.9975,
   comp_sens = 0.8,
   comp_dist = ipd_distribution("PCV20") %>% pull(x),
-  comp_test = ipd_distribution("PCV20") %>% pull(pneumo.phe_serotype) %>% forcats::as_factor()
+  comp_test = ipd_distribution("PCV20") %>% pull(pneumo.phe_serotype) %>% forcats::as_factor(),
+  exact_controls = TRUE
 )
 
 # scenario2 %>% unnest(summary) %>% filter(test == "Panel") %>% select(scenario_prev,true_prev) %>% view()
@@ -151,14 +153,14 @@ analyse_scenario = function(scenario, methods=c("bayes","lang-reiczigel","rogan-
       purrr::map(methods, function(m, ...) { 
         scenario %>% mutate(
           method = m,
-          modelled = purrr::map(samples, 
+          modelled = purrr::map2(samples, performance, 
               ~ true_panel_prevalence(
                    test_results = .x %>% rename(result=observed),
-                   # false_pos_controls = .x$false_pos_controls,
-                   # n_controls = .x$n_controls,
-                   # false_neg_diseased = .x$false_neg_diseased,
-                   # n_diseased = .x$n_diseased,
-                   sens = comp_sens, 
+                   # false_pos_controls = .y$false_pos_controls,
+                   # n_controls = .y$n_controls,
+                   # false_neg_diseased = .y$false_neg_diseased,
+                   # n_diseased = .y$n_diseased,
+                   sens = comp_sens,
                    spec = comp_spec,
                    panel_name = "Panel",
                    method = m
@@ -200,7 +202,7 @@ analyse_scenario = function(scenario, methods=c("bayes","lang-reiczigel","rogan-
   p1 = testerror:::demo_qq_plot(sim_plot %>% filter(n_components == 1))
   p2 = testerror:::demo_qq_plot(sim_plot %>% filter(n_components != 1))+facet_wrap(~"panel")
   p = p1+coord_fixed(xlim=comp_lim, ylim=comp_lim)+
-    p2+coord_fixed(xlim=comp_lim, ylim=panel_lim)+
+    p2+coord_fixed(xlim=panel_lim, ylim=panel_lim)+
     patchwork::plot_layout(guides="collect")+
     patchwork::plot_annotation(caption = caption) & 
     theme(legend.position = 'bottom',legend.justification = "center")
@@ -220,6 +222,7 @@ scenario3 = multi_panel_example(
   n_comp = 20,
   n_controls = 800,
   n_diseased = 200,
+  n_samples = 4000,
   comp_spec = 0.9975,
   comp_sens = 0.6,
   comp_dist = ipd_distribution("PCV20") %>% pull(x),

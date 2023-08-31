@@ -9,7 +9,11 @@
 \arguments{
 \item{x}{the beta distribution list}
 
-\item{...}{not used}
+\item{...}{
+  Arguments passed on to \code{\link[=format.beta_dist]{format.beta_dist}}
+  \describe{
+    \item{\code{glue}}{a glue spec taking any of \code{shape1}, \code{shape2}, \code{conc}, \code{mean}, \code{median}, \code{upper}, \code{lower}}
+  }}
 }
 \value{
 nothing

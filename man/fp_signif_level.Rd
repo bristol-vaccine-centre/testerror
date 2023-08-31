@@ -27,6 +27,8 @@ disease-free control group.}
 \item{bonferroni}{the number of simultaneous tests considered.}
 
 \item{...}{not used}
+
+\item{spec}{a prior value for specificity as a \code{beta}}
 }
 \value{
 a vector of test positive counts which are the lowest significant value

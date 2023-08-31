@@ -10,5 +10,5 @@ sens_prior()
 a \code{beta_dist}
 }
 \description{
-If undefined this is 0.773 \link{0.109–0.999} (N=2.00). This can be set with \verb{options(testerror.sens_prior = beta_dist(p=??, n=??))}
+If undefined this is 0.70 (0.11 - 1.00). This can be set with \verb{options(testerror.sens_prior = beta_dist(p=??, n=??))}
 }

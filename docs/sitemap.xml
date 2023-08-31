@@ -43,13 +43,25 @@
     <loc>https://bristol-vaccine-centre.github.io/testerror/reference/as_tibble.beta_dist_list.html</loc>
   </url>
   <url>
+    <loc>https://bristol-vaccine-centre.github.io/testerror/reference/bayesian_component_logit_model.html</loc>
+  </url>
+  <url>
     <loc>https://bristol-vaccine-centre.github.io/testerror/reference/bayesian_component_simpler_model.html</loc>
   </url>
   <url>
     <loc>https://bristol-vaccine-centre.github.io/testerror/reference/bayesian_panel_complex_model.html</loc>
   </url>
   <url>
+    <loc>https://bristol-vaccine-centre.github.io/testerror/reference/bayesian_panel_logit_model.html</loc>
+  </url>
+  <url>
     <loc>https://bristol-vaccine-centre.github.io/testerror/reference/bayesian_panel_simpler_model.html</loc>
+  </url>
+  <url>
+    <loc>https://bristol-vaccine-centre.github.io/testerror/reference/bayesian_panel_true_prevalence_model.html</loc>
+  </url>
+  <url>
+    <loc>https://bristol-vaccine-centre.github.io/testerror/reference/bayesian_true_prevalence_model.html</loc>
   </url>
   <url>
     <loc>https://bristol-vaccine-centre.github.io/testerror/reference/beta_dist.html</loc>
@@ -59,6 +71,18 @@
   </url>
   <url>
     <loc>https://bristol-vaccine-centre.github.io/testerror/reference/beta_params.html</loc>
+  </url>
+  <url>
+    <loc>https://bristol-vaccine-centre.github.io/testerror/reference/ci_to_logitnorm.html</loc>
+  </url>
+  <url>
+    <loc>https://bristol-vaccine-centre.github.io/testerror/reference/dot-input_data.html</loc>
+  </url>
+  <url>
+    <loc>https://bristol-vaccine-centre.github.io/testerror/reference/dot-input_panel_data.html</loc>
+  </url>
+  <url>
+    <loc>https://bristol-vaccine-centre.github.io/testerror/reference/dot-output_data.html</loc>
   </url>
   <url>
     <loc>https://bristol-vaccine-centre.github.io/testerror/reference/format.beta_dist.html</loc>
@@ -85,7 +109,16 @@
     <loc>https://bristol-vaccine-centre.github.io/testerror/reference/index.html</loc>
   </url>
   <url>
+    <loc>https://bristol-vaccine-centre.github.io/testerror/reference/inv_logit.html</loc>
+  </url>
+  <url>
     <loc>https://bristol-vaccine-centre.github.io/testerror/reference/length.beta_dist.html</loc>
+  </url>
+  <url>
+    <loc>https://bristol-vaccine-centre.github.io/testerror/reference/length.beta_dist_list.html</loc>
+  </url>
+  <url>
+    <loc>https://bristol-vaccine-centre.github.io/testerror/reference/logit.html</loc>
   </url>
   <url>
     <loc>https://bristol-vaccine-centre.github.io/testerror/reference/odds_ratio_ve.html</loc>
@@ -116,6 +149,9 @@
   </url>
   <url>
     <loc>https://bristol-vaccine-centre.github.io/testerror/reference/print.beta_dist.html</loc>
+  </url>
+  <url>
+    <loc>https://bristol-vaccine-centre.github.io/testerror/reference/print.beta_dist_list.html</loc>
   </url>
   <url>
     <loc>https://bristol-vaccine-centre.github.io/testerror/reference/relative_risk_ve.html</loc>
@@ -155,6 +191,9 @@
   </url>
   <url>
     <loc>https://bristol-vaccine-centre.github.io/testerror/reference/uniform_prior.html</loc>
+  </url>
+  <url>
+    <loc>https://bristol-vaccine-centre.github.io/testerror/reference/uninformed_prior.html</loc>
   </url>
   <url>
     <loc>https://bristol-vaccine-centre.github.io/testerror/reference/update_posterior.beta_dist.html</loc>

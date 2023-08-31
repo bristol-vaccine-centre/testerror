@@ -14,12 +14,12 @@ NULL
 
 .sampling_cached = memoise::memoise(rstan::sampling)
 
-.get_stan_model = function(name) {
+.get_stan_model = function(name, .nocache = FALSE) {
   
   file = fs::path_ext_set(fs::path(system.file("stan", package="testerror"),name),"stan")
   path = fs::path_ext_set(fs::path(rappdirs::user_cache_dir("testerror"),"models",rstan::stan_version(),name),"stan")
   fs::dir_create(fs::path_dir(path))
-  if (!fs::file_exists(path)) fs::file_copy(file, path)
+  if (!fs::file_exists(path) || .nocache) fs::file_copy(file, path,overwrite = TRUE)
   
   # must call the stan_model in the global environment to allow caching to occur
   tmp = do.call(rstan::stan_model, args = list(
@@ -108,10 +108,11 @@ NULL
     n_controls,
     false_neg_diseased,
     n_diseased,
-    sens, 
-    spec,
+    sens = NULL, 
+    spec = NULL,
     panel_sens = NULL,
     panel_spec = NULL,
+    logit = FALSE,
     ...
 ) {
   
@@ -120,42 +121,70 @@ NULL
   # TODO remove redundant parts due to sens and spec being always present
   
   # Spec priors
-  standata$tn_spec_prior = as.double(get_beta_shape(spec, "shape1"))
-  standata$fp_spec_prior = as.double(get_beta_shape(spec, "shape2"))
+  if (!is.null(spec)) {
+    if (!logit) {
+      standata$tn_spec_prior = array(as.double(get_beta_shape(spec, "shape1")), dim=n_test)
+      standata$fp_spec_prior = array(as.double(get_beta_shape(spec, "shape2")), dim=n_test)
+    } else {
+      tmp = beta_dist_to_logitnorm(spec)
+      standata$logit_mu_spec_prior = array(tmp$mu, dim=n_test)
+      standata$logit_sigma_spec_prior = array(tmp$sigma, dim=n_test)
+    }
+  }
   
   # Sens priors
-  standata$tp_sens_prior = as.double(get_beta_shape(sens, "shape1"))
-  standata$fn_sens_prior = as.double(get_beta_shape(sens, "shape2"))
+  if (!is.null(sens)) {
+    if (!logit) {
+      standata$tp_sens_prior = array(as.double(get_beta_shape(sens, "shape1")), dim=n_test)
+      standata$fn_sens_prior = array(as.double(get_beta_shape(sens, "shape2")), dim=n_test)
+    } else {
+      tmp = beta_dist_to_logitnorm(sens)
+      standata$logit_mu_sens_prior = array(tmp$mu, dim=n_test)
+      standata$logit_sigma_sens_prior = array(tmp$sigma, dim=n_test)
+    }
+  }
   
   # negative controls (spec)
   if (!is.null(false_pos_controls)) {
     # Use fp_spec as binomial outcome
-    standata$k_spec = as.integer(n_controls)
-    standata$fp_spec = as.integer(false_pos_controls)
+    standata$k_spec = array(as.integer(n_controls), dim=n_test)
+    standata$fp_spec = array(as.integer(false_pos_controls), dim=n_test)
   } else {
-    standata$k_spec = rep(0L,n_test)
-    standata$fp_spec = rep(0L,n_test)
+    standata$k_spec = array(rep(0L,n_test), dim=n_test)
+    standata$fp_spec = array(rep(0L,n_test), dim=n_test)
   }
   
   # positive controls (sens)  
   if (!is.null(false_neg_diseased)) {
-    standata$k_sens = as.integer(n_diseased)
-    standata$fn_sens = as.integer(false_neg_diseased)
+    standata$k_sens = array(as.integer(n_diseased), dim=n_test)
+    standata$fn_sens = array(as.integer(false_neg_diseased), dim=n_test)
   } else {
-    standata$k_sens = rep(0L,n_test)
-    standata$fn_sens = rep(0L,n_test)
+    standata$k_sens = array(rep(0L,n_test), dim=n_test)
+    standata$fn_sens = array(rep(0L,n_test), dim=n_test)
   }
   
   # Panel sens priors
   if (!is.null(panel_sens)) {
-    standata$tp_panel_sens_prior = as.double(panel_sens$shape1)
-    standata$fn_panel_sens_prior = as.double(panel_sens$shape2)
+    if (!logit) {
+      standata$tp_panel_sens_prior = as.double(panel_sens$shape1)
+      standata$fn_panel_sens_prior = as.double(panel_sens$shape2)
+    } else {
+      tmp = beta_dist_to_logitnorm(panel_sens)
+      standata$logit_mu_panel_sens_prior = tmp$mu
+      standata$logit_sigma_panel_sens_prior = tmp$sigma
+    }
   }
   
   # Panel spec priors
   if (!is.null(panel_spec)) {
-    standata$tn_panel_spec_prior = as.double(panel_spec$shape1)
-    standata$fp_panel_spec_prior = as.double(panel_spec$shape2)
+    if (!logit) {
+      standata$tn_panel_spec_prior = as.double(panel_spec$shape1)
+      standata$fp_panel_spec_prior = as.double(panel_spec$shape2)
+    } else {
+      tmp = beta_dist_to_logitnorm(panel_spec)
+      standata$logit_mu_panel_spec_prior = tmp$mu
+      standata$logit_sigma_panel_spec_prior = tmp$sigma
+    }
   } 
   
   return(standata)

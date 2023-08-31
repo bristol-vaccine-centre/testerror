@@ -77,10 +77,7 @@ true_prevalence = function(
     
   } else {
     
-    if (is.null(sens)) sens = uniform_prior()
-    if (is.null(spec)) spec = uniform_prior()
-    
-    tmp = bayesian_component_simpler_model(
+    tmp = bayesian_true_prevalence_model(
       pos_obs,n_obs,
       false_pos_controls = false_pos_controls,
       n_controls = n_controls,
@@ -100,3 +97,21 @@ true_prevalence = function(
   
 }
 
+#' Execute one of a set of bayesian models
+#'
+#' @inheritDotParams bayesian_component_simpler_model
+#' @inheritDotParams bayesian_component_logit_model
+#' @param model_type The bayesian model used - `r pkgutils::doc_formals(bayesian_true_prevalence_model, model_type)`
+#'
+#' @return `r .output_data`
+#' @export
+bayesian_true_prevalence_model = function(..., model_type = c("logit","simpler")) {
+  model_type = match.arg(model_type)
+  if (stringr::str_starts(model_type,"s")) {
+    bayesian_component_simpler_model(...)
+  } else if (stringr::str_starts(model_type,"l")) {
+    bayesian_component_logit_model(...)
+  } else {
+    stop("unknown stan model: ",model_type)
+  }
+}

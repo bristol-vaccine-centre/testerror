@@ -18,12 +18,14 @@ uncertain_panel_spec = function(
     na.rm=FALSE,
     fit_beta = FALSE) {
   
-  pkgutils::recycle(false_pos_controls,n_controls,spec)
+  n = pkgutils::recycle(false_pos_controls,n_controls,spec)
+  if (n<2) stop("Panel results require more than one test")
+  
   pkgutils::check_integer(false_pos_controls, n_controls)
   
   spec = update_posterior(spec, neg = false_pos_controls, n = n_controls)
   
-  if (inherits(spec,"beta_dist")) spec=list(spec)
+  # spec = as.beta_dist_list(spec)
   mat = sapply(1:length(spec), function(i) spec[[i]]$r(samples))
   
   specs = apply(mat, MARGIN = 1, prod, na.rm=na.rm)

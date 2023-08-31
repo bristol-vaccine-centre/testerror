@@ -4,11 +4,7 @@
 \alias{format.beta_dist}
 \title{Format a beta distribution}
 \usage{
-\method{format}{beta_dist}(
-  x,
-  glue = "{sprintf('\%1.3f [\%1.3f–\%1.3f] (N=\%1.2f)',median,lower,upper,conc)}",
-  ...
-)
+\method{format}{beta_dist}(x, glue = .default_beta_dist_format(), ...)
 }
 \arguments{
 \item{x}{the beta distribution}

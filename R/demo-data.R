@@ -19,7 +19,7 @@ multi_panel_example = function(
     tibble::tibble(
       scenario_name = sprintf("P: %1.2f%%",p*100),
       scenario_prev = p,
-      as_tibble(purrr:::map(tmp3, ~ list(.x)))
+      as_tibble(purrr::map(tmp3, ~ list(.x)))
     )
   }))
   
@@ -60,7 +60,7 @@ panel_example = function(
                       )
     ))
   }
-  panel_spec = panel_spec %>% group_by(panel_name) %>% mutate(n_components=n())
+  panel_spec = panel_spec %>% dplyr::group_by(panel_name) %>% dplyr::mutate(n_components=dplyr::n())
   
   tmp = test_example(
     prev = comp_prev,
@@ -80,7 +80,7 @@ panel_example = function(
   # this is not grouped by boot
   panel_design = tmp$design %>%
     dplyr::mutate(test = as.character(test)) %>%
-    dplyr::inner_join(panel_spec %>% mutate(comp_test = as.character(comp_test)), by=c("test"="comp_test")) %>%
+    dplyr::inner_join(panel_spec %>% dplyr::mutate(comp_test = as.character(comp_test)), by=c("test"="comp_test")) %>%
     dplyr::group_by(panel_name, n_components) %>%
     dplyr::summarise(
       tmp_design_prev = panel_prevalence(design_prev),
@@ -92,14 +92,14 @@ panel_example = function(
   
   # Panel and component design
   tmp$design = dplyr::bind_rows(
-    tmp$design %>% mutate(n_components=1), 
+    tmp$design %>% dplyr::mutate(n_components=1), 
     panel_design
   )
   
   # calculate a panel test result (at level of individual)
   panel = tmp$samples %>%
     dplyr::mutate(test = as.character(test)) %>%
-    dplyr::inner_join(panel_spec %>% mutate(comp_test = as.character(comp_test)), by=c("test"="comp_test")) %>%
+    dplyr::inner_join(panel_spec %>% dplyr::mutate(comp_test = as.character(comp_test)), by=c("test"="comp_test")) %>%
     dplyr::group_by(panel_name, n_components,boot,id) %>%
     dplyr::summarise( 
       actual = 1-prod(1-actual),
@@ -123,7 +123,7 @@ panel_example = function(
   # combine simulation actual and observed counts to calculate
   # true and apparent prevalence.
   tmp$summary = dplyr::bind_rows(
-    tmp$summary %>% mutate(n_components=1), 
+    tmp$summary %>% dplyr::mutate(n_components=1), 
     panel_summary
   )
   
@@ -170,7 +170,7 @@ test_example = function(
   # negative control group sample. This simultates the outcome of controls
   # for each component
   performance = comp_design %>% 
-    cross_join(tibble(boot = 1:n_boots)) %>%
+    dplyr::cross_join(tibble::tibble(boot = 1:n_boots)) %>%
     either_or(
     exact_controls,
     if_true = ~ .x %>% dplyr::mutate(
@@ -199,13 +199,13 @@ test_example = function(
     either_or(
       exact_samples,
       if_true = ~ .x %>%
-        group_by(boot,test) %>%
-        mutate(actual = rfixed(1, dplyr::n(), design_prev)) %>%
-        group_by(boot,test,actual) %>%
-        mutate(
+        dplyr::group_by(boot,test) %>%
+        dplyr::mutate(actual = rfixed(1, dplyr::n(), design_prev)) %>%
+        dplyr::group_by(boot,test,actual) %>%
+        dplyr::mutate(
           observed = rfixed(1, dplyr::n(), dplyr::if_else(actual==1, design_sens, 1-design_spec))
         ) %>% 
-        ungroup(), 
+        dplyr::ungroup(), 
       if_false = ~ .x %>% dplyr::mutate(
         actual = stats::rbinom(n_boots * n_samples * n, 1, design_prev),
         observed = stats::rbinom(n_boots * n_samples * n, 1, actual * design_sens + (1-actual) * (1-design_spec))
@@ -268,7 +268,7 @@ demo_bar_plot = function(
       apparent_prev = double ~ "observed test positive rate",
       true_prev = double ~ "true positive rate",
       n_samples = integer ~ "the overall number of patients tested",
-      testerror:::.output_data
+      testerror::.output_data
     ), 
     ...
 ) {
@@ -294,7 +294,7 @@ demo_qq_plot = function(
       apparent_prev = double ~ "observed test positive rate",
       true_prev = double ~ "true positive rate",
       n_samples = integer ~ "the overall number of patients tested",
-      testerror:::.output_data
+      testerror::.output_data
     ), 
     ...
 ) {

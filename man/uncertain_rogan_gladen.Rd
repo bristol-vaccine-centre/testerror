@@ -52,8 +52,6 @@ control group.}
 \item{fmt}{a \code{sprintf} formatting string accepting 3 numbers}
 
 \item{seed}{set seed for reproducibility}
-
-\item{prefix}{column name prefix}
 }
 \value{
 the expected value of apparent prevalence
@@ -70,8 +68,8 @@ uncertain_rogan_gladen(
   
 uncertain_rogan_gladen(
   pos_obs = 5, n_obs = 1000, 
-  sens = beta_dist(0.75,n=200), 
-  spec = beta_dist(0.9975, n=800))
+  sens = beta_dist(p=0.75,n=200), 
+  spec = beta_dist(p=0.9975, n=800))
 
 uncertain_rogan_gladen(
   pos_obs = c(5,10), n_obs = c(1000,1000), 

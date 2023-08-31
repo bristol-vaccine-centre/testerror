@@ -18,7 +18,7 @@ in a group_modify."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aj
     
     <a class="navbar-brand me-2" href="../index.html">testerror</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.4</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -73,7 +73,7 @@ in a <code>group_modify</code>.</p>
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">true_panel_prevalence</span><span class="op">(</span></span>
-<span>  test_results <span class="op">=</span> <span class="fu">testerror</span><span class="fu">:::</span><span class="va">.input_data</span>,</span>
+<span>  test_results <span class="op">=</span> <span class="fu">testerror</span><span class="fu">::</span><span class="va"><a href="dot-input_data.html">.input_data</a></span>,</span>
 <span>  false_pos_controls <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  n_controls <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  false_neg_diseased <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -120,7 +120,13 @@ control group.</p></dd>
 
 
 <dt>...</dt>
-<dd><p>Arguments passed on to <code><a href="bayesian_panel_complex_model.html">bayesian_panel_complex_model</a></code>, <code><a href="bayesian_panel_simpler_model.html">bayesian_panel_simpler_model</a></code></p><dl><dt><code>panel_sens</code></dt>
+<dd><p>Arguments passed on to <code><a href="uncertain_panel_rogan_gladen.html">uncertain_panel_rogan_gladen</a></code>, <code><a href="prevalence_panel_lang_reiczigel.html">prevalence_panel_lang_reiczigel</a></code>, <code><a href="bayesian_panel_complex_model.html">bayesian_panel_complex_model</a></code>, <code><a href="bayesian_panel_true_prevalence_model.html">bayesian_panel_true_prevalence_model</a></code>, <code><a href="bayesian_panel_simpler_model.html">bayesian_panel_simpler_model</a></code>, <code><a href="bayesian_panel_logit_model.html">bayesian_panel_logit_model</a></code></p><dl><dt><code>samples</code></dt>
+<dd><p>number fo random draws of sensitivity and specificity</p></dd>
+
+    <dt><code>fmt</code></dt>
+<dd><p>a <code>sprintf</code> formatting string accepting 3 numbers</p></dd>
+
+    <dt><code>panel_sens</code></dt>
 <dd><p>the prior sensitivity of the panel as a <code>beta_dist</code>
 (optional)</p></dd>
 
@@ -128,8 +134,9 @@ control group.</p></dd>
 <dd><p>the prior specificity of the panel as a <code>beta_dist</code>
 (optional)</p></dd>
 
-    <dt><code>fmt</code></dt>
-<dd><p>a <code>sprintf</code> formatting string accepting 3 numbers</p></dd>
+    <dt><code>cache_result</code></dt>
+<dd><p>save the result of the sampling in memory for the current
+session</p></dd>
 
     <dt><code>chains</code></dt>
 <dd><p>A positive integer specifying the number of Markov chains. 
@@ -146,6 +153,9 @@ control group.</p></dd>
     hence these warmup samples should not be used for inference). The number of 
     warmup iterations should be smaller than <code>iter</code> and the default is
     <code>iter/2</code>.</p></dd>
+
+    <dt><code>model_type</code></dt>
+<dd><p>The bayesian model used - one of: <code>logit</code>, <code>simpler</code>, <code>complex</code>; default <code>logit</code></p></dd>
 
   
 </dl></dd>
@@ -194,7 +204,6 @@ control group.</p></dd>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">tmp</span> <span class="op">=</span> <span class="fu">testerror</span><span class="fu">:::</span><span class="fu">panel_example</span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in mutate(., n_components = n()):</span> could not find function "mutate"</span>
 <span class="r-in"><span><span class="fu">true_panel_prevalence</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  test_results <span class="op">=</span> <span class="va">tmp</span><span class="op">$</span><span class="va">samples</span> <span class="op"><a href="pipe.html">%&gt;%</a></span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">id</span>,<span class="va">test</span>,result <span class="op">=</span> <span class="va">observed</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  false_pos_controls <span class="op">=</span> <span class="va">tmp</span><span class="op">$</span><span class="va">performance</span><span class="op">$</span><span class="va">false_pos_controls</span>,</span></span>
@@ -203,7 +212,26 @@ control group.</p></dd>
 <span class="r-in"><span>  n_diseased <span class="op">=</span> <span class="va">tmp</span><span class="op">$</span><span class="va">performance</span><span class="op">$</span><span class="va">n_diseased</span>,</span></span>
 <span class="r-in"><span>  method <span class="op">=</span> <span class="st">"rogan-gladen"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in eval(expr, envir, enclos):</span> object 'tmp' not found</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>qbeta(a, *) =: x0 with |pbeta(x0,*) - alpha| = 0.06217 is not accurate</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>qbeta(a, *) =: x0 with |pbeta(x0,*) - alpha| = 0.06217 is not accurate</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 11 × 16</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    prevalence.median prevalence.lower prevalence.upper prevalence.label     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span>           0.010<span style="text-decoration: underline;">2</span>           0.003<span style="text-decoration: underline;">77</span>          0.014<span style="text-decoration: underline;">4</span>  1.02% [0.38% — 1.44%]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span>           0.005<span style="text-decoration: underline;">80</span>          0                0.009<span style="text-decoration: underline;">42</span> 0.58% [0.00% — 0.94%]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span>           0.014<span style="text-decoration: underline;">2</span>           0.006<span style="text-decoration: underline;">21</span>          0.020<span style="text-decoration: underline;">2</span>  1.42% [0.62% — 2.02%]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span>           0.005<span style="text-decoration: underline;">24</span>          0                0.009<span style="text-decoration: underline;">97</span> 0.52% [0.00% — 1.00%]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span>           0.007<span style="text-decoration: underline;">99</span>          0                0.015<span style="text-decoration: underline;">8</span>  0.80% [0.00% — 1.58%]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span>           0.009<span style="text-decoration: underline;">57</span>          0                0.016<span style="text-decoration: underline;">0</span>  0.96% [0.00% — 1.60%]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span>           0                0                0.005<span style="text-decoration: underline;">32</span> 0.00% [0.00% — 0.53%]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span>           0.015<span style="text-decoration: underline;">2</span>           0.005<span style="text-decoration: underline;">30</span>          0.022<span style="text-decoration: underline;">1</span>  1.52% [0.53% — 2.21%]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span>           0.018<span style="text-decoration: underline;">4</span>           0.017<span style="text-decoration: underline;">2</span>           0.021<span style="text-decoration: underline;">1</span>  1.84% [1.72% — 2.11%]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span>           0.001<span style="text-decoration: underline;">34</span>          0.001<span style="text-decoration: underline;">10</span>          0.001<span style="text-decoration: underline;">75</span> 0.13% [0.11% — 0.17%]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">11</span>           0.079<span style="text-decoration: underline;">4</span>           0.061<span style="text-decoration: underline;">5</span>           0.097<span style="text-decoration: underline;">6</span>  7.94% [6.15% — 9.76%]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 12 more variables: spec.median &lt;dbl&gt;, spec.lower &lt;dbl&gt;, spec.upper &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   spec.label &lt;chr&gt;, sens.median &lt;dbl&gt;, sens.lower &lt;dbl&gt;, sens.upper &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   sens.label &lt;chr&gt;, prevalence.method &lt;chr&gt;, test &lt;chr&gt;, pos_obs &lt;int&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   n_obs &lt;int&gt;</span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>

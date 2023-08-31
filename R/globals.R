@@ -3,5 +3,6 @@ utils::globalVariables(c(
   "design_sens", "design_spec", "false_neg_diseased", "false_pos_controls",
   "id", "lower", "median", "method", "observed", "observed_pos", "offset", "param",
   "prevalence.lower", "prevalence.median", "prevalence.method", "prevalence.upper",
-  "result", "test", "true_prev", "upper", "x"
+  "result", "test", "true_prev", "upper", "x", "n_components",
+  "shape1", "shape2", "mu", "sigma"
 ))

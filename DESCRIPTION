@@ -1,6 +1,6 @@
 Package: testerror
 Title: Uncertainty in Multiplex Panel Testing 
-Version: 0.0.3
+Version: 0.0.4
 Authors@R: 
     person(given = "Robert",
            family = "Challen",
@@ -27,7 +27,6 @@ Imports:
     fs,
     forcats,
     purrr,
-    readr,
     rlang,
     scales,
     stringr,
@@ -35,7 +34,7 @@ Imports:
     stats,
     extraDistr,
     interfacer (>= 0.0.6),
-    pkgutils (>= 0.0.0.9004),
+    pkgutils (>= 0.0.0.9005),
     BH (>= 1.66.0),
     Rcpp (>= 0.12.0),
     RcppEigen (>= 0.3.3.3.0),

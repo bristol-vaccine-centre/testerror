@@ -5,7 +5,7 @@
 \title{Calculate an estimate of true prevalence for a single panel and components}
 \usage{
 true_panel_prevalence(
-  test_results = testerror:::.input_data,
+  test_results = testerror::.input_data,
   false_pos_controls = NULL,
   n_controls = NULL,
   false_neg_diseased = NULL,
@@ -44,13 +44,16 @@ is (1-sensitivity)*n_diseased}
 control group.}
 
 \item{...}{
-  Arguments passed on to \code{\link[=bayesian_panel_complex_model]{bayesian_panel_complex_model}}, \code{\link[=bayesian_panel_simpler_model]{bayesian_panel_simpler_model}}
+  Arguments passed on to \code{\link[=uncertain_panel_rogan_gladen]{uncertain_panel_rogan_gladen}}, \code{\link[=prevalence_panel_lang_reiczigel]{prevalence_panel_lang_reiczigel}}, \code{\link[=bayesian_panel_complex_model]{bayesian_panel_complex_model}}, \code{\link[=bayesian_panel_true_prevalence_model]{bayesian_panel_true_prevalence_model}}, \code{\link[=bayesian_panel_simpler_model]{bayesian_panel_simpler_model}}, \code{\link[=bayesian_panel_logit_model]{bayesian_panel_logit_model}}
   \describe{
+    \item{\code{samples}}{number fo random draws of sensitivity and specificity}
+    \item{\code{fmt}}{a \code{sprintf} formatting string accepting 3 numbers}
     \item{\code{panel_sens}}{the prior sensitivity of the panel as a \code{beta_dist}
 (optional)}
     \item{\code{panel_spec}}{the prior specificity of the panel as a \code{beta_dist}
 (optional)}
-    \item{\code{fmt}}{a \code{sprintf} formatting string accepting 3 numbers}
+    \item{\code{cache_result}}{save the result of the sampling in memory for the current
+session}
     \item{\code{chains}}{A positive integer specifying the number of Markov chains. 
     The default is 4.}
     \item{\code{iter}}{A positive integer specifying the number of iterations for each 
@@ -61,6 +64,7 @@ control group.}
     hence these warmup samples should not be used for inference). The number of 
     warmup iterations should be smaller than \code{iter} and the default is
     \code{iter/2}.}
+    \item{\code{model_type}}{The bayesian model used - one of: \code{logit}, \code{simpler}, \code{complex}; default \code{logit}}
   }}
 
 \item{sens}{the prior sensitivity of the test as a \code{beta_dist}.}

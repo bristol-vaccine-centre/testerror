@@ -67,7 +67,7 @@ uncertain_panel_rogan_gladen = function(
     .beta_label_3(p, "prevalence", ci = confint, fmt=fmt),
     .beta_label_3(panel_sens, "sens", ci = confint, fmt=fmt),
     .beta_label_3(panel_spec, "spec", ci = confint, fmt=fmt)
-  ) %>% mutate(
+  ) %>% dplyr::mutate(
     prevalence.method = "rogan-gladen (samples)"
   )
   

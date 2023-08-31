@@ -16,6 +16,8 @@ prevalence_panel_lang_reiczigel(
   ...,
   spec = spec_prior(),
   sens = sens_prior(),
+  confint = 0.95,
+  fmt = "\%1.2f\%\% [\%1.2f\%\% — \%1.2f\%\%]",
   samples = 1000
 )
 }
@@ -45,13 +47,16 @@ control group.}
 \item{...}{
   Arguments passed on to \code{\link[=prevalence_lang_reiczigel]{prevalence_lang_reiczigel}}
   \describe{
-    \item{\code{confint}}{confidence interval limits}
-    \item{\code{fmt}}{a \code{sprintf} formatting string accepting 3 numbers}
+    \item{\code{}}{}
   }}
 
 \item{spec}{the prior specificity of the test as a \code{beta_dist}.}
 
 \item{sens}{the prior sensitivity of the test as a \code{beta_dist}.}
+
+\item{confint}{confidence interval limits}
+
+\item{fmt}{a \code{sprintf} formatting string accepting 3 numbers}
 
 \item{samples}{number of random draws of sensitivity and specificity (optional - default 1000)}
 }

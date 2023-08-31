@@ -4,12 +4,14 @@
 \alias{rep.beta_dist}
 \title{Repeat a \code{beta_dist}}
 \usage{
-\method{rep}{beta_dist}(x, times)
+\method{rep}{beta_dist}(x, times, ...)
 }
 \arguments{
 \item{x}{a \code{beta_dist}}
 
 \item{times}{n}
+
+\item{...}{not used}
 }
 \value{
 a \code{beta_dist_list}

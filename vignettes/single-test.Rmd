@@ -130,7 +130,8 @@ tmp1 = tibble::tibble(
   n_obs = n,
   sens = sens,
   spec = spec,
-  method = "bayes"
+  method = "bayes",
+  model_type = "logit"
 ))
 
 tmp2 = tibble::tibble(
@@ -214,7 +215,8 @@ res1 = ex1$summary %>% dplyr::mutate(true_prevalence(
   n_controls = ex1$performance$n_controls,
   false_neg_diseased = ex1$performanc$false_neg_diseased,
   n_diseased = ex1$performance$n_diseased,
-  method = "bayes"
+  method = "bayes",
+  model_type = "logit"
 ))
 
 res2 = ex1$summary %>% dplyr::mutate(true_prevalence(

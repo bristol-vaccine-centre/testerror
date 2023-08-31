@@ -5,7 +5,7 @@
 \title{Bayesian models true prevalence for panel}
 \usage{
 bayesian_panel_complex_model(
-  test_results = testerror:::.input_data,
+  test_results = testerror::.input_data,
   false_pos_controls = NULL,
   n_controls = NULL,
   false_neg_diseased = NULL,
@@ -20,7 +20,8 @@ bayesian_panel_complex_model(
   fmt = "\%1.2f\%\% [\%1.2f\%\% — \%1.2f\%\%]",
   chains = 4,
   warmup = 1000,
-  iter = 2000
+  iter = 2000,
+  cache_result = TRUE
 )
 }
 \arguments{
@@ -77,6 +78,9 @@ control group.}
 
 \item{iter}{A positive integer specifying the number of iterations for each 
     chain (including warmup). The default is 2000.}
+
+\item{cache_result}{save the result of the sampling in memory for the current
+session}
 }
 \value{
 a list of dataframes containing the prevalence, sensitivity, and

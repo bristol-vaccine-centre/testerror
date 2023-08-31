@@ -22,7 +22,6 @@
 #' @param confint confidence interval limits
 #' @param fmt a `sprintf` formatting string accepting 3 numbers
 #' @param seed set seed for reproducibility
-#' @param prefix column name prefix
 #' 
 #' @return the expected value of apparent prevalence
 #' @export
@@ -35,8 +34,8 @@
 #'   
 #' uncertain_rogan_gladen(
 #'   pos_obs = 5, n_obs = 1000, 
-#'   sens = beta_dist(0.75,n=200), 
-#'   spec = beta_dist(0.9975, n=800))
+#'   sens = beta_dist(p=0.75,n=200), 
+#'   spec = beta_dist(p=0.9975, n=800))
 #' 
 #' uncertain_rogan_gladen(
 #'   pos_obs = c(5,10), n_obs = c(1000,1000), 
@@ -86,7 +85,7 @@ uncertain_rogan_gladen = function(
         n_diseased = n_diseased[[i]],
         sens = sens[[i]], 
         spec = spec[[i]], 
-        samples=samples, confint = confint, fmt = fmt, seed=seed, prefix = prefix))
+        samples=samples, confint = confint, fmt = fmt, seed=seed))
     })))
   }
   
