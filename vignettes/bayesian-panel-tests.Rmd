@@ -88,14 +88,15 @@ uad1_controls = tibble::tibble(
   # In the design of UAD1 the cut off is calibrated on 400 negative samples and 
   # set to make 2 positive
   
+  # Forstner et al (2019) control group
   # In the control group of 397 non-CAP patients, 1 patient had to
   # be excluded because of indeterminable results (0.3%, see Fig. 1)
   # and SSUAD was positive in 3 patients (0.8%). Of those 3 non-CAP
   # patients, 2 were positive for serotype 18C and 1 person for two
   # pneumococcal serotypes (5, 7F).
 
-  false_pos_controls = 2+c(0L, 1L, 0L, 1L, 0L, 0L, 0L, 0L, 0L, 2L, 0L, 0L, 0L),
-  n_controls = 400+397
+  false_pos_controls = 2+c(0L, 0L, 0L, 1L, 0L, 0L, 1L, 0L, 0L, 2L, 0L, 0L, 0L),
+  n_controls = 400+396
 )
 
 

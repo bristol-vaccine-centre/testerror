@@ -189,9 +189,14 @@ as.beta_dist_list.beta_dist = function(x, ...) {
   return(as.beta_dist_list.list(list(x)))
 }
 
+# fix a R.4.0.2 windows issue :-(
+.isa = function(x, what) {
+  all(class(x) %in% what)
+}
+
 as.beta_dist_list.list = function(x, ...) {
   tmp = class(x)
-  if (!all(sapply(x, isa, "beta_dist"))) stop("list is not only of `beta_dist` objects")
+  if (!all(sapply(x, .isa, "beta_dist"))) stop("list is not only of `beta_dist` objects")
   class(x)<-unique(c("beta_dist_list","beta_dist",tmp))
   return(x)
 }
