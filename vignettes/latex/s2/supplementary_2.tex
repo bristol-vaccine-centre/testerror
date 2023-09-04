@@ -176,7 +176,7 @@ sens_{N,j} &\approx 1-\frac{
 \end{aligned}
 \end{equation*}
 
-We then calculate the parameters required for the Lang-Reiczigel method\cite{lang2014}, which are expressed as central estimates of the panel sensitivity (\(widehat{Se}\)) and specificity (\(widehat{Sp}\)), and respective sample sizes (Beta distribution concentration parameters - \(n_{Se}\) and \(n_{Sp}\)). We determine these from the set of panel test specificity and sensitivity estimates obtained above, by assuming matching the moments of their empirical distributions to that of a Beta distribution.
+We then calculate the parameters required for the Lang-Reiczigel method\cite{lang2014}, which are expressed as central estimates of the panel sensitivity (\(\widehat{Se}\)) and specificity (\(\widehat{Sp}\)), and respective sample sizes (Beta distribution concentration parameters - \(n_{Se}\) and \(n_{Sp}\)). We determine these from the set of panel test specificity and sensitivity estimates obtained above, by assuming matching the moments of their empirical distributions to that of a Beta distribution.
 
 \begin{equation*}
 \begin{aligned}
@@ -201,27 +201,28 @@ As the empirical distribution of panel test sensitivity and specificity is appro
 
 \subsection{Bayesian model}
 
-The methods described above both suffer from the same weakness in that at low (and high) prevalence the Rogan-Gladen estimator must be truncated. This could lead to undesirable effects at low prevalence. In certain real life scenarios we do not have estimates of both sensitivity both specificity information at the individual component level, but rather at the level of the combined panel. In a Bayesian framework we can incorporate prior assumptions about the sensitivity and specificity with specific control group test results, at both component and panel levels to inform estimates of true prevalence.
+The methods described above both suffer from the same weakness in that at low (and high) prevalence the Rogan-Gladen estimator must be truncated. This could lead to undesirable effects at low prevalence. In certain real life scenarios we do not have estimates of both sensitivity both specificity information at the individual component level, but rather at the level of the combined panel. In a Bayesian framework we can incorporate prior assumptions about the sensitivity and specificity with specific control group test results, at both component and panel levels to inform estimates of true prevalence. 
 
-In this model we are trying to estimate the true prevalence of \(K_{sample}\) subjects tested with a panel with \(n\) component subtypes. We assume informed priors for sensitivity and specificity expressed as \(Beta\) distributions with shape parameters \(\alpha\) and \(\beta\), and a set of disease negative controls (\(K_{disease^-}\)) for specificity and disease positive controls (\(K_{disease^+}\)) for sensitivity. We can create the following model to describe the result of an individuals test result for a single component (\(I(O_{n,k_{sample}})\) - with \(I\) as an indicator of test positivity) based on work of Gelman et al. \cite{gelman2020}, using hyperparameters \(\alpha\) and \(\beta\) for sensitivity and specificity, and data \(TP_{disease^+,n}\), \(TN_{disease^-,n}\), and \(I(O_{n,k_{sample}})\):
+In this model we are trying to estimate the true prevalence of \(K_{sample}\) subjects tested with a panel with \(n\) component subtypes. We assume informed priors for sensitivity and specificity expressed as a logistic transform of normal distributions with parameters \(\mu\) and \(\sigma\) (i.e. \(P(\mathcal{N}(\mu,\sigma^2))\) where P is the standard logistic function), and a set of disease negative controls (\(K_{disease^-}\)) for specificity and disease positive controls (\(K_{disease^+}\)) for sensitivity. To make this model identifiable some weak prior information is also required about the true prevalence of the components. We also require the component prevalence to be expressed as \(\mu\) and \(\sigma\) parameters of a logistic normal distribution for component prevalence. Based on the work of Gelman et al. \cite{gelman2020}, we propose the following model to describe the result of an individuals test result for a single component (\(I(O_{n,k_{sample}})\) - with \(I\) as an indicator of test positivity), using the two hyperparameters \(\mu\) and \(\sigma\) for the sensitivity, specificity, and prevalence of each component tests, and data \(TP_{disease^+,n}\), \(TN_{disease^-,n}\), and \(I(O_{n,k_{sample}})\) describing the observed control group results and the sample under investigation repectively:
 
 \begin{equation*}
 \begin{aligned}
-sens_n &\sim Beta(\alpha_{disease^+,n}, \beta_{disease^+,n}) \\
-spec_n &\sim Beta(\alpha_{disease^-,n}, \beta_{disease^-,n}) \\
+sens_n &\sim P(\mathcal{N}(\mu_{disease^+,n}, \sigma_{disease^+,n}^2)) \\
+spec_n &\sim P(\mathcal{N}(\mu_{disease^-,n}, \sigma_{disease^-,n}^2)) \\
 TP_{disease^+,n} &\sim Binomial(|K_{disease^+,n}|, sens_n) \\
 TN_{disease^-,n} &\sim Binomial(|K_{disease^-,n}|, spec_n) \\
-prev_n &\sim Uniform(0,1) \\
+prev_n &\sim P(\mathcal{N}(\mu_{sample,n}, \sigma_{sample,n}^2)) \\
 AP_n &= prev_n \times sens_n + (1-spec_n) \times (1-prev_n) \\
 \widehat{AP_n} &= \sum_{K_{sample}}{I(O_{n,k_{sample}})} \\
 \widehat{AP_n} &\sim Binomial(|K_{sample}|, AP_n) \\
 \end{aligned}
 \end{equation*}
 
-With the relationships determined in supplementary S1 we can determine panel sensitivity and specificity:
+With the relationships determined in supplementary S1 we can determine panel sensitivity and specificity, and aggregate component test results to panel results (\(I(O_{N,k_{sample}})\)) per test subject and hence observed test positivity in all subjects (\(\widehat{AP_N}\)):
 
 \begin{equation*}
 \begin{aligned}
+prev_N &= 1-\prod_{n \in N}(1-prev_n) \\
 spec_N &= \prod_{n \in N}{spec_n} \\
 sens_N &= 1-\frac{
   \prod_{n \in N}{\bigg((1-sens_n) prev_n + spec_n  (1-prev_n) \bigg) } - \prod_{n \in N}{spec_n (1-prev_n)}
@@ -233,19 +234,20 @@ I(O_{N,k_{sample}}) &= 1-\prod_{n \in N}{1-I(O_{n,k_{sample})}} \\
 \end{aligned}
 \end{equation*}
 
-From this we can also describe the observed panel apparent prevalence, integrating any prior information we have about panel test sensitivity and specificity expressed as \(Beta\) distributions with hyperparameters \(\alpha\) and \(\beta\) as for the individual components, if known:
+From this we can also describe the observed panel apparent prevalence, and, if available, integrating any prior information we have about panel test sensitivity and specificity expressed as logistic normal distributions with hyperparameters \(\mu\) and \(\sigma\) as for the individual components:
 
 \begin{equation*}
 \begin{aligned}
-prev_N &\sim Uniform(0,1) \\
-sens_N &\sim Beta(\alpha_{disease^+,N}, \beta_{disease^+,N}) \\
-spec_N &\sim Beta(\alpha_{disease^-,N}, \beta_{disease^-,N}) \\
+sens_N &\sim P(\mathcal{N}(\mu_{disease^+,N}, \sigma_{disease^+,N}^2)) \\
+spec_N &\sim P(\mathcal{N}(\mu_{disease^-,N}, \sigma_{disease^-,N}^2)) \\
 AP_N &= prev_N \times sens_N + (1-spec_N) \times (1-prev_N) \\
 \widehat{AP_N} &\sim Binomial(|K_{sample}|, AP_N) \\
 \end{aligned}
 \end{equation*}
 
 Maximising the log-likelihood of the combined model allows for simultaneous estimation of component and panel prevalence, and posterior estimates of component and panel sensitivity and specificity.
+
+Choice of priors in this model depends on the nature of the control group data available. In all cases component prevalence priors should only be weakly informative as it is a key output of the model. In this implementation the \(\mu\) value is automatically calculated to the Rogan Gladen estimate and the \(\sigma\) value set to a large value. If good control group data is available for control group specificity and sensitivity then prior estimates of these quantities can be weakly informative, and sensible default values encompassing a wide range of possibilities can be used. In this implementation we used \(\mu=2.217\), \(\sigma=2.202\), to give a wide range of sensitivity of 10.9\% — 99.9\% and a narrower \(\mu=18.47\), \(\sigma=8.966\), to give a range of specificites of 71\% to 100\%. A scenario encountered in real life is for reasonable amounts of control group data to be available for component specificity but very limited information for component sensitivity. In this case we may have some additional information from studies of the performance of the panel test, which can be incorporated as a prior for panel sensitivity (further details are included in the documentation of the R package\cite{challen2023d}).
 
 \section{Results}
 
@@ -254,7 +256,7 @@ From Fig~\ref{fig:B1} we expect overestimation at low prevalence and underestima
 \begin{figure}[h!]
 \centering
   \includegraphics{vignettes/latex/s2/fig/simulation_result_sens_80_80_v2}
-  \caption{Apparent and adjusted prevalence estimates for component serotypes and PCV20 panel in the IPD simulation, at 8 different pre-set levels of overall prevalence. The red cross is apparent prevalence, and the estimates of adjusted prevalence with associated uncertainty are shown in shades of grey, by methodology, including Bayesian, Rogan-Gladen or Lang-Reiczigel. The sensitivity and specificity parameters this simulation is based on is shown in the top left and the prior estimates of component sensitivity and specificity that are used in the individual methods are shown in the bottom right. In this example the priors are set to be equal to the simulation parameters but with uncertainty (displayed as 95\% confidence intervals}. All component tests are assumed to have the same sensitivity and specificity.
+  \caption{Apparent and adjusted prevalence estimates for component serotypes and PCV20 panel in the IPD simulation, at 8 different pre-set levels of overall prevalence. The red cross is apparent prevalence, and the estimates of adjusted prevalence with associated uncertainty are shown in shades of grey, by methodology, including Bayesian, Rogan-Gladen or Lang-Reiczigel. The sensitivity and specificity parameters this simulation is based on is shown in the top left and the prior estimates of component sensitivity and specificity that are used in the individual methods are shown in the bottom right. In this example the priors are set to be equal to the simulation parameters but with uncertainty (displayed as 95\% confidence intervals). All component tests are assumed to have the same sensitivity and specificity.}
 \label{fig:B3}
 \end{figure}
 
