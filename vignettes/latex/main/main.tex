@@ -179,7 +179,7 @@
 % Title must be 250 characters or less.
 \begin{flushleft}
 {\Large
-\textbf\newline{Combined panel test positivity is an uncertain predictor of disease probability in multiplex testing with implications for epidemiological estimates and clinical decision making.} % Please use "sentence case" for title and headings (capitalize only the first word in a title (or heading), the first word in a subtitle (or subheading), and any proper nouns).
+\textbf\newline{Combined multiplex panel test results are a poor estimate of disease prevalence without adjustment for test error.} 
 }
 \newline
 % Insert author names, affiliations and corresponding author email (do not include titles, positions, or degrees).
@@ -203,27 +203,6 @@ Leon Danon\textsuperscript{1,2}
 \bigskip
 
 % Insert additional author notes using the symbols described below. Insert symbol callouts after author names as necessary.
-%
-% Remove or comment out the author notes below if they aren't used.
-%
-% Primary Equal Contribution Note
-% \Yinyang These authors contributed equally to this work.
-
-% Additional Equal Contribution Note
-% Also use this double-dagger symbol for special authorship notes, such as senior authorship.
-% \ddag These authors also contributed equally to this work.
-
-% Current address notes
-% \textcurrency Current Address: Dept/Program/Center, Institution Name, City, State, Country % change symbol to "\textcurrency a" if more than one current address note
-% \textcurrency b Insert second current address
-% \textcurrency c Insert third current address
-
-% Deceased author note
-% \dag Deceased
-
-% Group/Consortium Author Note
-% \textpilcrow Membership list can be found in the Acknowledgments section.
-
 % Use the asterisk to denote corresponding authorship and provide email address in note below.
 * rob.challen@bristol.ac.uk
 
@@ -231,22 +210,22 @@ Leon Danon\textsuperscript{1,2}
 % Please keep the abstract below 300 words
 \section*{Abstract}
 
-Multiplex panel tests identify many individual causes of disease at once, using a set of component tests. In some panels the number of components can be large. If the panel is detecting causative pathogens for a syndrome or disease then we might wish to estimate the burden of that disease by combining the results of the panel, for example pneumococcal pneumonia as caused by individual pneumococcal serotypes.  When we are dealing with multiplex test panels with many components, test error in the individual components of a panel, even when present at very low levels, can cause significant overall error. Uncertainty in the sensitivity and specificity of the individual tests, and statistical fluctuations in the numbers of false positives and false negatives, will cause large uncertainty in the combined estimates of disease prevalence. In many cases this can be a source of significant bias. In this paper we characterise this issue and present novel methods to adjust for this bias and properly represent the uncertainty when interpreting the combined results of multiplex panel tests. As multiplex testing becomes more common in clinical practice the interpretation of large numbers of test results for uncommon events will become difficult, as the risk of false positives increases with the number of tests. 
-
-% When multiple tests are carried out simultaneously that identify distinct disease subtypes, it seems uncontroversial to combine the component results into a panel to detect the disease super-type in an individual, or quantify the burden of disease in the population. However, if the number of disease subtypes tested for is large then it is likely that the pre-test probability of each individual subtype is low. In this situation false positive results for each subtype test create a compound error that depends on sensitivity, specificity and prevalence of each subtype. This causes the combined test positivity to be a biased estimate of the post-test probability of disease, usually leading to significant over estimation. This complicates the interpretation of the combined panel result. In clinical applications, a higher than expected false positive rate for the super-type, could lead to inappropriate management if not correctly interpreted by the clinician. In epidemiological applications it can lead to significant uncertainty when determining the burden of disease. At an epidemiological level correction of this bias is possible through Bayesian and frequentist methods, but requires a rigorous approach to propagate uncertainty, as estimates of sensitivity and specificity for multiplex tests are often not well characterised.
+Multiplex panel tests identify many individual pathogens at once, using a set of component tests. In some panels the number of components can be large. If the panel is detecting causative pathogens for a single syndrome or disease then we might wish to estimate the burden of that disease by combining the results of the panel, for example determining the prevalence of pneumococcal pneumonia as caused by many individual pneumococcal serotypes. When we are dealing with multiplex test panels with many components, test error in the individual components of a panel, even when present at very low levels, can cause significant overall error. Uncertainty in the sensitivity and specificity of the individual tests, and statistical fluctuations in the numbers of false positives and false negatives, will cause large uncertainty in the combined estimates of disease prevalence. In many cases this can be a source of significant bias. In this paper we develop a mathematical framework to characterise this issue, present novel statistical methods that adjust for this bias and quantify uncertainty, and use simulation to test these methods. As multiplex testing becomes more commonly used for screening in routine clinical practice, accumulation of test error due to  the combination of large numbers of test results for uncommon events needs to be identified and corrected for. 
 
 % Please keep the Author Summary between 150 and 200 words
 % Use first person. PLOS ONE authors please skip this step.
 % Author Summary not valid for PLOS ONE submissions.
-% \section*{Author summary}
-% In analysing data on pneumococcal serotypes we discovered ...
+
+\section*{Author summary}
+
+During analysis of pneumococcal incidence data obtained from serotype specific multiplex urine antigen testing, we identified that despite excellent test sensitivity and specificity, the small error rate in each individual serotype test has the potential to compound and cause large uncertainty in the resulting estimates of pneumococcal prevalence, obtained by combining individual results. This limits the accuracy of estimates of the burden of disease caused by vaccine preventable pneumococcal serotypes, and in certain situations can produce marked bias.
 
 \linenumbers
 
 % Use "Eq" instead of "Equation" for equation citations.
 \section*{Introduction}
 
-Multiplex panel testing is a convenient and rapid diagnostic approach and is increasingly being used in clinical practice to differentiate between viral and bacterial causes of a range of disorders\cite{ramanan2017}. It has also been used in epidemiological studies to identify pneumococcal subtypes targeted by vaccines\cite{bonten2015} or monitor disease spread\cite{henson2023}. Multiplex panel tests have been developed for a wide range of clinical syndromes caused by different pathogens, or for specific diseases caused by different subtypes of the same pathogen\cite{ramanan2017}, and may be based on immunological\cite{pride2012,kalina2020} or genetic techniques\cite{mengelle2013,murphy2020,jaaskelainen2006,jansen2011,grondahl1999,hendolin1997}. The number of targets tested for in each multiplex are increasing, but range from a handful, up to 48 different causative agents\cite{henson2023}. In this paper we demonstrate that when large multiplex panels are used, even small errors in the component tests can cause significant uncertainty and potential bias if the results are combined, usually leading to an overestimate of the prevalence of the combined condition.
+Multiplex panel testing is a convenient and rapid diagnostic approach and is increasingly being used in clinical practice to differentiate between viral and bacterial causes of a range of disorders\cite{ramanan2017}. It has also been used in epidemiological studies to identify pneumococcal subtypes targeted by vaccines\cite{bonten2015} or monitor disease spread\cite{henson2023}. Multiplex panel tests have been developed for a wide range of clinical syndromes caused by different pathogens, or for specific diseases caused by different subtypes of the same pathogen\cite{ramanan2017}, and may be based on immunological\cite{pride2012,kalina2020} or genetic techniques\cite{mengelle2013,murphy2020,jaaskelainen2006,jansen2011,grondahl1999,hendolin1997}. The number of targets tested for in each multiplex are increasing, but range from a handful, up to 48 different causative agents\cite{henson2023}. In this paper we demonstrate that when large multiplex panels are used, even small errors in the component tests can cause significant compound error and potential bias if the results are combined, usually leading to an overestimate of the prevalence of the combined condition.
 
 In the schematic in Fig~\ref{fig1}, we distinguish between multiplex testing (subfigures A-D) and other types of multiple testing (subfigures E-G). Subfigures A-D show two component tests which identify each of two subtypes of disease. The disease subtypes are present independently of each other and the disease super-type is present if any of the subtypes is present (B-C). In panel A we see that a false positive in one component, results in a false positive in the combined panel. In subfigure B one subtype is correctly detected, in C the other subtype, and in subfigure D a false positive result for one subtype and a false negative for the other results in an overall result which is correct for the wrong reason. In all subfigures A-D, the combined test result would be interpreted as positive. As described above, this design of test is usually extended to many more than two subtypes to make a multiplex panel.
 
@@ -262,7 +241,7 @@ Subfigures E-H in Fig~\ref{fig1} show a different test design which is more rela
 
 In more formal language we define a multiplex test as specifically consisting of a set of independent components which test different independent hypotheses, and the results of which are combined to give a panel result where any positive test result in a component implies a positive test result in the panel. From this point, only multiplex panel tests will be discussed.
 
-If a condition is composed of many subtypes, then each individual subtype must be a fraction of the overall condition prevalence. The more subtypes in a multiplex panel, on average the smaller that fraction will be. If the pre-test probability for each component is low, then each component test is operating at a level where the positive predictive value of the test is also relatively low. This leads to a high probability of observing false positives in each component. We will also observe false negatives depending on the sensitivity of the test, but if the prevalence of a subtype is low, there are fewer true positives to be missed.
+If a condition is composed of many subtypes, then each individual subtype must be a fraction of the overall condition prevalence. The more subtypes in a multiplex panel, on average the smaller that fraction will be. If the prevalence of each component is low, then each component test is operating at a level where the positive predictive value of the test (i.e. the probability that a positive test result represents a true positive rather than a false positive) is also relatively low. This leads to a high probability of observing false positives in each component. We will also observe false negatives depending on the sensitivity of the test, but if the prevalence of a subtype is low, there are fewer true positives to be missed.
 
 \begin{figure}[hb!]
 \centerline{\includegraphics{fig/low-prevalence-sensitivity-specificity.pdf}}
@@ -287,7 +266,7 @@ In this section we describe the mathematical analysis, the methods used to adjus
 
 \subsection*{Mathematical analysis and validation}
 
-Given a set of \(N\) multiplex panel component tests, the test positivity of the combined result is the combination of the components. For a specific patient \(k\) this is represented by the following expression, where \(I\) is an indicator function and \(O\) is observed test positivity.
+Given a set of \(N\) multiplex panel component tests, the combined test result is defined as positive if any of the panel component tests are positive. For a specific patient \(k\) this is represented by the following expression, where \(I\) is an indicator function and \(O\) is observed test positivity.
 
 \begin{eqnarray}
 \begin{aligned}
@@ -303,7 +282,7 @@ The test positivity rate (or apparent prevalence: \(\widehat{AP_N}\)) for the pa
 \end{aligned}
 \end{eqnarray}
 
-In \nameref{S1_Appendix} we define that a true negative panel result can only be the result of a combination of true negative component results, and extension of this logic allows us to determine estimates of sensitivity and specificity expressions for combined panels. In Eq~\ref{eq:schemeP1} and \ref{eq:schemeP2}, \(\widehat{AP_n}\)  is the apparent prevalence (test positivity rate) for the component tests. \(sens_n\) and \(sens_N\) is the sensitivity of the components and combined panel, with \(spec_N\) and \(spec_n\) as the specificity.
+A panel result is positive if any component result is positive, and in \nameref{S1_Appendix} we show that a true negative panel result can only be the result of a combination of true negative component results. From this we go on to determine estimates of sensitivity and specificity expressions for combined panels as shown below. In Eq~\ref{eq:schemeP1} and \ref{eq:schemeP2}, \(\widehat{AP_n}\)  is the apparent prevalence (test positivity rate) for the component tests. \(sens_n\) and \(sens_N\) is the sensitivity of the components and combined panel, with \(spec_N\) and \(spec_n\) as the specificity.
 
 \begin{eqnarray}
 \label{eq:schemeP1}
@@ -337,7 +316,7 @@ In \nameref{S1_Appendix} these estimators are demonstrated to perform well in a 
 
 To illustrate the implications of multiplex test error for epidemiological studies, we have constructed a simulation based on pneumococcal serotypes, to demonstrate uncertainty and risk of bias that could occur in studies that investigate the overall burden of pneumococcal disease using multiplex testing. 
 
-We previously published the frequency of the 20 pneumococcal serotypes contained in the 20-valent pneumococcal conjugate vaccine (PCV20), that were identified in an invasive pneumococcal disease (IPD) cohort in Bristol between January 2021 and December 2022 \cite{hyams2023a}. This IPD distribution was scaled to give a realistic distribution of 20 subtypes in a hypothetical population with an overall PCV20-type pneumococcal prevalence of 10\%. We simulate testing this population with a hypothetical multiplex panel which detects the 20 individual serotypes. For illustration purposes we assume all component tests of the multiplex panel have are moderately sensitive (80\%) and highly specific (99.75\%), (these assumptions are loosely based on existing serotype specific detection tests). Using the estimators for panel sensitivity and specificity above, we use the synthetic data set to calculate the apparent prevalence of both components and panels. We then investigate the difference between ``true'' simulation prevalence (10\%) and simulated test positivity rates (apparent prevalence) to demonstrate the impact of test sensitivity and specificity across a broad range of component test properties. 
+We previously published the frequency of the 20 pneumococcal serotypes contained in the 20-valent pneumococcal conjugate vaccine (PCV20), that were identified in an invasive pneumococcal disease (IPD) cohort in Bristol between January 2021 and December 2022 \cite{hyams2023a}. This IPD distribution was scaled to give a realistic distribution of 20 subtypes in a hypothetical population with an overall PCV20-type pneumococcal prevalence of 10\%. We simulate testing this population with a hypothetical multiplex panel which detects the 20 individual serotypes. For illustration purposes we assume all component tests of the multiplex panel are moderately sensitive (80\%) and highly specific (99.75\%), (these assumptions are loosely based on existing serotype specific detection tests). Using the estimators for panel sensitivity and specificity above, we use the synthetic data set to calculate the apparent prevalence of both components and panels. We then investigate the difference between ``true'' simulation prevalence (10\%) and simulated test positivity rates (apparent prevalence) to demonstrate the impact of test sensitivity and specificity across a broad range of component test properties. 
 
 \subsection*{Uncertainty propagation}
 
@@ -378,7 +357,7 @@ We have described that even low false positive rates in component tests lead to 
 \begin{figure}[h!]
 \centerline{\includegraphics{fig/simulation_result_bayes_v2.pdf}}
 \caption{{\bf Correction of bias in a single IPD scenario.}
-The relative frequency of the 20 pneumococcal serotypes contained in PCV20, and identified in Bristol within the last 2 years, were converted to a distribution of 20 subtypes to give an overall PCV20 pneumococcal prevalence of 10\% (blue lines). Test positive samples were created assuming each serotype test had a sensitivity of 80\% and a specificity of 99.75\% (red lines) resulting in underestimates of true prevalence for serotypes 3 and 8, and overestimates for the remainder. The simulated test results for individual serotypes were aggregated into a PCV7 group (consisting of serotypes 4, 6B, 9V, 14, 18C, 19F, 23F), a PCV13 group (PCV7 groups plus 1, 3, 5, 6A, 7F, 19A), a PCV15 group (PCV13 plus 22F and 33F), and a PCV20 group (all serotypes). In the right subfigure combined test positivity for each group (apparent prevalence - red lines) overestimate true prevalence (blue line) for this scenario. We estimate true prevalence from test positivity, incorporating uncertainty in component sensitivity and specificity using a Bayesian model described in \nameref{S2_Appendix}. These estimates are shown as point estimates and 95\% credible intervals (black).}
+The relative frequency of the 20 pneumococcal serotypes contained in PCV20, and identified in Bristol within the last 2 years, were converted to a distribution of 20 subtypes to give an overall PCV20 pneumococcal prevalence of 10\% (blue lines). Test positive samples were created assuming each serotype test had a sensitivity of 80\% and a specificity of 99.75\% (red lines) resulting in underestimates of true prevalence for serotypes 3 and 8, and overestimates for the remainder. The simulated test results for individual serotypes were aggregated into a PCV7 group (consisting of serotypes 4, 6B, 9V, 14, 18C, 19F, 23F), a PCV13 group (PCV7 groups plus 1, 3, 5, 6A, 7F, 19A), a PCV15 group (PCV13 plus 22F and 33F), and a PCV20 group (all serotypes). In the right subfigure combined test positivity for each group (apparent prevalence - red lines) overestimate true prevalence (blue line) for this scenario. We estimate true prevalence from test positivity (red lines), incorporating uncertainty in component sensitivity and specificity using a Bayesian model described in \nameref{S2_Appendix}. These estimates are shown as point estimates and 95\% credible intervals (black), which accurately estimate the true prevalence (blue lines).}
 \label{fig5}
 \end{figure}
 
@@ -418,7 +397,7 @@ Uncertainty in test results due to lower sensitivity and specificity result in m
 
 \paragraph*{S3 R package.}
 \label{S3_Github}
-{\bf testerror: Uncertainty in Multiplex Panel Testing.}  Provides methods to support the estimation of epidemiological parameters based on the results of multiplex panel tests, doi:10.5281/zenodo.7691196. \url{https://bristol-vaccine-centre.github.io/testerror/}.
+{\bf testerror: Uncertainty in Multiplex Panel Testing.}  R package providing methods to support the estimation of epidemiological parameters based on the results of multiplex panel tests, doi:10.5281/zenodo.7691196. \url{https://bristol-vaccine-centre.github.io/testerror/}.
 
 
 % \paragraph*{Supplementary 3.}

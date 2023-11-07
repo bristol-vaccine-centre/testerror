@@ -60,7 +60,7 @@
 
 \maketitle
 
-The rationale for this analysis is given in detail in the main paper, but in summary it is to investigate the properties of the result of a panel combination of multiple component tests. The component tests are looking for individual subtypes of a condition which may appear independently of one another, but the presence of any subtype implies the presence of the index condition. Likewise the index condition can be considered to be absent if none of the components are present. If we consider a single patient $k$ and a set of $N$ condition subtypes then the patients condition status is given by:
+The rationale for this analysis is given in detail in the main paper, but in summary it is to investigate the properties of the result of a panel combination of multiple component tests. The component tests aim to detect individual subtypes of a condition which may appear independently of one another, but the presence of any subtype implies the presence of the index condition. Likewise, the index condition can be considered to be absent if none of the components are present. If we consider a single patient $k$ and a set of $N$ condition subtypes then the patient's condition status is given by:
 
 \begin{equation*}
 \begin{aligned}
@@ -68,47 +68,55 @@ I(A_{N,k}) = 1-\prod_{n \in N}{(1-I(A_n,k))} \\
 \end{aligned}
 \end{equation*}
 
-Where \(I\) is the indicator function and a value of one represents presence and zero is absence, and \(A_n,k\) is describes the actual status of the disease subtype \(n\) in an individual \(k\).
+Where \(I\) is the indicator function and a value of one represents presence and zero is absence, and \(A_n,k\) describes the actual status of the disease subtype \(n\) in an individual \(k\).
 
 Such as scenario may occur when considering a single disease, that may be caused by multiple distinct pathogens which are tested for separately, and could, at least in theory, occur together.
 
 \section{Definitions}
 
-Assume we have a series of patients presenting who we are testing for disease. Their true disease status
-may be either positive of negative. The rates of arrival of the patients in a given time period (\(t\)) for testing may be assumed to be due to a stochastic process following a Poisson distributed rate. If the overall probability of disease in the population (i.e. the prevalence) is \(prev\)
-then we can define \(\alpha_p\) and \(\beta\) such that \(\frac{\alpha_p}{\beta} = prev\) then as in a Bayesian framework with an uninformed prior for \(prev\) the expected number of actual positive cases (\(E(A)\)) arriving in a given time period (\(t\)) is:
-
-\begin{equation*}
-E(A_t) \sim Gamma(\alpha^+, \beta)
-\end{equation*}
-
-Similarly we may define the expected number of actual negative cases (\(E(\neg A)\)) arriving in a given time period, with \(\alpha^- = \beta-\alpha^+\) and \(\frac{\alpha^-}{\beta} = 1-p\) then:
-
-\begin{equation*}
-E(\neg A_t) \sim Gamma(\alpha^-, \beta)
-\end{equation*}
-
-and the prevalence (\(prev\)), or probability that a person is an actual case (\(P(A)\)) is given by:
+Assume we have a set of patients presenting to hospital (\(K\)) who we are testing for disease. Their true disease status
+may be either positive or negative, if each individuals true disease state is given by the binary value \(A_k\), then we define the probability of disease over all patients as \(P(A)\) which is the true prevalence of the disease (\(prev\)). This quantity cannot necessarily be directly observed, and is usually something we wish to estimate  - (\nb \(I\) is the indicator function where 1 is a positive and 0 a negative.)
 
 \begin{equation*}
 \begin{aligned}
-prev &= P(A_t) = \frac{E(A_t)}{E(A_t)+E(\neg A_t)} \\
-prev &\sim \frac{Gamma(\alpha^+, \beta)}{  Gamma(\alpha^+, \beta) + Gamma(\alpha^-, \beta)} \\
-&\sim Beta(\alpha^+,\alpha^-) \\
-1 - prev &= P(\neg A_t) \sim {Beta}(\alpha^-, \alpha^+)
+prev = P(A) \approx \frac{\sum_{k \in K}{I(A_k)}}{|K|}
 \end{aligned}
 \end{equation*}
 
-Assume we have a sample \(K\) of a binomially distributed quantity with probability of actual disease prevalence of \(P(A)\). After a single observation of a number of positives within the fixed time period (\(\hat{k}\)) and given a non-informative Beta prior, the posterior distribution of \(P(A)\) in a Bayesian framework is given by:
+% The rates of arrival of the patients in a given time period (\(t\)) for testing may be assumed to be due to a stochastic process following a Poisson distributed rate. If the overall probability of disease in the population (i.e. the prevalence) is \(prev\)
+% then we can define \(\alpha_p\) and \(\beta\) such that \(\frac{\alpha_p}{\beta} = prev\) then as in a Bayesian framework with an uninformed prior for \(prev\) the expected number of actual positive cases (\(E(A)\)) arriving in a given time period (\(t\)) is:
 
-\begin{equation*}
-\begin{aligned}
-\alpha^+ &= \hat{k}+1 \\
-\alpha^- &= |K|-\hat{k}+1
-\end{aligned}
-\end{equation*}
+% \begin{equation*}
+% E(A_t) \sim Gamma(\alpha^+, \beta)
+% \end{equation*}
 
-If we assume all arrivals are tested for disease there is a observation of positive test results (\(O\)) for each of \(K\) patients. The probability of observation (\(P(O)\)) is the expected value of apparent prevalence (\(E(AP)\)) which can be estimated using an observation of the test positivity (\(\widehat{AP}\)) - (\nb \(I\) is the indicator function where 1 is a positive and 0 a negative.)
+% Similarly we may define the expected number of actual negative cases (\(E(\neg A)\)) arriving in a given time period, with \(\alpha^- = \beta-\alpha^+\) and \(\frac{\alpha^-}{\beta} = 1-p\) then:
+
+% \begin{equation*}
+% E(\neg A_t) \sim Gamma(\alpha^-, \beta)
+% \end{equation*}
+
+% and the prevalence (\(prev\)), or probability that a person is an actual case (\(P(A)\)) is given by:
+
+% \begin{equation*}
+% \begin{aligned}
+% prev &= P(A_t) = \frac{E(A_t)}{E(A_t)+E(\neg A_t)} \\
+% prev &\sim \frac{Gamma(\alpha^+, \beta)}{  Gamma(\alpha^+, \beta) + Gamma(\alpha^-, \beta)} \\
+% &\sim Beta(\alpha^+,\alpha^-) \\
+% 1 - prev &= P(\neg A_t) \sim {Beta}(\alpha^-, \alpha^+)
+% \end{aligned}
+% \end{equation*}
+
+% Assume we have a sample \(K\) of a binomially distributed quantity with probability of actual disease prevalence of \(P(A)\). After a single observation of a number of positives within the fixed time period (\(\hat{k}\)) and given a non-informative Beta prior, the posterior distribution of \(P(A)\) in a Bayesian framework is given by:
+
+% \begin{equation*}
+% \begin{aligned}
+% \alpha^+ &= \hat{k}+1 \\
+% \alpha^- &= |K|-\hat{k}+1
+% \end{aligned}
+% \end{equation*}
+
+If we assume all patients are tested for disease there is a binary observation of a test result (\(O_k\)) for each of \(K\) patients. The probability of observing a positive test result (\(P(O)\)), depends on disease status and test error, and is the apparent prevalence (\(E(AP)\)) which can be estimated using an observation of the test positivity (\(\widehat{AP}\))
 
 \begin{equation*}
 \begin{aligned}
@@ -117,9 +125,9 @@ P(O) = E(AP) \approx \widehat{AP} = \frac{\sum_{k \in K}{I(O_k)}}{|K|}
 \end{equation*}
 
 
-There is a potential for test error. Type 1 errors are false positives, the rate of which may be defined as the probability of observing a positive test result given an actual negative case (\(P(O| \neg A)\)).
+Type 1 test errors are false positives, the rate of which may be defined as the probability of observing a positive test result given an actual negative case (\(P(O| \neg A)\)).
 The complement of this quantity is the true negative rate and is known as the specificity (\(spec\)).
-Type 2 errors are false negatives and the rate of these is the probability of observing a negative test result given an actual positive case (\(P(\neg O|A)\)).
+Type 2 test errors are false negatives and the rate of these is the probability of observing a negative test result given an actual positive case (\(P(\neg O|A)\)).
 The complement of this quantity is the true positive rate and is known as the sensitivity (\(sens\)).
 
 \begin{equation*}
@@ -143,7 +151,7 @@ P(TP) &= P(O|A) P(A) = sens \times prev \\
 
 \subsection{Rogan-Gladen derivation}
 
-The Rogan-Gladen estimator for true prevalence can be expressed in the notation from \eqref{eq:definition} as:
+An estimator for true prevalence presented by Rogan and Gladen \cite{rogan1978} can be expressed in the notation from \eqref{eq:definition} as:
 
 \begin{equation*}
 \begin{aligned}
@@ -169,7 +177,7 @@ E(AP) &= sens \times prev + (1-spec) \times (1-prev) \\
 \mytag{eq:rogan-gladen}
 \end{equation*}
 
-The estimator is only approximate as the use of an observed test positive rate (\(\widehat{AP}\)) as  an estimate for the expected value of the apparent prevalence (\(E(AP)\)) becomes unreliable at extreme values. If also requires knowledge of test sensitivity and specificity.
+The estimator is only approximate as the use of an observed test positive rate (\(\widehat{AP}\)) as  an estimate for the expected value of the apparent prevalence (\(E(AP)\)) becomes unreliable at extreme values. It also requires knowledge of test sensitivity and specificity.
 
 An equivalence formulation for the Rogan-Gladen estimator using the complement of prevalence can be expressed as follows and will be referred to later.
 
@@ -187,7 +195,7 @@ P(\neg A) &= \frac{P(\neg O) - FNR}{TNR - FNR} \\
 
 
 
-In the situation where a panel of independent tests looking for independently occurring features are combined, if any of the the independent component test results are positive, we may infer the observed panel combination is positive. On the other hand only if all the test results are negative the panel may be considered as negative. If we again consider a single patient $k$ and a panel of component tests $N$, then the patient's combined result of the panel of tests is:
+In the situation where a panel of independent tests looking for independently occurring features are combined, if any of the independent component test results are positive, we may infer the observed panel combination is positive. On the other hand only if all the test results are negative the panel may be considered as negative. If we again consider a single patient $k$ and a panel of component tests $N$, then the patient's combined result of the panel of tests is:
 
 \begin{equation*}
 \begin{aligned}
@@ -195,7 +203,7 @@ I(O_{N,k}) = 1-\prod_{n \in N}{(1-I(O_n,k))} \\
 \end{aligned}
 \end{equation*}
 
-Due to false positives and false negatives in the individual component tests however the result of the observed combined panel will be inaccurate as compared to the actual index condition. If we consider an example panel consisting of two component tests, then the possible combination of results of a panel can be seen in table \ref{tab:A1}. The combination of imperfect test results result in an imperfect panel result. There are three things to note, all of which can be extended to scenarios involving more than two components. Firstly a panel result can only be considered a ``true negative'' (TN) result if all the component tests are themselves ``true negative'' (cyan). Secondly, the panel result is negative, if, and only if, all the component test results are negative, and unless all components are ``true negatives'', the negative panel result will be a ``false negative'' (yellow). Thirdly there is a class of outcome when a panel will be positive, due to a combination of component false positives and false negatives, which is the correct panel result, but for the wrong reason (red). These results increase the effective true positive rate of the panel, over and above the true positive rates of the components.
+Due to false positives and false negatives in the individual component tests however, the result of the observed combined panel will be inaccurate as compared to the actual index condition. If we consider an example panel consisting of two component tests, then the possible combination of results of a panel can be seen in table \ref{tab:A1}. The combination of imperfect test results result in an imperfect panel result. There are three things to note, all of which can be extended to scenarios involving more than two components. Firstly a panel result can only be considered a ``true negative'' (TN) result if all the component tests are themselves ``true negative'' (cyan). Secondly, the panel result is negative, if, and only if, all the component test results are negative, and unless all components are ``true negatives'', the negative panel result will be a ``false negative'' (yellow). Thirdly there is a class of outcomes when a panel will be positive, due to a combination of component false positives and false negatives, which is the correct panel result, but for the wrong reason (red). These results increase the effective true positive rate of the panel, over and above the true positive rates of the components.
 
 \begin{table}[]
 \centering
@@ -391,7 +399,7 @@ Thirdly in figure \ref{fig:A2}, panel C we explore the relationship between comp
 
 \section{Simulation}
 
-Whilst the characterisation is helpful to test the estimator in a wide range of scenarios we resort to multiple simulations. The model for each simulation is described in \eqref{eq:simulation-setup}. We run 8 batches of 100 simulations. Each simulation consisting of between 2 and 9 components (depending on the batch) and each component in every simulation has a randomly assigned, but generally plausible, prevalence, sensitivity and specificity. 10000 cases are generated for each of the 800 simulations with ``actual'' subtype status depending on the component prevalence, and a test observation for each subtype depending on the ``actual'' subtype status, sensitivity and specificity. ``Actual'' combined disease status and observed test panel status are calculated for each of the 10000 cases.
+Whilst the characterisation is helpful to test the estimator in a wide range of scenarios we resort to multiple simulations. The model for each simulation is described in \eqref{eq:simulation-setup}. We run 8 batches of 100 simulations. Each simulation consisting of between 2 and 9 components (depending on the batch) and each component in every simulation has a randomly assigned, but generally plausible, prevalence, sensitivity and specificity. Each component is given a random zero-inflated prevalence (\(prev_n\)) using a product of two Poisson distributed quantities, constrained so that the total prevalence matches a simulation parameter (\(prev_{N_{sim}}\)). 10000 cases are generated for each of the 800 simulations with ``actual'' subtype status depending on the component prevalence, and a test observation for each subtype depending on the ``actual'' subtype status, sensitivity and specificity. ``Actual'' combined disease status and observed test panel status are calculated for each of the 10000 cases.
 
 \begin{equation*}
 \begin{aligned}
@@ -490,5 +498,7 @@ The implication of this is that when interpreting panel test results, we must ta
 We have derived expressions that can estimate panel sensitivity and specificity and taken together with the panel test positivity, we have demonstrated that a good central estimate of prevalence can be recovered from a simulation.
 
 Propagation of uncertainty in these estimates is not trivial and this is addressed in Supplementary Appendix 2.
+
+\bibliography{refs}
 
 \end{document}
