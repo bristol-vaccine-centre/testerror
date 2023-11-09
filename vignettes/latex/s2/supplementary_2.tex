@@ -25,7 +25,7 @@
     \author[5]{Krasimira Tsaneva-Atanasova}
     \author[1,2]{Leon Danon}
     \affil[1]{Bristol Vaccine Centre, University of Bristol. UK.}
-    \affil[2]{Department of Engineering Mathematics, University of Bristol, Bristol, UK.}\\
+    \affil[2]{Department of Engineering Mathematics, University of Bristol, Bristol, UK.}
     \affil[3]{Population Health Sciences, University of Bristol. UK.}
     \affil[4]{NIHR Health Protection Unit in Behavioural Science and Evaluation, University of Bristol. UK.}
     \affil[5]{Department of Mathematics and Statistics, University of Exeter, UK.}
@@ -62,7 +62,7 @@
 
 \section{Introduction}
 
-The problem of estimating expected prevalence given the positive test or apparent prevalence (AP) of observed positive test results with imperfect tests is not new, Rogan and Gladen \cite{rogan1978} described an adjustment to the apparent prevalence to give us an unbiased point estimate of true prevalence. In a set of patients \(K\), the expected number of positive test results, or apparent prevalence, \(E(AP)\), is a function of prevalence, test sensitivity (\(sens\)) and test specificity (\(spec\)). A single observation of apparent prevalence \(\widehat{AP}\), is the rate of the positive test results per patient, \(I_k\), and this can be used to estimate true prevalence (\(prev\)). When prevalence is low, apparent prevalence is an over-estimate due to false positives, and when high an underestimate due to false negatives. There is a critical value of prevalence (\(prev_{crit}\)) at which false positives and false negatives exactly balance and apparent prevalence is equal to true prevalence.
+The problem of estimating expected prevalence given the positive test or apparent prevalence (AP) of observed positive test results with imperfect tests is not new; Rogan and Gladen \cite{rogan1978} described an adjustment to the apparent prevalence to give us an unbiased point estimate of true prevalence. In a set of patients \(K\), the expected number of positive test results, or apparent prevalence, \(E(AP)\), is a function of prevalence, test sensitivity (\(sens\)) and test specificity (\(spec\)). A single observation of apparent prevalence \(\widehat{AP}\), is the rate of the positive test results per patient, \(I_k\), and this can be used to estimate true prevalence (\(prev\)). When prevalence is low, apparent prevalence is an over-estimate due to false positives, and when high an underestimate due to false negatives. There is a critical value of prevalence (\(prev_{crit}\)) at which false positives and false negatives exactly balance and apparent prevalence is equal to true prevalence.
 
 \begin{equation*}
 \begin{aligned}
@@ -128,7 +128,7 @@ Methods for propagating uncertainty described below (Bayesian, Lang-Reiczigel, a
 
 \subsection{Rogan Gladen with resampling}
 
-As illustrated in Fig\ref{fig:B1} there are three sources of uncertainty in estimates of true prevalence, there is uncertainty in test sensitivity, test specificity and observed test positivity. In the panel test there are three per component test which are combined in a non-linear fashion. A simple empirical method involves creating a set of randomly sampled component test sensitivity, specificity and apparent prevalence (\(J\)). Uncertainty in sensitivity is expressed as a Beta distributed quantity defined in terms of a disease positive control group, which consists of true positives (\(TP_{disease^+}\)) and false negatives (\(FN_{disease^+}\)). Specificity on the other hand is defined in terms of a disease negative control group, consisting of true negatives (\(TN_{disease^-}\)) and false positives (\(FP_{disease^-}\)). Apparent prevalence is assumed to originate from a binomial sample of size \(k\) representing the number of patients tested.
+As illustrated in Fig \ref{fig:B1} there are three sources of uncertainty in estimates of true prevalence, there is uncertainty in test sensitivity, test specificity and observed test positivity. In the panel test there are three per component test which are combined in a non-linear fashion. A simple empirical method involves creating a set of randomly sampled component test sensitivity, specificity and apparent prevalence (\(J\)). Uncertainty in sensitivity is expressed as a Beta distributed quantity defined in terms of a disease positive control group, which consists of true positives (\(TP_{disease^+}\)) and false negatives (\(FN_{disease^+}\)). Specificity on the other hand is defined in terms of a disease negative control group, consisting of true negatives (\(TN_{disease^-}\)) and false positives (\(FP_{disease^-}\)). Apparent prevalence is assumed to originate from a binomial sample of size \(k\) representing the number of patients tested.
 
 With the sampled set \(J\) we can directly apply the Rogan-Gladen estimator to derive a set of estimates of component prevalence including uncertainty. The empirical quantiles of these can be used as estimators of component prevalence.
 
@@ -255,7 +255,7 @@ From Fig~\ref{fig:B1} we expect overestimation at low prevalence and underestima
 
 \begin{figure}[h!]
 \centering
-  \includegraphics{vignettes/latex/s2/fig/simulation_result_sens_80_80_v2}
+  \includegraphics{fig/simulation_result_sens_80_80_v2}
   \caption{Apparent and adjusted prevalence estimates for component serotypes and PCV20 panel in the IPD simulation, at 8 different pre-set levels of overall prevalence. The red cross is apparent prevalence, and the estimates of adjusted prevalence with associated uncertainty are shown in shades of grey, by methodology, including Bayesian, Rogan-Gladen or Lang-Reiczigel. The sensitivity and specificity parameters this simulation is based on is shown in the top left and the prior estimates of component sensitivity and specificity that are used in the individual methods are shown in the bottom right. In this example the priors are set to be equal to the simulation parameters but with uncertainty (displayed as 95\% confidence intervals). All component tests are assumed to have the same sensitivity and specificity.}
 \label{fig:B3}
 \end{figure}
@@ -280,7 +280,7 @@ In the results thus far the adjustment has been done using prior estimates of se
 
 \section{Discussion and Conclusions}
 
-We present three methods for correcting the bias in prevalence estimates in multiplex panel tests. These are implemented in an R package ''testerror`` \cite{challen2023d}. These methods are all able to correct apparent prevalence estimates of components and panels with uncertain test sensitivity and specificity. No method is robust to misspecification, although Bayesian approaches can exclude some combinations of sensitivity and specificity based on the observed positive tests, (particularly combinations with comparatively low specificity, which would tend to make observations with low number of positives unlikely), the main adjustment requires accurate assessment of test parameters to produce and unbiased estimate but all methods are able to propagate imprecision in those estimates into the final prevalence estimates.
+We present three methods for correcting the bias in prevalence estimates in multiplex panel tests. These are implemented in an R package ''testerror`` \cite{challen2023d}. These methods are all able to correct apparent prevalence estimates of components and panels with uncertain test sensitivity and specificity. No method is robust to misspecification, although Bayesian approaches can exclude some combinations of sensitivity and specificity based on the observed positive tests, (particularly combinations with comparatively low specificity, which would tend to make observations with low number of positives unlikely), the main adjustment requires accurate assessment of test parameters to produce an unbiased estimate but all methods are able to propagate imprecision in those estimates into the final prevalence estimates.
 
 We have not formally quantified the performance of the various methods as there are a very large number of potential scenarios in which we could deploy them, and some of the methods are computationally expensive. On the evidence we have so far the three methods are each able to adjust the apparent prevalence of a simulated panel test results back to the true prevalence values the simulation is based on, with reasonable agreement between the methods. Within the software package released with this paper further validation of the methods is available.
 

@@ -1,8 +1,8 @@
 [General]
-kile_livePreviewEnabled=true
+kile_livePreviewEnabled=false
 kile_livePreviewStatusUserSpecified=true
 kile_livePreviewTool=LivePreview-PDFLaTeX
-lastDocument=main/main.tex
+lastDocument=s2/supplementary_2.tex
 
 [document-settings,item:main/main.tex]
 Bookmarks=
@@ -41,7 +41,7 @@ Mode=LaTeX
 Mode Set By User=false
 
 [document-settings,item:s2/supplementary_2.tex]
-Bookmarks=0,239
+Bookmarks=239,0
 Encoding=UTF-8
 Highlighting=LaTeX
 Highlighting Set By User=false
@@ -66,24 +66,24 @@ open=false
 order=-1
 
 [item:s1/supplementary_chapter_1.tex]
-open=false
-order=2
+open=true
+order=1
 
 [item:s2/refs.bib]
 open=false
 order=-1
 
 [item:s2/supplementary_2.tex]
-open=false
-order=0
+open=true
+order=2
 
 [item:test-error.kilepr]
 open=false
 order=-1
 
 [view-settings,view=0,item:main/main.tex]
-CursorColumn=593
-CursorLine=242
+CursorColumn=0
+CursorLine=406
 Dynamic Word Wrap=true
 JumpList=
 TextFolding=[]
@@ -106,16 +106,16 @@ TextFolding=[]
 ViMarks=
 
 [view-settings,view=0,item:s1/supplementary_chapter_1.tex]
-CursorColumn=25
-CursorLine=20
+CursorColumn=121
+CursorLine=153
 Dynamic Word Wrap=true
 JumpList=
 TextFolding=[]
 ViMarks=
 
 [view-settings,view=0,item:s2/supplementary_2.tex]
-CursorColumn=25
-CursorLine=20
+CursorColumn=77
+CursorLine=72
 Dynamic Word Wrap=true
 JumpList=
 TextFolding=[]
