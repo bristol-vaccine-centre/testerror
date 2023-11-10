@@ -74,8 +74,7 @@ Such as scenario may occur when considering a single disease, that may be caused
 
 \section{Definitions}
 
-Assume we have a set of patients presenting to hospital (\(K\)) who we are testing for disease. Their true disease status
-may be either positive or negative, if each individuals true disease state is given by the binary value \(A_k\), then we define the probability of disease over all patients as \(P(A)\) which is the true prevalence of the disease (\(prev\)). This quantity cannot necessarily be directly observed, and is usually something we wish to estimate  - (\nb \(I\) is the indicator function where 1 is a positive and 0 a negative.)
+Consider a set of patients (\(K\)) who we are testing for disease. Their true disease status may be either positive or negative, we denote each individual true disease state with the binary value \(A_k\). We then define the probability of disease over all patients as \(P(A)\) which is the true prevalence of the disease (\(prev\)). This quantity cannot necessarily be directly observed, and is usually something we wish to estimate  - (\nb \(I\) is the indicator function where 1 is a positive and 0 a negative.)
 
 \begin{equation*}
 \begin{aligned}
@@ -116,7 +115,7 @@ prev = P(A) \approx \frac{\sum_{k \in K}{I(A_k)}}{|K|}
 % \end{aligned}
 % \end{equation*}
 
-If we assume all patients are tested for disease there is a binary observation of a test result (\(O_k\)) for each of \(K\) patients. The probability of observing a positive test result (\(P(O)\)), depends on disease status and test error, and is the apparent prevalence (\(E(AP)\)) which can be estimated using an observation of the test positivity (\(\widehat{AP}\))
+If we assume all patients are tested for disease there is a binary observation of a test result (\(O_k\)) for each \k\ of \(K\) patients. The probability of observing a positive test result (\(P(O)\)), depends on disease status and test error, and is the apparent prevalence (\(E(AP)\)) which can be estimated using an observation of the test positivity (\(\widehat{AP}\))
 
 \begin{equation*}
 \begin{aligned}
