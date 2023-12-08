@@ -2,7 +2,7 @@
 kile_livePreviewEnabled=false
 kile_livePreviewStatusUserSpecified=true
 kile_livePreviewTool=LivePreview-PDFLaTeX
-lastDocument=s2/supplementary_2.tex
+lastDocument=main/main.tex
 
 [document-settings,item:main/main.tex]
 Bookmarks=
@@ -82,8 +82,8 @@ open=false
 order=-1
 
 [view-settings,view=0,item:main/main.tex]
-CursorColumn=0
-CursorLine=406
+CursorColumn=1192
+CursorLine=212
 Dynamic Word Wrap=true
 JumpList=
 TextFolding=[]
@@ -107,7 +107,7 @@ ViMarks=
 
 [view-settings,view=0,item:s1/supplementary_chapter_1.tex]
 CursorColumn=121
-CursorLine=153
+CursorLine=117
 Dynamic Word Wrap=true
 JumpList=
 TextFolding=[]
