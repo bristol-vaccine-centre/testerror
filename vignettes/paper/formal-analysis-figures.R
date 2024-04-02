@@ -226,7 +226,7 @@ serotype_prevalence_2 = tibble::tibble(
     d %>% mutate(
       group_size = n(),
       distribution = .norm(rpois(group_size,5)*rpois(group_size,1)),
-      prevalence = distribution*group_prevalence
+      prevalence = distribute(distribution, group_prevalence)
     )
   })
   

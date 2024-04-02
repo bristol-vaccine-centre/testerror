@@ -28,11 +28,13 @@ bayesian_panel_complex_model(
 \item{test_results}{A dataframe containing the following columns:
 \itemize{
 \item id (character) - the patient identifier
-\item result (logical) - the test result
 \item test (factor) - the test type
+\item result (logical) - the test result
 }
 
-Ungrouped}
+Ungrouped.
+
+No default value.}
 
 \item{false_pos_controls}{the number of positives that appeared in the specificity
 disease-free control group. These are by definition false positives. This

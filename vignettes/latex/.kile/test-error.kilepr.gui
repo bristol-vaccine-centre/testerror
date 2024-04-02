@@ -41,7 +41,7 @@ Mode=LaTeX
 Mode Set By User=false
 
 [document-settings,item:s2/supplementary_2.tex]
-Bookmarks=239,0
+Bookmarks=0,239
 Encoding=UTF-8
 Highlighting=LaTeX
 Highlighting Set By User=false
@@ -82,8 +82,8 @@ open=false
 order=-1
 
 [view-settings,view=0,item:main/main.tex]
-CursorColumn=1192
-CursorLine=212
+CursorColumn=0
+CursorLine=397
 Dynamic Word Wrap=true
 JumpList=
 TextFolding=[]
@@ -106,16 +106,16 @@ TextFolding=[]
 ViMarks=
 
 [view-settings,view=0,item:s1/supplementary_chapter_1.tex]
-CursorColumn=121
-CursorLine=117
+CursorColumn=115
+CursorLine=26
 Dynamic Word Wrap=true
 JumpList=
 TextFolding=[]
 ViMarks=
 
 [view-settings,view=0,item:s2/supplementary_2.tex]
-CursorColumn=77
-CursorLine=72
+CursorColumn=115
+CursorLine=26
 Dynamic Word Wrap=true
 JumpList=
 TextFolding=[]

@@ -239,7 +239,7 @@ res3 = ex1$summary %>% dplyr::mutate(true_prevalence(
   method = "rogan-gladen"
 ))
 
-testerror:::demo_bar_plot(dplyr::bind_rows(res1,res2,res3))+
+testerror:::demo_bar_plot(dplyr::bind_rows(res1,res2,res3),.pcv = FALSE)+
   ggplot2::labs(caption=sprintf("Red lines / grey bars are apparent prevalence / counts
 Blue lines the underlying true prevalence rate.
 Test sensitivity: %s

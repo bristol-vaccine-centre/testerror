@@ -101,7 +101,7 @@ true_prevalence = function(
 #'
 #' @inheritDotParams bayesian_component_simpler_model
 #' @inheritDotParams bayesian_component_logit_model
-#' @param model_type The bayesian model used - `r pkgutils::doc_formals(bayesian_true_prevalence_model, model_type)`
+#' @param model_type The bayesian model used - one of "logit" or "simpler"
 #'
 #' @return `r .output_data`
 #' @export

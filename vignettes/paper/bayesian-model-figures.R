@@ -16,92 +16,94 @@ ggrrr::gg_pedantic()
 
 ## Supp 2 figure 1 ----
 
-app=apparent_prevalence_plot(p = c(0.05,0.3),top_left = "")
+sf1 = rogan_gladen_plot(sens = 0.8, spec=0.95, examples=c(0.05,0.3))
 
-# not vectorised
-.pos_test_p = function(test, prev, sens, spec, size, ...) {
-  sum(
-    # TRUE POSITIVES:
-    dbinom(test:0, prob = sens*prev, size=size)*
-      dbinom(0:test, prob = (1-spec)*(1-prev), size=size))
-}
+# app=apparent_prevalence_plot(p = c(0.05,0.3),top_left = "")
+# 
+# # not vectorised
+# .pos_test_p = function(test, prev, sens, spec, size, ...) {
+#   sum(
+#     # TRUE POSITIVES:
+#     dbinom(test:0, prob = sens*prev, size=size)*
+#       dbinom(0:test, prob = (1-spec)*(1-prev), size=size))
+# }
+# 
+# tmp = crossing(
+#   prev=seq(0,1,length.out=1001),
+#   test=0:100
+# ) %>% mutate(
+#   sens = 0.8,
+#   spec = 0.95,
+#   size = 100,
+#   ap = prev*sens+(1-prev)*(1-spec),
+#   #p_test = dbinom(test, prob = ap, size=max(test)),
+#   test_n = test/max(test)
+# ) %>% mutate(
+#   p_test = purrr::pmap_dbl(., .pos_test_p)
+# )
+# 
+# marks = tibble(
+#   p_mark = c(0.05, 0.3)
+# ) %>% mutate(
+#   ap_mark = apparent_prevalence(p_mark, 0.8, 0.95),
+#   test_mark = round(ap_mark*100),
+#   binom::binom.confint(test_mark,100,method="wilson")
+# )
+# 
+# thres = testerror::underestimation_threshold(0.8,0.95)
+# 
+# #p_cols = scales::brewer_pal(palette = "Dark2")(2)
+# p_cols = c("blue","red")
+# names(p_cols) = as.character(marks$p_mark)
+# test_cols = p_cols
+# names(test_cols) = as.character(marks$test_mark)
+# 
+# marginal_x = tmp %>% inner_join(marks, by = c("test"="test_mark"))
+# marginal_y = tmp %>% inner_join(marks, by = c("prev"="p_mark"))
+# 
+# app2 = ggplot(tmp, aes(x=prev,y=ap*100))+
+#   geom_abline(colour="grey40",slope = 100)+
+#   geom_line()+
+#   geom_tile(aes(x=prev, y=test, fill = p_test),data = tmp, inherit.aes = FALSE)+
+#   scale_fill_gradient(trans="sqrt",high = "#0A0AFF" , low = "#FFFFFF00", guide="none",name="probability", oob=scales::squish)+
+#   scale_y_continuous(sec.axis = sec_axis( trans=~./100, name="apparent prevalence"), expand = c(0, 0))+
+#   scale_x_continuous(expand = c(0, 0))+
+#   theme(axis.text.y.left = element_blank(), axis.title.y.left = element_blank())+
+#   ggrrr::gg_hide_X_axis()+
+#   geom_hline(data = marks, mapping=aes(yintercept=ap_mark*100, color = as.character(p_mark)), linetype="dotted")+
+#   geom_segment(data = marks, mapping=aes(x=p_mark, y=0, xend = p_mark, yend=ap_mark*100, color = as.character(p_mark)), linetype="dashed")+
+#   geom_point(data = marks, mapping=aes(x=p_mark, y=ap_mark*100, color = as.character(p_mark)), size=1)+
+#   geom_point(x=thres,y=thres*100,colour="black", size=1)+
+#   # geom_errorbarh(data= marks, mapping=aes(y=ap_mark*100, x=mean, xmin=lower, xmax=upper, colour = as.character(p_mark)))+
+#   scale_color_manual(values = p_cols, guide="none")
+#   
+# 
+# # ggrrr::gg_save_as(app2,  here::here("vignettes/latex/s2/fig/rogan-gladen-v2"), size = std_size$third)
+# 
+# mx = ggplot(marginal_x, aes(x=prev, y=p_test, colour=as.character(test),fill=as.character(test)))+geom_area(position="dodge",alpha=0.1)+
+#   scale_color_manual(values = test_cols, name = "count", aesthetics = c("colour","fill"))+
+#   geom_vline(data=marks, mapping=aes(xintercept=p_mark, colour=as.character(test_mark)), linetype = "dashed")+
+#   geom_rect(data= marks, mapping=aes(ymin=-0.015, ymax=-0.005, xmin=lower, xmax=upper, fill = as.character(test_mark), colour = as.character(test_mark)), alpha=0.2, inherit.aes = FALSE)+
+#   scale_x_continuous(expand = c(0, 0), name="true prevalence")+scale_y_reverse(expand = c(0.005, 0.005),breaks = NULL)+ggrrr::gg_hide_Y_axis()
+# 
+#   
+# my = ggplot(marginal_y, aes(x=test, y=p_test, colour=as.character(prev),fill=as.character(prev)))+
+#   scale_color_manual(values = p_cols, name="prevalence",aesthetics = c("colour","fill"))+
+#   geom_bar(stat="identity",position=position_identity(),colour=NA,alpha=0.1)+
+#   geom_step(direction="mid")+
+#   geom_vline(data=marks, mapping=aes(xintercept=ap_mark*100,colour=as.character(p_mark)), linetype = "dotted")+
+#   ggplot2::scale_x_continuous(expand = c(0, 0), name="positive count (N=100)")+
+#   coord_flip()+scale_y_reverse(expand = c(0, 0.005),breaks = NULL)+ggrrr::gg_hide_X_axis()
+# 
+# sf1 = my + app2 + patchwork::guide_area() + mx + plot_layout(design = 
+# "ABBBB
+# ABBBB
+# ABBBB
+# ABBBB
+# CDDDD
+# ",guides="collect")
 
-tmp = crossing(
-  prev=seq(0,1,length.out=1001),
-  test=0:100
-) %>% mutate(
-  sens = 0.8,
-  spec = 0.95,
-  size = 100,
-  ap = prev*sens+(1-prev)*(1-spec),
-  #p_test = dbinom(test, prob = ap, size=max(test)),
-  test_n = test/max(test)
-) %>% mutate(
-  p_test = purrr::pmap_dbl(., .pos_test_p)
-)
-
-marks = tibble(
-  p_mark = c(0.05, 0.3)
-) %>% mutate(
-  ap_mark = apparent_prevalence(p_mark, 0.8, 0.95),
-  test_mark = round(ap_mark*100),
-  binom::binom.confint(test_mark,100,method="wilson")
-)
-
-thres = testerror::underestimation_threshold(0.8,0.95)
-
-#p_cols = scales::brewer_pal(palette = "Dark2")(2)
-p_cols = c("blue","red")
-names(p_cols) = as.character(marks$p_mark)
-test_cols = p_cols
-names(test_cols) = as.character(marks$test_mark)
-
-marginal_x = tmp %>% inner_join(marks, by = c("test"="test_mark"))
-marginal_y = tmp %>% inner_join(marks, by = c("prev"="p_mark"))
-
-app2 = ggplot(tmp, aes(x=prev,y=ap*100))+
-  geom_abline(colour="grey40",slope = 100)+
-  geom_line()+
-  geom_tile(aes(x=prev, y=test, fill = p_test),data = tmp, inherit.aes = FALSE)+
-  scale_fill_gradient(trans="sqrt",high = "#0A0AFF" , low = "#FFFFFF00", guide="none",name="probability", oob=scales::squish)+
-  scale_y_continuous(sec.axis = sec_axis( trans=~./100, name="apparent prevalence"), expand = c(0, 0))+
-  scale_x_continuous(expand = c(0, 0))+
-  theme(axis.text.y.left = element_blank(), axis.title.y.left = element_blank())+
-  ggrrr::gg_hide_X_axis()+
-  geom_hline(data = marks, mapping=aes(yintercept=ap_mark*100, color = as.character(p_mark)), linetype="dotted")+
-  geom_segment(data = marks, mapping=aes(x=p_mark, y=0, xend = p_mark, yend=ap_mark*100, color = as.character(p_mark)), linetype="dashed")+
-  geom_point(data = marks, mapping=aes(x=p_mark, y=ap_mark*100, color = as.character(p_mark)), size=1)+
-  geom_point(x=thres,y=thres*100,colour="black", size=1)+
-  # geom_errorbarh(data= marks, mapping=aes(y=ap_mark*100, x=mean, xmin=lower, xmax=upper, colour = as.character(p_mark)))+
-  scale_color_manual(values = p_cols, guide="none")
-  
-
-# ggrrr::gg_save_as(app2,  here::here("vignettes/latex/s2/fig/rogan-gladen-v2"), size = std_size$third)
-
-mx = ggplot(marginal_x, aes(x=prev, y=p_test, colour=as.character(test),fill=as.character(test)))+geom_area(position="dodge",alpha=0.1)+
-  scale_color_manual(values = test_cols, name = "count", aesthetics = c("colour","fill"))+
-  geom_vline(data=marks, mapping=aes(xintercept=p_mark, colour=as.character(test_mark)), linetype = "dashed")+
-  geom_rect(data= marks, mapping=aes(ymin=-0.015, ymax=-0.005, xmin=lower, xmax=upper, fill = as.character(test_mark), colour = as.character(test_mark)), alpha=0.2, inherit.aes = FALSE)+
-  scale_x_continuous(expand = c(0, 0), name="true prevalence")+scale_y_reverse(expand = c(0.005, 0.005),breaks = NULL)+ggrrr::gg_hide_Y_axis()
-
-  
-my = ggplot(marginal_y, aes(x=test, y=p_test, colour=as.character(prev),fill=as.character(prev)))+
-  scale_color_manual(values = p_cols, name="prevalence",aesthetics = c("colour","fill"))+
-  geom_bar(stat="identity",position=position_identity(),colour=NA,alpha=0.1)+
-  geom_step(direction="mid")+
-  geom_vline(data=marks, mapping=aes(xintercept=ap_mark*100,colour=as.character(p_mark)), linetype = "dotted")+
-  ggplot2::scale_x_continuous(expand = c(0, 0), name="positive count (N=100)")+
-  coord_flip()+scale_y_reverse(expand = c(0, 0.005),breaks = NULL)+ggrrr::gg_hide_X_axis()
-
-sf1 = my + app2 + patchwork::guide_area() + mx + plot_layout(design = 
-"ABBBB
-ABBBB
-ABBBB
-ABBBB
-CDDDD
-",guides="collect")
-
-ggrrr::gg_save_as(sf1,  here::here("vignettes/latex/s2/fig/rogan-gladen-v3"), maxWidth = 4, maxHeight = 4)
+ggrrr::gg_save_as(sf1,  here::here("vignettes/latex/s2/fig/rogan-gladen-v3"), maxWidth = 5, maxHeight = 5)
 
 ## Set up scenario / IPD test data ----
 
@@ -194,7 +196,7 @@ p = p1+theme(axis.title.y.right = element_blank(),axis.text.y.right = element_bl
   patchwork::plot_annotation(caption=caption) & theme(legend.position = 'bottom',legend.justification = "center") &
   coord_cartesian(ylim=c(0,15))
 p
-ggrrr::gg_save_as(p,  here::here("vignettes/latex/main/fig/simulation_result_bayes_v2"), size = std_size$half)
+ggrrr::gg_save_as(p,  here::here("vignettes/latex/main/fig/fig5-simulation_result_bayes_v2"),formats = c("svg","eps"), size = std_size$half)
 
 ## Scenario with multiple panels with different prevalences ----
 

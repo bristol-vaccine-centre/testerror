@@ -4,8 +4,11 @@
 
 # generate a theoretical distribution of component prevalences that combine to produce
 # a panel prevalence at a given level. Based on a relative frequency of observation.
+# distribute(dist = c(0.222222222222222, 0.155555555555556, 0, 0.2, 0, 0, 0.0222222222222222, 0.4, 0), p=0.04)
+# distribute(dist = c(0, 0, 0, 1, 0), p=0.04)
 distribute = function(dist, p) {
   dist = dist/sum(dist)
+  if (all(dist %in% c(0,1))) return(dist*p)
   p = unique(p)
   if (length(p) > 1) stop("p must be unique")
   u = stats::uniroot(f = function(k) 1-prod(1-dist^k*p)-p,interval = c(0,.Machine$double.max.exp))

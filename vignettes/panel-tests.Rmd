@@ -182,7 +182,7 @@ corr3 = true_panel_prevalence(
   model_type = "logit"
 )
 
-testerror:::demo_bar_plot(tmp$summary %>% dplyr::inner_join(bind_rows(corr,corr2,corr3),by="test"))
+testerror:::demo_bar_plot(tmp$summary %>% dplyr::inner_join(bind_rows(corr,corr2,corr3),by="test"),.pcv=FALSE)
 ```
 
 ```{r}

@@ -40,20 +40,22 @@ control group.}
     \code{iter/2}.}
   }}
 
-\item{model_type}{The bayesian model used - one of: \code{logit}, \code{simpler}; default \code{logit}}
+\item{model_type}{The bayesian model used - one of "logit" or "simpler"}
 }
 \value{
 A dataframe containing the following columns:
 \itemize{
-\item prevalence.label (character) - a fomatted label of the true prevalence estimate with CI
+\item test (character) - the name of the test or panel
 \item prevalence.lower (numeric) - the lower estimate
 \item prevalence.median (numeric) - the median estimate
-\item prevalence.method (character) - the method of estimation
 \item prevalence.upper (numeric) - the upper estimate
-\item test (character) - the name of the test or panel
+\item prevalence.method (character) - the method of estimation
+\item prevalence.label (character) - a fomatted label of the true prevalence estimate with CI
 }
 
-Ungrouped
+Ungrouped.
+
+No default value.
 }
 \description{
 Execute one of a set of bayesian models

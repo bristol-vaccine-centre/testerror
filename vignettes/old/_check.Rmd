@@ -1,0 +1,65 @@
+
+
+
+$$
+
+P(A \cup B) = P(A) + P(B) - P(A) \times P(B)
+
+$$
+
+
+Assuming independence:
+
+If a condition is composed of many subtypes, then each individual subtype must be a 
+fraction of the overall condition prevalence.
+
+$$
+
+P(A_N) = 1 - \prod_n(1-P(A_n)) \\
+
+1-P(A_n) = \frac{1-P(A_N)}{\prod_{i=1}^{n-1}(1-P(A_i))}\\
+
+P(¬A_n) = \frac{P(¬A_N)}{\prod_{i=1}^{n-1}(P(¬A_i))} \\
+
+{\prod_{i=0}^{n-1}(P(¬A_i))} \leq 1 \\
+
+P(¬A_n) \geq P(¬A_N) \\ 
+
+P(A_n) \leq P(A_N) \\ 
+
+
+
+$$
+
+$$
+
+1-prev_N = \prod_n(1-prev_n) \\
+prev_n \leq prev_N \\
+\frac{prev_N}{|n|} \leq \overline{prev_n} \leq 1-\sqrt[|n|]{1-prev_N}
+
+$$
+
+
+
+
+
+```{r}
+a = runif(20)*0.2 # c(0.1,0.2,0.15)
+a_N = 1-prod(1-a)
+
+1-prod(1-a)^(1/length(a))
+prod(a)^(1/length(a))
+
+```
+
+
+```{r}
+
+a = rep(0.1,5)
+a_N = 1-prod(1-a)
+
+mean(a)
+
+1-(1-a_N)^(1/5)
+
+```

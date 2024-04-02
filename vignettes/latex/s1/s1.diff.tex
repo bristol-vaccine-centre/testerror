@@ -1,0 +1,607 @@
+\documentclass[a4paper, 12pt, twoside]{article}
+%DIF LATEXDIFF DIFFERENCE FILE
+%DIF DEL s1.first_submission.tex   Fri Dec  8 10:43:11 2023
+%DIF ADD s1.tex                    Tue Mar 19 12:59:00 2024
+    % General document formatting
+    \usepackage[a4paper,
+            left=20mm, right=20mm,
+			top=20mm, bottom=20mm]{geometry}
+    \usepackage[parfill]{parskip}
+    \usepackage[utf8]{inputenc}
+
+    % Related to math
+    \usepackage{amsmath,amssymb,amsfonts,amsthm}
+    \usepackage{mathtools}
+    \newcounter{tagno}
+    \setcounter{tagno}{0}
+    \newcommand{\mytag}[1]{\tag{\thetagno} \label{#1} \stepcounter{tagno}}
+
+    \usepackage{authblk}
+    \title{Supplementary 1: Sensitivity and specificity of combined panel tests}
+    \author[1,2]{Robert Challen}
+    \author[1,2]{Anastasia Chatzilena}
+    \author[1,2]{George Qian}
+    \author[1,2]{Glenda Oben}
+    \author[3,4]{Rachel Kwiatkowska}
+    \author[1]{Catherine Hyams}
+    \author[1]{Adam Finn}
+    \author[5]{Krasimira Tsaneva-Atanasova}
+    \author[1,2]{Leon Danon}
+%DIF 27c27
+%DIF <     \affil[1]{Bristol Vaccine Centre, Schools of Population Health Sciences and of Cellular and Molecular Medicine, University of Bristol. UK.}
+%DIF -------
+    \affil[1]{Bristol Vaccine Centre, Schools of Population Health Sciences and of Cellular and Molecular Medicine, University of Bristol, Bristol, UK.} %DIF > 
+%DIF -------
+    \affil[2]{Department of Engineering Mathematics, University of Bristol, Bristol, UK.}
+    \affil[3]{Population Health Sciences, University of Bristol. UK.}
+    \affil[4]{NIHR Health Protection Unit in Behavioural Science and Evaluation, University of Bristol. UK.}
+    \affil[5]{Department of Mathematics and Statistics, University of Exeter, UK.}
+    \date{}                     %% if you don't need date to appear
+    \setcounter{Maxaffil}{0}
+    \renewcommand\Affilfont{\itshape\small}
+
+    % keep figures in same section
+    \usepackage{placeins}
+    \let\Oldsection\section
+    \renewcommand{\section}{\FloatBarrier\Oldsection}
+    \let\Oldsubsection\subsection
+    \renewcommand{\subsection}{\FloatBarrier\Oldsubsection}
+    \let\Oldsubsubsection\subsubsection
+    \renewcommand{\subsubsection}{\FloatBarrier\Oldsubsubsection}
+
+    % for \ie \eg
+    \usepackage{xspace}
+    \newcommand*{\eg}{e.g.\@\xspace}
+    \newcommand*{\ie}{i.e.\@\xspace}
+    \newcommand*{\nb}{N.b.\@\xspace}
+
+    \usepackage{booktabs}
+    \usepackage{multirow}
+    \usepackage[table,xcdraw]{xcolor}
+
+    % cite package, to clean up citations in the main text. Do not remove.
+%DIF <     \usepackage{cite}
+%DIF -------
+%     \usepackage{cite} %DIF > 
+%DIF <     \bibliographystyle{plain}
+%     \bibliographystyle{plain} %DIF > 
+    \usepackage[hidelinks]{hyperref} %DIF > 
+    \usepackage[numbers]{natbib} %DIF > 
+    \bibliographystyle{unsrturl} %DIF > 
+%DIF PREAMBLE EXTENSION ADDED BY LATEXDIFF
+%DIF UNDERLINE PREAMBLE %DIF PREAMBLE
+\RequirePackage[normalem]{ulem} %DIF PREAMBLE
+\RequirePackage{color}\definecolor{RED}{rgb}{1,0,0}\definecolor{BLUE}{rgb}{0,0,1} %DIF PREAMBLE
+\providecommand{\DIFaddtex}[1]{{\protect\color{blue}\uwave{#1}}} %DIF PREAMBLE
+\providecommand{\DIFdeltex}[1]{{\protect\color{red}\sout{#1}}}                      %DIF PREAMBLE
+%DIF SAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddbegin}{} %DIF PREAMBLE
+\providecommand{\DIFaddend}{} %DIF PREAMBLE
+\providecommand{\DIFdelbegin}{} %DIF PREAMBLE
+\providecommand{\DIFdelend}{} %DIF PREAMBLE
+\providecommand{\DIFmodbegin}{} %DIF PREAMBLE
+\providecommand{\DIFmodend}{} %DIF PREAMBLE
+%DIF FLOATSAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddFL}[1]{\DIFadd{#1}} %DIF PREAMBLE
+\providecommand{\DIFdelFL}[1]{\DIFdel{#1}} %DIF PREAMBLE
+\providecommand{\DIFaddbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFaddendFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelendFL}{} %DIF PREAMBLE
+%DIF HYPERREF PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFadd}[1]{\texorpdfstring{\DIFaddtex{#1}}{#1}} %DIF PREAMBLE
+\providecommand{\DIFdel}[1]{\texorpdfstring{\DIFdeltex{#1}}{}} %DIF PREAMBLE
+%DIF LISTINGS PREAMBLE %DIF PREAMBLE
+\RequirePackage{listings} %DIF PREAMBLE
+\RequirePackage{color} %DIF PREAMBLE
+\lstdefinelanguage{DIFcode}{ %DIF PREAMBLE
+%DIF DIFCODE_UNDERLINE %DIF PREAMBLE
+  moredelim=[il][\color{red}\sout]{\%DIF\ <\ }, %DIF PREAMBLE
+  moredelim=[il][\color{blue}\uwave]{\%DIF\ >\ } %DIF PREAMBLE
+} %DIF PREAMBLE
+\lstdefinestyle{DIFverbatimstyle}{ %DIF PREAMBLE
+	language=DIFcode, %DIF PREAMBLE
+	basicstyle=\ttfamily, %DIF PREAMBLE
+	columns=fullflexible, %DIF PREAMBLE
+	keepspaces=true %DIF PREAMBLE
+} %DIF PREAMBLE
+\lstnewenvironment{DIFverbatim}{\lstset{style=DIFverbatimstyle}}{} %DIF PREAMBLE
+\lstnewenvironment{DIFverbatim*}{\lstset{style=DIFverbatimstyle,showspaces=true}}{} %DIF PREAMBLE
+%DIF END PREAMBLE EXTENSION ADDED BY LATEXDIFF
+
+\begin{document}
+
+\maketitle
+
+The rationale for this analysis is given in detail in the main paper, but in summary it is to investigate the properties of the result of a panel combination of multiple component tests. The component tests aim to detect individual subtypes of a condition which may appear independently of one another, but the presence of any subtype implies the presence of the index condition. Likewise, the index condition can be considered to be absent if none of the components are present. If we consider a single patient $k$ and a set of $N$ condition subtypes then the patient's condition status is given by:
+
+\begin{equation*}
+\begin{aligned}
+I(A_{N,k}) = 1-\prod_{n \in N}{(1-I(A\DIFdelbegin \DIFdel{_n,k}\DIFdelend \DIFaddbegin \DIFadd{_{n,k}}\DIFaddend ))} \\
+\end{aligned}
+\end{equation*}
+
+Where \(I\) is the indicator function and a value of one represents presence and zero is absence, and \DIFdelbegin \DIFdel{\(A_n,k\) }\DIFdelend \DIFaddbegin \DIFadd{\(A_{n,k}\) }\DIFaddend describes the actual status of the disease subtype \(n\) in an individual \(k\).
+
+Such \DIFdelbegin \DIFdel{as }\DIFdelend \DIFaddbegin \DIFadd{a }\DIFaddend scenario may occur when considering a single disease, that may be caused by multiple distinct pathogens which are tested for separately, and could, at least in theory, occur together.
+
+\section{Definitions}
+
+Consider a set of patients (\(K\)) who we are testing for disease. Their true disease status may be either positive or negative, we denote each individual true disease state with the binary value \(A_k\). We then define the probability of disease over all patients as \(P(A)\) which is the true prevalence of the disease (\(prev\)). This quantity cannot necessarily be directly observed, and is usually something we wish to estimate  - (\nb \(I\) is the indicator function where 1 is a positive and 0 a negative.)
+
+\begin{equation*}
+\begin{aligned}
+prev = P(A) \approx \frac{\sum_{k \in K}{I(A_k)}}{|K|}
+\end{aligned}
+\end{equation*}
+
+% The rates of arrival of the patients in a given time period (\(t\)) for testing may be assumed to be due to a stochastic process following a Poisson distributed rate. If the overall probability of disease in the population (i.e. the prevalence) is \(prev\)
+% then we can define \(\alpha_p\) and \(\beta\) such that \(\frac{\alpha_p}{\beta} = prev\) then as in a Bayesian framework with an uninformed prior for \(prev\) the expected number of actual positive cases (\(E(A)\)) arriving in a given time period (\(t\)) is:
+
+% \begin{equation*}
+% E(A_t) \sim Gamma(\alpha^+, \beta)
+% \end{equation*}
+
+% Similarly we may define the expected number of actual negative cases (\(E(\neg A)\)) arriving in a given time period, with \(\alpha^- = \beta-\alpha^+\) and \(\frac{\alpha^-}{\beta} = 1-p\) then:
+
+% \begin{equation*}
+% E(\neg A_t) \sim Gamma(\alpha^-, \beta)
+% \end{equation*}
+
+% and the prevalence (\(prev\)), or probability that a person is an actual case (\(P(A)\)) is given by:
+
+% \begin{equation*}
+% \begin{aligned}
+% prev &= P(A_t) = \frac{E(A_t)}{E(A_t)+E(\neg A_t)} \\
+% prev &\sim \frac{Gamma(\alpha^+, \beta)}{  Gamma(\alpha^+, \beta) + Gamma(\alpha^-, \beta)} \\
+% &\sim Beta(\alpha^+,\alpha^-) \\
+% 1 - prev &= P(\neg A_t) \sim {Beta}(\alpha^-, \alpha^+)
+% \end{aligned}
+% \end{equation*}
+
+% Assume we have a sample \(K\) of a binomially distributed quantity with probability of actual disease prevalence of \(P(A)\). After a single observation of a number of positives within the fixed time period (\(\hat{k}\)) and given a non-informative Beta prior, the posterior distribution of \(P(A)\) in a Bayesian framework is given by:
+
+% \begin{equation*}
+% \begin{aligned}
+% \alpha^+ &= \hat{k}+1 \\
+% \alpha^- &= |K|-\hat{k}+1
+% \end{aligned}
+% \end{equation*}
+
+We assume all patients are tested for disease and there is a binary observation of a test result (\(O_k\)) for each \(k\) of \(K\) patients. The probability of observing a positive test result (\(P(O)\)), depends on disease status and test error, and is the apparent prevalence (\(E(AP)\)) which can be estimated using an observation of the test positivity (\(\widehat{AP}\))
+
+\begin{equation*}
+\begin{aligned}
+P(O) = E(AP) \approx \widehat{AP} = \frac{\sum_{k \in K}{I(O_k)}}{|K|}
+\end{aligned}
+\end{equation*}
+
+
+Type 1 test errors are false positives, the rate of which may be defined as the probability of observing a positive test result given an actual negative case (\(P(O| \neg A)\)).
+The complement of this quantity is the true negative rate and is known as the specificity (\(spec\)).
+Type 2 test errors are false negatives and the rate of these is the probability of observing a negative test result given an actual positive case (\(P(\neg O|A)\)).
+The complement of this quantity is the true positive rate and is known as the sensitivity (\(sens\)).
+
+\begin{equation*}
+\begin{aligned}
+spec = TNR &= P(\neg O| \neg A) = 1 - P(O| \neg A)  = 1-FPR \\
+sens = TPR &= P(O|A) = 1 - P(\neg O|A)  = 1-FNR
+\end{aligned}
+\end{equation*}
+
+The likelihood that any given person is actual case positive and observed test positive is the true positives \DIFaddbegin \DIFadd{(}\DIFaddend \(TP\)\DIFaddbegin \DIFadd{)}\DIFaddend , and can be defined in terms of the sensitivity and prevalence (\(sens\) and \(prev\)). \DIFaddbegin \DIFadd{Similarly we can define false positives (\(FP\)), false negatives (\(FN\)) and true negatives (\(FN\)).
+}\DIFaddend 
+
+\begin{equation*}
+\begin{aligned}
+P(\DIFdelbegin \DIFdel{TN}\DIFdelend \DIFaddbegin \DIFadd{TP}\DIFaddend ) &= P(\DIFdelbegin \DIFdel{\neg }\DIFdelend O|\DIFdelbegin \DIFdel{\neg }\DIFdelend A) P(\DIFdelbegin \DIFdel{\neg }\DIFdelend A) = \DIFdelbegin \DIFdel{spec \times (1-prev) }\DIFdelend \DIFaddbegin \DIFadd{sens \times prev }\DIFaddend \\
+P(FP) &= P(O|\neg A) P(\neg A) = (1-spec) \times (1-prev) \\
+P(FN) &= P(\neg O|A) P(A) = (1-sens) \times prev \\
+P(\DIFdelbegin \DIFdel{TP}\DIFdelend \DIFaddbegin \DIFadd{TN}\DIFaddend ) &= P(\DIFaddbegin \DIFadd{\neg }\DIFaddend O|\DIFaddbegin \DIFadd{\neg }\DIFaddend A) P(\DIFaddbegin \DIFadd{\neg }\DIFaddend A) = \DIFdelbegin \DIFdel{sens \times prev }\DIFdelend \DIFaddbegin \DIFadd{spec \times (1-prev) }\DIFaddend \\
+\end{aligned}
+\mytag{eq:definition}
+\end{equation*}
+
+\subsection{Rogan-Gladen derivation}
+
+An estimator for true prevalence presented by Rogan and Gladen \cite{rogan1978} can be expressed in this notation from Eq \eqref{eq:definition} as:
+
+\begin{equation*}
+\begin{aligned}
+P(O) &= P(TP) + P(FP) \\
+P(O) &= P(O|A)P(A) + P(O|\neg A)P(\neg A) \\
+P(O) &= P(O|A)P(A) + P(O|\neg A)(1-P(A)) \\
+P(O) &= P(O|A)P(A) + P(O|\neg A)-P(O|\neg A)P(A) \\
+P(A) &= \frac{P(O) - P(O|\neg A)}{P(O|A) - P(O|\neg A)}. \\
+\end{aligned}
+\end{equation*}
+
+Or, expressed in more familiar terms, the apparent prevalence (\(E(AP)\)) from prevalence, sensitivity and specificity is described, which can be rearranged to get an estimate for true prevalence (\(\widehat{prev}\)) based on an observed test positive rate (\(\widehat{AP}\)), and sensitivity and specificity:
+
+\begin{equation*}
+\begin{aligned}
+E(AP) &= sens \times prev + (1-spec) \times (1-prev) \\
+\widehat{prev} &\approx \begin{cases}
+    0 & \widehat{AP} \le (1-spec)\\
+    \frac{\widehat{AP} + spec -1}{sens + spec - 1} & (1-spec) < \widehat{AP} < sens\\
+    1 & sens \le \widehat{AP}\\
+  \end{cases}
+\end{aligned}
+\mytag{eq:rogan-gladen}
+\end{equation*}
+
+The estimator is only approximate because the use of an observed test positive rate (\(\widehat{AP}\)) as an estimate for the expected value of the apparent prevalence (\(E(AP)\)) becomes unreliable at extreme values. It also requires knowledge of test sensitivity and specificity.
+
+An equivalence formulation for the Rogan-Gladen estimator using the complement of prevalence can be expressed as follows and will be referred to later:
+
+\begin{equation*}
+\begin{aligned}
+P(\neg O) &= P(FN) + P(TN) \\
+P(\neg O) &= P(\neg O|A)P(A) + P(\neg O|\neg A)P(\neg A) \\
+P(\neg A) &= \frac{P(\neg O) - P(\neg O|A)}{P(\neg O|\neg A) - P(\neg O|A)} \\
+P(\neg A) &= \frac{P(\neg O) - FNR}{TNR - FNR}. \\
+\end{aligned}
+\mytag{eq:rogan-gladen-neg}
+\end{equation*}
+
+\section{Test panel combination}
+
+
+
+In the situation where a panel of independent tests looking for independently occurring features is combined, if any of the independent component test results are positive, we may infer the observed panel combination is positive. On the other hand only if all the test results are negative the panel may be considered as negative. If we again consider a single patient $k$ and a panel of component tests $N$, then the patient's combined result of the panel of tests is:
+
+\begin{equation*}
+\begin{aligned}
+I(O_{N,k}) = 1-\prod_{n \in N}{(1-I(O\DIFdelbegin \DIFdel{_n,k}\DIFdelend \DIFaddbegin \DIFadd{_{n,k}}\DIFaddend ))}. \\
+\end{aligned}
+\end{equation*}
+
+Due to false positives and false negatives in the individual component tests however, the result of the observed combined panel will be inaccurate as compared to the actual index condition. If we consider an example panel consisting of two component tests, then the possible combination of results of a panel can be seen in table \ref{tab:A1}. The combination of imperfect test results result in an imperfect panel result. There are three things to note, all of which can be extended to scenarios involving more than two components. Firstly a panel result can only be considered a ``true negative'' (TN) result if all the component tests are themselves ``true negative'' (cyan). Secondly, the panel result is negative, if, and only if, all the component test results are negative, and unless all components are ``true negatives'', the negative panel result will be a ``false negative'' (yellow). Thirdly there is a class of outcomes when a panel will be positive, due to a combination of component false positives and false negatives, which is the correct panel result, but for the wrong reason (red). These results increase the effective true positive rate of the panel, over and above the true positive rates of the components.
+
+\begin{table}[]
+\centering
+\caption{}
+\label{tab:A1}
+\begin{tabular}{@{}l|l|ll|ll|@{}}
+\cmidrule(l){2-6}
+\textbf{}                                                     & \textit{\textbf{test 2}} & \multicolumn{2}{l|}{\textit{\textbf{pos}}} & \multicolumn{2}{l|}{\textit{\textbf{neg}}}               \\ \midrule
+\multicolumn{1}{|l|}{\textit{\textbf{test 1}}}                &                          & \textbf{TP}  & \textbf{FP}                 & \textbf{FN}                 & \textbf{TN}                \\ \midrule
+\multicolumn{1}{|l|}{}                                        & \textbf{TP}              & TP           & TP                          & TP                          & TP                         \\
+\multicolumn{1}{|l|}{\multirow{-2}{*}{\textit{\textbf{pos}}}} & \textbf{FP}              & TP           & FP                          & \cellcolor[HTML]{FFCCC9}TP+ & FP                         \\ \midrule
+\multicolumn{1}{|l|}{}                                        & \textbf{FN}              & TP           & \cellcolor[HTML]{FFCCC9}TP+ & \cellcolor[HTML]{FFFFC7}FN  & \cellcolor[HTML]{FFFFC7}FN \\
+\multicolumn{1}{|l|}{\multirow{-2}{*}{\textit{\textbf{neg}}}} & \textbf{TN}              & TP           & FP                          & \cellcolor[HTML]{FFFFC7}FN  & \cellcolor[HTML]{96FFFB}TN \\ \bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Actual prevalence of a condition as a collection of subtypes}
+
+Assuming independence of components, and complete knowledge of the subtypes, the probability of a patient having the supertype   condition (\(P(A_N)\)) that results from any of the \(N\) condition subtypes being present, is simply the complement of the probability that none of the condition subtypes is present:
+
+\begin{equation*}
+\begin{aligned}
+prev_N &= 1- \prod_{n \in N}{ (1-prev_n) }, \\
+1-P(A_N) &= \prod_{n \in N}{\DIFaddbegin \big(\DIFaddend 1-P(A_n)\DIFaddbegin \big)\DIFaddend }, \\
+P(\neg A_N) &= \prod_{n \in N}{\frac{P(\neg O_n) - P(\neg O_n|A_n)}{P(\neg O_n|\neg A_n) - P(\neg O_n|A_n)}}. \\
+\end{aligned}
+\end{equation*}
+%
+% This expressions allow us to estimate the ``actual'' prevalence of a panel condition using the observed component test positivity by applying the Rogan-Gladen estimator.
+%
+% \begin{equation*}
+% \begin{aligned}
+% \widehat{prev_N} &\approx 1- \prod_{n \in N}{
+%   \begin{cases}
+%     \widehat{AP_n} \le (1-spec_n), 1 \\
+%     (1-spec_n) < \widehat{AP_n} < sens_n, \frac{sens_n - \widehat{AP_n}}{sens_n - (1-spec_n)} \\
+%     \widehat{AP_n} \le sens_n, 0 \\
+%   \end{cases}
+% }
+% \end{aligned}
+% \end{equation*}
+
+\subsection{Observed test positivity of a panel as a collection of component tests}
+
+Assuming independence of components, the observed positivity of a panel (\(P(O_N)\)) that is composed of \(N\) component tests is simply the complement of the probability that none of the component tests is positive. This is also the expected value of the apparent prevalence of a panel test result (\(E(AP_N)\)):
+
+\begin{equation*}
+\begin{aligned}
+P(O_N) &= 1-\prod_{n \in N}{\DIFaddbegin \big(\DIFaddend 1-P(O_n)\DIFaddbegin \big)\DIFaddend } \\
+ &= 1-\prod_{n \in N}{P(\neg O_n)} \\
+ &= 1-\prod_{n \in N}{ \bigg(P(\neg O_n|\neg A_n)P(\neg A_n) + P(\neg O_n|A_n)P(A_n)} \bigg), \\
+E(AP_N) &= 1- \prod_{n \in N}{ \bigg(TNR_n \times (1-prev_n) + FNR_n \times prev_n} \bigg) \\
+ &= 1- \prod_{n \in N}{ \bigg(spec_n \times (1-prev_n) + (1-sens_n) \times prev_n} \bigg). \\
+\end{aligned}
+\end{equation*}
+
+
+\subsection{Panel specificity: \(TNR = 1-FPR\)}
+
+As we discussed above and in table \ref{tab:A1}, for a panel of $N$ tests, the panel result is a true negative, if and only if all the $N$ test results are also true negatives. From the definition of the probability of a given result being a true positive in \eqref{eq:definition}, we can derive the true negative rate, \ie the specificity:
+
+\begin{equation*}
+\begin{aligned}
+P(TN_N) &= P(\neg O_N|\neg A_N)P(\neg A_N)\\
+ &= \prod_{n \in N}{P(\neg O_n|\neg A_n)P(\neg A_n)}, \\
+TNR_N &= P(\neg O_N|\neg A_N)\\ 
+ &= \prod_{n \in N}{P(\neg O_n|\neg A_n)}, \\
+spec_N &= \prod_{n \in N}{spec_n}. \\
+\end{aligned}
+\mytag{eq:spec-theory}
+\end{equation*}
+
+\subsection{Panel sensitivity: \(TPR = 1-FNR\)}
+
+We determined above that if all observed component results are negative, the panel is also negative and that this is a false negative unless all component results are true negatives. This can also be derived from the definition of probability of the false negative result \eqref{eq:definition}, using the following application of Bayes theorem:
+
+\begin{equation*}
+\begin{aligned}
+P(\neg Y|X)P(X) &= P(X|\neg Y)P(\neg Y) \\
+&= (1-P(\neg X|\neg Y))P(\neg Y) \\
+&= P(\neg Y)-P(\neg X|\neg Y)P(\neg Y) \\
+&= P(\neg Y)-P(\neg Y|\neg X)P(\neg X).
+\end{aligned}
+\end{equation*}
+
+When this is applied to the definition of the probability that an observation is a false negative, we can derive an expression for the false negative rate, \ie 1 - sensitivity, from \eqref{eq:definition}:
+
+\begin{equation*}
+\begin{aligned}
+P(FN_N) &= P(\neg O_N|A_N) P(A_N) \\
+&= P(\neg O_N) - P(\neg O_N|\neg A_N)P(\neg A_N) \\
+&= \prod_{n \in N}{P(\neg O_n)} - \prod_{n \in N}{P(\neg O_n|\neg A_n) P(\neg A_n)}, \\
+FNR_N &= P(\neg O_N|A_N) \\
+& = \frac{P(FN_N)}{P(A_N)} \\
+& = \frac{
+  \prod_{n \in N}{P(\neg O_n)} - \prod_{n \in N}{P(\neg O_n|\neg A_n) P(\neg A_n)}
+}{
+  1 - \prod_{n \in N}{ P(\neg A_n) }
+}. \\
+\end{aligned}
+\end{equation*}
+
+From this and the Rogan-Gladen estimates in \eqref{eq:rogan-gladen-neg} we can eliminate \(P(\neg O_n)\) terms, giving us a theoretical value for the sensitivity of the panel (\(sens_N\)) calculated using the prevalence of actual disease, if we know it, and component test sensitivity and specificity. This can be used to express the panel sensitivity in a Bayesian framework:
+
+\begin{equation*}
+\begin{aligned}
+FNR_N &= \frac{
+  \prod_{n \in N}{\bigg(P(\neg O_n|A_n)P(A_n) + P(\neg O_n|\neg A_n)P(\neg A_n) \bigg)} - \prod_{n \in N}{P(\neg O_n|\neg A_n) P(\neg A_n)}
+}{
+  1 - \prod_{n \in N}{ P(\neg A_n) },
+} \\
+sens_N &= 1-\frac{
+  \prod_{n \in N}{\bigg((1-sens_n) \times prev_n + spec_n \times (1-prev_n) \bigg) } - \prod_{n \in N}{spec_n \times (1-prev_n)}
+}{
+  1 - \prod_{n \in N}{ (1-prev_n)}
+}. \\
+\end{aligned}
+\mytag{eq:sens-theory}
+\end{equation*}
+
+Alternatively using \eqref{eq:rogan-gladen-neg} we can eliminate \(P(\neg A_n)\) terms, to express an estimate of panel sensitivity (\(\widehat{sens_N}\)) in terms of a set of observations of component test positive results (\(\widehat{AP_n}\)), and associated component test sensitivity and specificity:
+
+\begin{equation*}
+\begin{aligned}
+FNR_N &= \frac{
+  \prod_{n \in N}{P(\neg O_n)} - \prod_{n \in N}{TNR_n \frac{P(\neg O_n) - FNR_n}{TNR_n - FNR_n}}
+}{
+  1 - \prod_{n \in N}{ \frac{P(\neg O_n) - FNR_n}{TNR_n - FNR_n} }
+}, \\
+\widehat{sens_N} &\approx 1-\frac{
+  \prod_{n \in N}{(1-\widehat{AP_n})} - \prod_{n \in N}{spec_n \times \frac{(1-\widehat{AP_n}) - (1-sens_n)}{spec_n - (1-sens_n)}}
+}{
+  1 - \prod_{n \in N}{ \frac{(1-\widehat{AP_n}) - (1-sens_n)}{spec_n - (1-sens_n)} }
+} \\
+ &\approx 1-\frac{
+  \prod_{n \in N}{(1-\widehat{AP_n})} - \prod_{n \in N}{spec_n \times \frac{sens_n-\widehat{AP_n}}{spec_n + sens_n - 1}}
+}{
+  1 - \prod_{n \in N}{ \frac{sens_n-\widehat{AP_n}}{spec_n + sens_n - 1} }
+}.
+\end{aligned}
+\mytag{eq:sens-estimator}
+\end{equation*}
+
+This alternative expression is an estimator for panel \DIFdelbegin \DIFdel{specificity }\DIFdelend \DIFaddbegin \DIFadd{sensitivity }\DIFaddend based on observed data, but as with the Rogan-Gladen estimate for true prevalence, it may become inaccurate when the observations of component test positivity is a poor proxy of expected apparent prevalence (\ie outside of the range \((1-spec_n) < \widehat{AP_n} < sens_n\)). However, in practice, this is less of an issue than the Rogan-Gladen estimator, and truncation is not required to produce reasonable estimates of combined sensitivity\DIFaddbegin \DIFadd{, due to the Rogan-Gladen term }\eqref{eq:rogan-gladen} \DIFadd{being in both numerator and denominator}\DIFaddend .
+
+\subsection{Panel prevalence from data}
+
+These expressions allow us to create an estimator \DIFaddbegin \DIFadd{for }\DIFaddend the ``actual'' prevalence of a condition using the observed test positivity of a panel of component tests by applying the Rogan-Gladen estimator. This can be calculated from raw component test data, and component test sensitivity and specificity:
+
+\begin{equation*}
+\begin{aligned}
+\widehat{prev_{N}} &\approx \frac{
+    \widehat{AP_{N}} + spec_N -1
+  }{
+    \widehat{sens_N} + spec_N - 1
+  } \\
+ &\approx \frac{
+    \widehat{AP_{N}} + \prod_{n \in N}{spec_n} -1
+  }{
+    \prod_{n \in N}{spec_n}-\frac{
+      \prod_{n \in N}{(1-\widehat{AP_n})} - \prod_{n \in N}{spec_n \times \frac{sens_n-\widehat{AP_n}}{spec_n + sens_n - 1}}
+    }{
+      1 - \prod_{n \in N}{ \frac{sens_n-\widehat{AP_n}}{spec_n + sens_n - 1} }
+    }
+  } \\
+ &\approx \frac{
+    \prod_{n \in N}{spec_n} -(1-\widehat{AP_{N}})
+  }{
+    \prod_{n \in N}{spec_n}
+    -\prod_{n \in N}{(1-\widehat{AP_n})}
+  } \bigg(1 - \prod_{n \in N}{ \frac{sens_n-\widehat{AP_n}}{spec_n + sens_n - 1} } \bigg ). \\
+\end{aligned}
+\mytag{eq:prev-estiamtor}
+\end{equation*}
+
+This expression is equivalent to the Rogan-Gladen estimate for panel tests and has a similar set of caveats and requirement for truncation of the prevalence estimate at high and low values of apparent prevalence.
+
+\section{Characterisation}
+
+The combined prevalence, combined apparent prevalence, and combined specificity are a straightforward compound of their components, and behave in an unsurprising fashion.
+
+In both theoretical \eqref{eq:sens-theory} and estimator \eqref{eq:sens-estimator} forms of the combined sensitivity there is an interaction between component sensitivity, component specificity and component prevalence. This means that interpretation of the observed positivity of a panel test is not at all trivial, and unlike normal tests, the false negative rate is dependent on prevalence, with higher prevalence having lower false negative rate. There are a large number of free parameters and fully characterising the behaviour of this relationship is difficult so we restrict ourselves to some illustrative examples.
+
+In figure \ref{fig:A2}, panel A, this relationship is demonstrated in an artificial scenario where we assume 10 identically prevalent diseases, and fix 10 component tests to all have a specificity of 0.975. The sensitivities of all components are varied together between 0.5 and 1 and the prevalence of all components varied between 0 and 0.25. The sensitivity of the combined test (from \eqref{eq:sens-theory}) is always higher than that of the components, and this is increased with increasing prevalence. This is the result of more combined tests being correct for the wrong reason, as false positives in one test component balance out false negatives in another test component.
+
+Secondly, in figure \ref{fig:A2}, panel B we explore how the combined sensitivity varies with varying sensitivities of the component tests. In this scenario all 10 components have the same prevalence (0.05) and all 10 component tests have the same specificity (0.975). In this case we set the sensitivity of the components to be either low (baseline - grey line) or high (black line) and vary the ratio of high versus low sensitivity tests, as we vary the baseline sensitivity between 0.5 and 1. In this artificial situation the combined sensitivity appears to be proportional to the average of the component sensitivity.
+
+Thirdly in figure \ref{fig:A2}, panel C we explore the relationship between component test specificity and combined sensitivity, by fixing the prevalence of all components to 0.05. The sensitivities of all components are varied together between 0.5 and 1 and the specificity of all components varied between 0.75 and 1. In this scenario we see that the combined sensitivity is increased by decreasing component specificity, for the same reason as before, that decreasing the specificity of the components will result in more false positives to balance out any false negatives in another component.
+
+\begin{figure}[h!]
+\centering
+  \includegraphics{fig/component-vs-combined-specificity.png}
+  \caption{The relationship between component sensitivity and combined panel sensitivity for a panel of 10 tests. In the three subfigures A,B and C, the component tests are all kept the same, but one of disease prevalence, panel composition and component specificity are varied. In all cases the panel sensitivity is calculated using equation \eqref{eq:sens-estimator} for a range of component sensitivities. In this artificial scenario, where a given parameter is not being varied all components are set to have the same prevalence (0.05), test specificity (0.975) and test sensitivity is varied between 0.5 and 1.}
+\label{fig:A2}
+\end{figure}
+
+\section{Simulation}
+
+Whilst the characterisation is helpful to test the estimator in a wide range of scenarios, we resort to multiple simulations for further detailed characterisation. Following the model described in \eqref{eq:simulation-setup}, we run 8 batches of 100 simulations. Each simulation consisting of between 2 and 9 components\DIFaddbegin \DIFadd{, \(N_{sim}\) }\DIFaddend (depending on the batch) and each component in every simulation has a randomly assigned, but generally plausible, prevalence, sensitivity and specificity. Each component is given a random zero-inflated \DIFdelbegin \DIFdel{prevalence (\(prev_n\)}\DIFdelend \DIFaddbegin \DIFadd{frequency, (\(freq_n\)}\DIFaddend ) using a product of two Poisson distributed quantities, \DIFdelbegin \DIFdel{constrained so that the total prevalence matches a simulation parameter }\DIFdelend \DIFaddbegin \DIFadd{which is scaled by an empirically determined factor (\(scale\)) to enforce the component prevalences combine to the simulation total prevalence }\DIFaddend (\(prev_{N_{sim}}\)) \DIFaddbegin \DIFadd{with the assumption of independence}\DIFaddend . 10000 cases are generated for each of the 800 simulations with ``actual'' subtype status depending on the component prevalence, and a test observation for each subtype depending on the ``actual'' subtype status, sensitivity and specificity. ``Actual'' combined disease status and observed test panel status are calculated for each of the 10000 cases. The model for each simulation is described below:
+
+\begin{equation*}
+\begin{aligned}
+n &\in \{1, \dots, N_{sim}\}, \\
+sens_n &\sim Beta(80,20),\\
+spec_n &\sim Beta(97.5,2.5),\\
+prev\DIFdelbegin \DIFdel{_N }\DIFdelend \DIFaddbegin \DIFadd{_{N_{sim}} }\DIFaddend &\sim Beta(2,10),\\
+\DIFdelbegin \DIFdel{dist}\DIFdelend \DIFaddbegin \DIFadd{freq}\DIFaddend _n &\sim Poisson(5) \times Poisson(1),\\
+prev_n &= \DIFdelbegin \DIFdel{\frac{dist_n}{\sum{dist_n}} \times prev_{N_{sim}} }\DIFdelend \DIFaddbegin \DIFadd{\frac{scale \times freq_n}{\sum{freq_n}}, }\\
+\DIFadd{prev_{N_{sim}} }&\DIFadd{= 1-\prod_{n \in N}{\big(1-prev_n}}\big)\DIFaddend , \\
+k &\in \{1,2,\dots,10000\},\\
+I(A_{n,k}) &\sim Bernoulli(prev_n),\\
+I(O_{n,k}) &\sim Bernoulli((1-spec_n) \times (1-I(A_{n,k})) + sens_n \times I(A_{n,k})),\\
+I(A_{N,k}) &= \DIFdelbegin \DIFdel{\prod_n{I(A_{n,k})}}\DIFdelend \DIFaddbegin \DIFadd{1-\prod_n{\big(1-I(A_{n,k})\big)}}\DIFaddend ,\\
+I(O_{N,k}) &= \DIFdelbegin \DIFdel{\prod_n{I(O_{n,k})}}\DIFdelend \DIFaddbegin \DIFadd{1-\prod_n{\big(1-I(O_{n,k})\big)}}\DIFaddend .\\
+\end{aligned}
+\mytag{eq:simulation-setup}
+\end{equation*}
+
+\DIFdelbegin \DIFdel{For each simulation, the 10000 combined panel test status and }\DIFdelend \DIFaddbegin \subsection{\DIFadd{Panel prevalence validation}}
+
+\DIFadd{Using the simulated cases we estimate }\DIFaddend the ``actual'' \DIFdelbegin \DIFdel{combined disease status are aggregated to provide a per-simulation estimate of panel sensitivity (\(\widehat{sens_{N,sim}}\))and panel specificity (\(\widehat{spec_{N,sim}}\)), including confidence intervals, as defined in }%DIFDELCMD < \eqref{eq:simulation-output}%%%
+\DIFdelend \DIFaddbegin \DIFadd{prevalence of each component in the simulation using the proportion of test positives for each component (\(\widehat{AP_{n,sim}}\)), the simulation parameters for sensitivity and specificity and the Rogan-Gladen estimator }\eqref{eq:rogan-gladen}\DIFadd{. We compare this to the ``actual'' prevalence observed in the simulation as the proportion of simulation disease positives (\(\overline{prev_{n,sim}}\))}\DIFaddend :
+
+\begin{equation*}
+\begin{aligned}
+\DIFdelbegin \DIFdel{TP_{N} }%DIFDELCMD < &%%%
+\DIFdel{= \sum_i{I(A_{N,i}) \times I(O_{N,i})}, }%DIFDELCMD < \\
+%DIFDELCMD < %%%
+\DIFdel{FP_{N} }%DIFDELCMD < &%%%
+\DIFdel{= \sum_i{I(\neg A_{N,i}) \times I(O_{N,i})}, }%DIFDELCMD < \\
+%DIFDELCMD < %%%
+\DIFdel{FN_{N} }%DIFDELCMD < &%%%
+\DIFdel{= \sum_i{I(A_{N,i}) \times I(\neg O_{N,i})}, }%DIFDELCMD < \\
+%DIFDELCMD < %%%
+\DIFdel{TN_{N} }%DIFDELCMD < &%%%
+\DIFdel{= \sum_i{I(\neg A_{N,i}) \times I(\neg O_{N,i})}, }%DIFDELCMD < \\
+%DIFDELCMD < \widehat{spec_{N,sim}} %%%
+\DIFdelend \DIFaddbegin \widehat{AP_{n,sim}} \DIFaddend &= \DIFdelbegin \DIFdel{\frac{TN_{N}}{FP_{N}+TN_{N}}}\DIFdelend \DIFaddbegin \DIFadd{\frac{1}{|k|}\sum_k{I(O_{n,k})}}\DIFaddend , \\
+\DIFdelbegin %DIFDELCMD < \widehat{sens_{N,sim}} %%%
+\DIFdelend \DIFaddbegin \widehat{prev_{n,sim}} \DIFaddend &= \DIFdelbegin \DIFdel{\frac{TP_{N}}{FN_{N}+TP_{N}}}\DIFdelend \DIFaddbegin \DIFadd{\frac{
+    \widehat{AP_{n,sim}} + spec_n -1
+  }{
+    sens_n + spec_n - 1
+  }}\DIFaddend ,\\
+\DIFdelbegin %DIFDELCMD < \widehat{AP_{N,sim}} %%%
+\DIFdelend \DIFaddbegin \overline{prev_{n,sim}} \DIFaddend &= \DIFdelbegin \DIFdel{\frac{1}{10000}\sum_i{I(O_{N,i})}}\DIFdelend \DIFaddbegin \DIFadd{\frac{1}{|k|}\sum_k{I(A_{n,k})}}\DIFaddend .
+\end{aligned}
+\DIFdelbegin %DIFDELCMD < \mytag{eq:simulation-output}
+%DIFDELCMD < %%%
+\DIFdelend \end{equation*}
+
+\DIFdelbegin \DIFdel{These per-simulation values are compared to the theoretical values of panel specificity (\(spec_N\)) }%DIFDELCMD < \eqref{eq:spec-theory}%%%
+\DIFdel{, to the theoretical panel sensitivity derived from the simulation parameter ``actual'' prevalence (\(sens_N\)) obtained using }%DIFDELCMD < \eqref{eq:sens-theory}  %%%
+\DIFdel{and to the estimated panel sensitivity  (\(\widehat{sens_N}\)) derived from ``observed'' simulation component test apparent prevalence, obtained using }%DIFDELCMD < \eqref{eq:sens-estimator}%%%
+\DIFdel{. Lastly we can also estimate the ``actual'' }\DIFdelend \DIFaddbegin \DIFadd{We also use the simulated cases to estimate the }\DIFaddend prevalence of the overall disease by using the Rogan-Gladen estimator \DIFaddbegin \eqref{eq:rogan-gladen}\DIFaddend , observed panel test \DIFdelbegin \DIFdel{positives}\DIFdelend \DIFaddbegin \DIFadd{positivity (\(\widehat{AP_{N,sim}}\))}\DIFaddend , predicted panel sensitivity \DIFdelbegin \DIFdel{and specificity}\DIFdelend \DIFaddbegin \eqref{eq:sens-theory} \DIFadd{and specificity }\eqref{eq:spec-theory}\DIFaddend . This can be directly compared to the \DIFdelbegin \DIFdel{parameterised }\DIFdelend \DIFaddbegin \DIFadd{``actual'' }\DIFaddend simulation panel prevalence\DIFaddbegin \DIFadd{, as the proportion of simulation disease positives (\(\overline{prev_{N,sim}}\))}\DIFaddend :
+
+\begin{equation*}
+\begin{aligned}
+\DIFaddbegin \widehat{AP_{N,sim}} &\DIFadd{= \frac{1}{|k|}\sum_k{I(O_{N,k})}, }\\
+\DIFaddend \widehat{prev_{N,sim}} &= \frac{
+    \widehat{AP_{N,sim}} + spec_N -1
+  }{
+    \widehat{sens_N} + spec_N - 1
+  }\DIFdelbegin \DIFdel{.
+}\DIFdelend \DIFaddbegin \DIFadd{, }\\
+\overline{prev_{N,sim}} &\DIFadd{= \frac{1}{|k|}\sum_k{I(A_{N,k})}. }\\
+\DIFaddend \end{aligned}
+\DIFdelbegin %DIFDELCMD < \mytag{eq:simulation-output}
+%DIFDELCMD < %%%
+\DIFdelend \end{equation*}
+
+The primary results of \DIFdelbegin \DIFdel{the }\DIFdelend \DIFaddbegin \DIFadd{this }\DIFaddend simulation are shown in figure \ref{fig:A3}. \DIFdelbegin \DIFdel{Panel }\DIFdelend \DIFaddbegin \DIFadd{Subfigure }\DIFaddend A shows the relationship between the \DIFaddbegin \DIFadd{apparent prevalence, i.e. the test positivity rate in the simulation, on the y-axis (\(\widehat{AP_{n,sim}}\)) and the true }\DIFaddend prevalence of each component\DIFdelbegin \DIFdel{disease as a provided simulationparameter and we }\DIFdelend \DIFaddbegin \DIFadd{, i.e. the disease positivity rate within the simulation, on the x-axis (\(\overline{prev_{n,sim}}\)). We }\DIFaddend see the effect of false positives in low prevalence, biasing the apparent prevalence high with respect to the actual value. In \DIFdelbegin \DIFdel{panel }\DIFdelend \DIFaddbegin \DIFadd{subfigure }\DIFaddend B, the \DIFdelbegin \DIFdel{components are }\DIFdelend \DIFaddbegin \DIFadd{component apparent prevalence is }\DIFaddend adjusted using the Rogan-Gladen estimator, using simulation parameters for sensitivity and specificity \DIFdelbegin \DIFdel{correcting the bias}\DIFdelend \DIFaddbegin \DIFadd{to produce an unbiased estimate of prevalence (\(\widehat{prev_{n,sim}}\): y-axis) which agrees well with the true prevalence. This is the usual single test application of Rogan-Gladen, and shown here for comparison}\DIFaddend .
+
+Panel C shows the relationship between the apparent prevalence of the combined panel result\DIFaddbegin \DIFadd{, i.e. the test positivity rate of the combination, (\(\widehat{AP_{N,sim}}\): y-axis) }\DIFaddend compared to the \DIFdelbegin \DIFdel{actual }\DIFdelend prevalence of the combined disease\DIFdelbegin \DIFdel{as a provided simulation parameter}\DIFdelend \DIFaddbegin \DIFadd{, i.e. the disease positivity rate in the simulation (\(\overline{prev_{N,sim}}\): x-axis)}\DIFaddend . The scale of the error \DIFdelbegin \DIFdel{can be quite large }\DIFdelend \DIFaddbegin \DIFadd{using the apparent prevalence as an estimator is quite large compared to that seen in subfigure A, }\DIFaddend as the panel prevalence is compounding multiple false positive errors from each component\DIFdelbegin \DIFdel{, depending on the sensitivity and specificity of the components}\DIFdelend . The scale of the error will depend on the number of components in the panel and the sensitivities and specificities of the components as \DIFdelbegin \DIFdel{described }\DIFdelend \DIFaddbegin \DIFadd{characterised }\DIFaddend above. In \DIFdelbegin \DIFdel{Panel }\DIFdelend \DIFaddbegin \DIFadd{subfigure }\DIFaddend D, the \DIFaddbegin \DIFadd{simple }\DIFaddend Rogan-Gladen correction is applied \DIFdelbegin \DIFdel{, using the panel apparent prevalence, and the }\DIFdelend \DIFaddbegin \eqref{eq:rogan-gladen} \DIFadd{to the apparent panel prevalence, using }\DIFaddend estimates of panel sensitivity and specificity from this analysis (equations \eqref{eq:sens-estimator} and  \eqref{eq:spec-theory}). The correction is effective in restoring an accurate estimate of the actual prevalence \DIFaddbegin \DIFadd{(\(\widehat{prev_{N,sim}}\): y-axis), giving us confidence our estimates of panel sensitivity and specificity are valid, and that they can be used to create unbiased estimates of panel prevalence}\DIFaddend .
+
+\begin{figure}[h!]
+\centering
+  \includegraphics{fig/qq-prevalence-prediction-v-simulation.png}
+  \caption{Apparent prevalence (uncorrected estimate) and Rogan-Gladen (corrected estimate) as compared to simulation prevalence. \DIFdelbeginFL \DIFdelFL{Panels }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{The left column compares unadjusted apparent prevalence (\(\widehat{AP_{N,sim}}\)), as an estimate of prevalence, to simulation disease positive rate (\(\overline{prev_{N,sim}}\)), as actual prevalence. The right column compares the Rogan-Gladen modelled prevalence estimate (\(\widehat{prev_{N,sim}}\)) to the same simulation disease positive rate (actual prevalence). Subfigures }\DIFaddendFL A and B show results each of the 4400 single component tests \DIFdelbeginFL \DIFdelFL{in the 800 simulations (}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{with }\DIFaddendFL various component test sensitivities \DIFdelbeginFL \DIFdelFL{, }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{and }\DIFaddendFL specificities \DIFaddbeginFL \DIFaddFL{(100 each of 8 blocks with each block containing 2-9 component panels}\DIFaddendFL ). \DIFdelbeginFL \DIFdelFL{Panels }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{Subfigures }\DIFaddendFL C and D show the results of the 800 combined panels (2-9 components per panel, various component distributions).}
+\label{fig:A3}
+\end{figure}
+
+\DIFaddbegin \subsection{\DIFadd{Panel sensitivity and specificity validation}}
+
+\DIFadd{Further validation of panel sensitivity and specificity was performed. For each of 800 simulations, the 10000 combined panel test status and the ``actual'' combined disease status are aggregated to provide a per-simulation estimate of panel sensitivity (\(\widehat{sens_{N,sim}}\)) and panel specificity (\(\widehat{spec_{N,sim}}\)), as defined in }\eqref{eq:simulation-output}\DIFadd{, with binomial confidence intervals on panel sensitivity and specificity calculated using Wilson's method \mbox{%DIFAUXCMD
+\cite{brown2001}}\hspace{0pt}%DIFAUXCMD
+:
+}
+
+\begin{equation*}
+\begin{aligned}
+\DIFadd{TP_{N} }&\DIFadd{= \sum_k{I(A_{N,k}) \times I(O_{N,k})}, }\\
+\DIFadd{FP_{N} }&\DIFadd{= \sum_k{I(\neg A_{N,k}) \times I(O_{N,k})}, }\\
+\DIFadd{FN_{N} }&\DIFadd{= \sum_k{I(A_{N,k}) \times I(\neg O_{N,k})}, }\\
+\DIFadd{TN_{N} }&\DIFadd{= \sum_k{I(\neg A_{N,k}) \times I(\neg O_{N,k})}, }\\
+\widehat{spec_{N,sim}} &\DIFadd{= \frac{TN_{N}}{FP_{N}+TN_{N}}, }\\
+\widehat{sens_{N,sim}} &\DIFadd{= \frac{TP_{N}}{FN_{N}+TP_{N}}, }\\
+\end{aligned}
+\mytag{eq:simulation-output}
+\end{equation*}
+
+\DIFadd{These per-simulation observed values for sensitivity and specificity are compared to the predicted theoretical values of panel specificity (\(spec_N\)) from }\eqref{eq:spec-theory}\DIFadd{; to the theoretical panel sensitivity derived from the simulation parameter ``actual'' prevalence (\(sens_N\)) obtained using }\eqref{eq:sens-theory}\DIFadd{; and to the estimated panel sensitivity  (\(\widehat{sens_N}\)) derived from ``observed'' simulation component test apparent prevalence (\(\widehat{AP_{n,sim}}\)) obtained using }\eqref{eq:sens-estimator}\DIFadd{.
+}
+
+\DIFaddend In panel A, figure \ref{fig:A4}, we also see a close relationship between the theoretical panel specificity and panel specificity \DIFdelbegin \DIFdel{estimated }\DIFdelend \DIFaddbegin \DIFadd{observed }\DIFaddend from each simulation scenario. As specificity is estimated from test negative cases the confidence intervals of the simulation \DIFdelbegin \DIFdel{estimates }\DIFdelend \DIFaddbegin \DIFadd{observations }\DIFaddend are quite narrow. \DIFaddbegin \DIFadd{No further validation of specificity was performed.
+}\DIFaddend 
+
+\begin{figure}[h!]
+\centering
+  \includegraphics{fig/qq-prediction-v-simulation.png}
+  \caption{Panel sensitivity predicted using \eqref{eq:spec-theory} (subfigure A) and specificity predicted using equations \eqref{eq:sens-theory} (subfigure B) and equation \eqref{eq:sens-estimator} - (subfigure C) as compared to panel sensitivity and specificity values derived from the  combined test positive and actual positives from simulated component data. \DIFaddbeginFL \DIFaddFL{Magenta points highlight those simulations whose confidence limits do not include the theoretical value.}\DIFaddendFL }
+\label{fig:A4}
+\end{figure}
+
+\DIFdelbegin \DIFdel{Panel }\DIFdelend \DIFaddbegin \DIFadd{Subfigure }\DIFaddend B shows a comparison between predicted value of panel sensitivity (using \eqref{eq:sens-theory} in this formal analysis) and the observed panel sensitivity from simulation. \DIFdelbegin \DIFdel{Panel }\DIFdelend \DIFaddbegin \DIFadd{Subfigure }\DIFaddend C shows panel sensitivity predicted from component test positive rates that would be observed in a real setting (\eqref{eq:sens-estimator} in this analysis). In both cases there is a reasonable agreement between predicted and simulated values. \DIFaddbegin \DIFadd{Further analysis was performed on the error between simulation observed and theory predicted sensitivity.
+}\DIFaddend 
+
+\begin{figure}[h!]
+\centering
+  \includegraphics{fig/error-prediction-v-simulation.png}
+  \caption{Error between panel sensitivity estimates predicted using equations \eqref{eq:sens-theory} (top row) and equation \eqref{eq:sens-estimator} (bottom row) and observed simulation panel sensitivity. Error size is plotted as a function of simulation panel prevalence (first row), panel specificity (second row) and number of panel components (third row). Error magnitude depends on the quality of the estimator and the inherent error from using simulated data, which is higher when prevalence is low. \DIFaddbeginFL \DIFaddFL{Magenta points highlight those simulations whose confidence limits do not include the theoretical value.}\DIFaddendFL }
+\label{fig:A5}
+\end{figure}
+
+In both types of sensitivity estimate there is divergence between the predicted panel sensitivity and the observed simulation panel sensitivity. This is seen to be a worse in scenarios with low prevalence, as expected (figure \ref{fig:A5}). There is no clear trend in the error in scenarios with different sensitivities or in scenarios with different numbers of components. Errors in all cases are symmetrical suggesting the sensitivity predictions are unbiased.
+
+If the theoretical values of sensitivity are accurate then it should lie within binomial confidence limits of the simulation estimates 95\% of the time. Disagreement occurs when the theoretical value is outside the confidence interval. In figure \ref{fig:A6} we \DIFdelbegin \DIFdel{ses }\DIFdelend \DIFaddbegin \DIFadd{see }\DIFaddend the rates of disagreement as a function of panel prevalence, specificity and number of components. This demonstrates that in the areas of simulation parameter space where we have sufficient coverage, disagreement rates between simulated and theoretical values are close to the 0.05 value resulting from the 95\% confidence limits in the simulation. There is no clear trend.
+
+\begin{figure}[h!]
+\centering
+  \includegraphics{fig/calibration-prediction-v-simulation.png}
+  \caption{Percentage disagreement between panel sensitivity estimates predicted using equations \eqref{eq:sens-theory} (top row) and equation \eqref{eq:sens-estimator} (bottom row) versus observed simulation panel sensitivity. Disagreement accounts for uncertainty introduced by simulation by comparing the binomial confidence intervals of simulation panel sensitivity estimates with sensitivity predictions. 95\% confidence limits imply disagreement should be at the level of 5\%. Disagreement rates are plotted as a function of simulation panel prevalence (first \DIFdelbeginFL \DIFdelFL{row}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{column}\DIFaddendFL ), panel specificity (second \DIFdelbeginFL \DIFdelFL{row}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{column}\DIFaddendFL ) and number of panel components (third \DIFdelbeginFL \DIFdelFL{row}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{column}\DIFaddendFL ).}
+\label{fig:A6}
+\end{figure}
+
+\section{Summary}
+
+In this formal analysis we describe the relationship between panel specificity and sensitivity, and the component test sensitivities and specificities that comprise the panel. We demonstrate that panel specificity is the product of component specificities, and we demonstrate that panel sensitivity has a dependency on component sensitivities, component specificities and the prevalence of the subtypes of disease that are being tested for.
+
+The implication of this is that when interpreting panel test results, we must take into account the finding that component false positive rates are compounded up in the panel result, and that false negative rates within a panel are not simple to predict and, unlike the usual concept of sensitivity, depend on the prevalence of disease in the sampled population.
+
+We have derived expressions that can estimate panel sensitivity and specificity and taken together with the panel test positivity, we have demonstrated that a good central estimate of prevalence can be recovered from a simulation.
+
+Propagation of uncertainty in these estimates is not trivial and this is addressed in Supplementary Appendix 2.
+
+\bibliography{refs}
+
+\end{document}

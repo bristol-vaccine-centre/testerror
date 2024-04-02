@@ -17,6 +17,8 @@ A dataframe containing the following columns:
 \item result (logical) - the panel result
 }
 
-Ungrouped
+Ungrouped.
+
+No default value.
 }
 \keyword{data}

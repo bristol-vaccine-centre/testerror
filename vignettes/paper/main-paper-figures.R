@@ -76,37 +76,6 @@ fn_dist = function(prev, samples, spec, disease_pos = sens*diseased, disease_neg
   )
 }
 
-# TODO: think this through:
-# When combining FP or FN distributions we have to adjust for the fact that 
-# some FP on the LHS will be FN, TP (=condition positives) on the RHS and vice versa.
-# also some FP on the LHS will be FP on the RHS.
-# This essentially reduces the effective count on each side that we are combining.
-# sharpening the distribution and shifting the probability towards zero counts.
-# 
-# basically I'm trying to adjust for the situation where a false positive 
-# in one test is also an actual positive in another test. The true positive
-# trumping the false positive (or really the false positive becomes reinterpreted as a true positive)
-
-
-# e.g. p(count=1) = p(count=1) + p(count=2 and 1 collision) + p(count=3 and 2 collisions) etc.
-# p collision is just prevalence in other part of combination. If high lots of collisions if low not very many.
-
-# FP only are counted as a FP in the combination when combined with a TN or FP.
-# FP+FP=FP; FP+FN=TP (for the wrong reason); FP+TP=TP; FP+TN=FP
-# FP colliding with FN or TP need to be excluded completely (actual positives = prev)
-# FP colliding with FP need to be counted only once
-
-# This is almost the same for FN. They only remain a FN and are counted in combination when combined with a TN.
-# FN+FN = FN; FN+TP = TP; FN+TN = FN; FN+FP = TP (although true for the wrong reason)
-# FN colliding with FP or TP need to be excluded completely (test positives = prev*sens)
-# FN colliding with FN need to be counted only once
-
-# Both these scenarios are the same as exclude all collisions of LHS with not(TN) 
-# I.e. ((1-prev)*spec)
-# and add back in FP or FN although this is not particularly helpful I think.
-
-# therefore we need to check for collisions with TP and FP (i.e. test positives) and 
-# I.e. P(not FN or a TN) which is a P(test positive) = FP+TP = (1-prev)*(1-spec)+prev*sens
 
 dists_sum = function(a_data, b_data, samples = 1000) {
   

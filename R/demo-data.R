@@ -239,6 +239,19 @@ test_example = function(
 
 # Plots ----
 
+.add_pcv_group = function(prediction) {
+  prediction %>% dplyr::mutate(
+    test = factor(test, levels = c("4", "6B", "9V", "14", "18C", "19F", "23F", "1", "3", "5", "6A", "7F", "19A", "22F", "33F", "8", "10A", "11A", "12F", "15B", "PCV7", "PCV13", "PCV15", "PCV20")),
+    group = dplyr::case_when(
+      test %in% c("4", "6B", "9V", "14", "18C", "19F", "23F") ~ "PCV7",
+      test %in% c("1", "3", "5", "6A", "7F", "19A") ~ "PCV13-7",
+      test %in% c("22F", "33F") ~ "PCV15-13",
+      test %in% c("8", "10A", "11A", "12F", "15B") ~ "PCV20-15",
+      TRUE ~ NA
+    ) %>% factor(c("PCV7","PCV13-7","PCV15-13","PCV20-15"))
+  ) 
+}
+
 # plot true and predicted test results for a single panel.
 demo_bar_plot_base = function(
     summary = interfacer::iface(
@@ -250,16 +263,17 @@ demo_bar_plot_base = function(
     ...
 ) {
   prediction = interfacer::ivalidate(summary, ...)
-  prediction = prediction %>% dplyr::mutate(
-    test = forcats::as_factor(test)
-  )
-  tmp = prediction %>% dplyr::select(test,apparent_prev) %>% dplyr::distinct()
+  prediction = .add_pcv_group(prediction)
+  tmp = prediction %>% 
+    dplyr::select(test,group,apparent_prev) %>% 
+    dplyr::distinct()
   n_samples = unique(prediction$n_samples)
   ggplot2::ggplot(prediction)+
-    ggplot2::geom_bar(ggplot2::aes(x=test,y=apparent_prev*100), data = tmp, stat="identity", fill="grey80", colour=NA,width=0.8)+
-    ggplot2::geom_errorbar(ggplot2::aes(x=test,y=apparent_prev*100,ymin=apparent_prev*100,ymax=apparent_prev*100), colour="red",width=0.8, alpha=0.5)+
-    ggplot2::geom_errorbar(ggplot2::aes(x=test,y=true_prev*100,ymin=true_prev*100,ymax=true_prev*100), colour="blue",width=0.8, alpha=0.5)+
-    ggplot2::scale_y_continuous(sec.axis = ggplot2::sec_axis(trans = ~ ./100*n_samples, name="counts"),name = "prevalence (%)")
+    ggplot2::geom_bar(ggplot2::aes(x=ggh4x::weave_factors(test,group),y=apparent_prev*100), data = tmp, stat="identity", fill="grey80", colour=NA,width=0.8)+
+    ggplot2::geom_errorbar(ggplot2::aes(x=ggh4x::weave_factors(test,group),y=apparent_prev*100,ymin=apparent_prev*100,ymax=apparent_prev*100), colour="red",width=0.8, alpha=0.5)+
+    ggplot2::geom_errorbar(ggplot2::aes(x=ggh4x::weave_factors(test,group),y=true_prev*100,ymin=true_prev*100,ymax=true_prev*100), colour="blue",width=0.8, alpha=0.5)+
+    ggplot2::scale_y_continuous(sec.axis = ggplot2::sec_axis(trans = ~ ./100*n_samples, name="counts"),name = "prevalence (%)") +
+    ggplot2::guides(x = ggh4x::guide_axis_nested())
 }
 
 # plot true and predicted test results for a single panel.
@@ -270,23 +284,28 @@ demo_bar_plot = function(
       n_samples = integer ~ "the overall number of patients tested",
       testerror::.output_data
     ), 
-    ...
+    ...,
+    .pcv=TRUE
 ) {
   prediction = interfacer::ivalidate(prediction, ...)
-  prediction = prediction %>% dplyr::mutate(
-    test = forcats::as_factor(test)
-  )
-  tmp = prediction %>% dplyr::select(test,apparent_prev) %>% dplyr::distinct()
+  if(.pcv) 
+    prediction = .add_pcv_group(prediction)
+  else 
+    prediction = prediction %>% dplyr::mutate(group = factor(""))
+  tmp = prediction %>% 
+    dplyr::select(test,group,apparent_prev) %>% 
+    dplyr::distinct()
   n_samples = unique(prediction$n_samples)
   ggplot2::ggplot(prediction)+
-    ggplot2::geom_bar(ggplot2::aes(x=test,y=apparent_prev*100), data = tmp, stat="identity", fill="grey80", colour=NA,width=0.8)+
-    ggplot2::geom_errorbar(ggplot2::aes(x=test,y=apparent_prev*100,ymin=apparent_prev*100,ymax=apparent_prev*100), colour="red",width=0.8, alpha=0.5)+
-    ggplot2::geom_errorbar(ggplot2::aes(x=test,y=true_prev*100,ymin=true_prev*100,ymax=true_prev*100), colour="blue",width=0.8, alpha=0.5)+
+    ggplot2::geom_bar(ggplot2::aes(x=ggh4x::weave_factors(test,group),y=apparent_prev*100), data = tmp, stat="identity", fill="grey80", colour=NA,width=0.8)+
+    ggplot2::geom_errorbar(ggplot2::aes(x=ggh4x::weave_factors(test,group),y=apparent_prev*100,ymin=apparent_prev*100,ymax=apparent_prev*100), colour="red",width=0.8, alpha=0.5)+
+    ggplot2::geom_errorbar(ggplot2::aes(x=ggh4x::weave_factors(test,group),y=true_prev*100,ymin=true_prev*100,ymax=true_prev*100), colour="blue",width=0.8, alpha=0.5)+
     ggplot2::scale_y_continuous(sec.axis = ggplot2::sec_axis(trans = ~ ./100*n_samples, name="counts"),name = "prevalence (%)")+
-    ggplot2::geom_point(ggplot2::aes(x=test, y=prevalence.median*100, colour = prevalence.method), size=0.25,position = ggplot2::position_dodge(width=0.3))+
-    ggplot2::geom_errorbar(ggplot2::aes(x=test, y=prevalence.median*100, ymin=prevalence.lower*100, ymax=prevalence.upper*100, colour = prevalence.method), width=0.15, position = ggplot2::position_dodge(width=0.3),size=0.25)+
+    ggplot2::geom_point(ggplot2::aes(x=ggh4x::weave_factors(test,group), y=prevalence.median*100, colour = prevalence.method), size=1,position = ggplot2::position_dodge(width=0.3))+
+    ggplot2::geom_errorbar(ggplot2::aes(x=ggh4x::weave_factors(test,group), y=prevalence.median*100, ymin=prevalence.lower*100, ymax=prevalence.upper*100, colour = prevalence.method), width=0.15, position = ggplot2::position_dodge(width=0.3),linewidth=0.25)+
     ggplot2::scale_colour_grey(start=0,end = 0.4,name="")+
-    ggplot2::xlab(NULL)
+    ggplot2::xlab(NULL)+
+    (if (.pcv) ggplot2::guides(x = ggh4x::guide_axis_nested()) else NULL)
 }
 
 demo_qq_plot = function(

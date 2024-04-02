@@ -4,5 +4,5 @@ utils::globalVariables(c(
   "id", "lower", "median", "method", "observed", "observed_pos", "offset", "param",
   "prevalence.lower", "prevalence.median", "prevalence.method", "prevalence.upper",
   "result", "test", "true_prev", "upper", "x", "n_components",
-  "shape1", "shape2", "mu", "sigma"
+  "shape1", "shape2", "mu", "sigma", "group"
 ))

@@ -18,7 +18,7 @@ in a group_modify."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aj
     
     <a class="navbar-brand me-2" href="../index.html">testerror</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -92,9 +92,10 @@ in a <code>group_modify</code>.</p>
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
     <dl><dt>test_results</dt>
 <dd><p>A dataframe containing the following columns:</p><ul><li><p>id (character) - the patient identifier</p></li>
-<li><p>result (logical) - the test result</p></li>
 <li><p>test (factor) - the test type</p></li>
-</ul><p>Ungrouped</p></dd>
+<li><p>result (logical) - the test result</p></li>
+</ul><p>Ungrouped.</p>
+<p>No default value.</p></dd>
 
 
 <dt>false_pos_controls</dt>
@@ -155,7 +156,7 @@ session</p></dd>
     <code>iter/2</code>.</p></dd>
 
     <dt><code>model_type</code></dt>
-<dd><p>The bayesian model used - one of: <code>logit</code>, <code>simpler</code>, <code>complex</code>; default <code>logit</code></p></dd>
+<dd><p>The bayesian model used one of "logit", "simpler", "complex"</p></dd>
 
   
 </dl></dd>
@@ -192,13 +193,16 @@ session</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     
 
-<p>A dataframe containing the following columns:</p><ul><li><p>prevalence.label (character) - a fomatted label of the true prevalence estimate with CI</p></li>
+<p>A dataframe containing the following columns:</p><ul><li><p>test (character) - the name of the test or panel</p></li>
 <li><p>prevalence.lower (numeric) - the lower estimate</p></li>
 <li><p>prevalence.median (numeric) - the median estimate</p></li>
-<li><p>prevalence.method (character) - the method of estimation</p></li>
 <li><p>prevalence.upper (numeric) - the upper estimate</p></li>
-<li><p>test (character) - the name of the test or panel</p></li>
-</ul><p>Ungrouped</p>
+<li><p>prevalence.method (character) - the method of estimation</p></li>
+<li><p>prevalence.label (character) - a fomatted label of the true prevalence estimate with CI</p></li>
+</ul><p>Ungrouped.</p>
+
+
+<p>No default value.</p>
     </div>
 
     <div class="section level2">

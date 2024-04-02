@@ -14,10 +14,12 @@ An object of class \code{iface} (inherits from \code{tbl_df}, \code{tbl}, \code{
 A dataframe containing the following columns:
 \itemize{
 \item id (character) - the patient identifier
-\item result (logical) - the test result
 \item test (factor) - the test type
+\item result (logical) - the test result
 }
 
-Ungrouped
+Ungrouped.
+
+No default value.
 }
 \keyword{data}

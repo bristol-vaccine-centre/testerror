@@ -61,7 +61,7 @@ corr2 = true_panel_prevalence(
    #method = "bayes"
 )
 
-testerror:::demo_bar_plot(tmp$summary %>% dplyr::inner_join(bind_rows(corr2),by="test"))
+testerror:::demo_bar_plot(tmp$summary %>% dplyr::inner_join(bind_rows(corr2),by="test"),.pcv=FALSE)
 ```
 
 These functions are elaborated in the other vignettes.

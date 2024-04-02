@@ -233,7 +233,7 @@ true_panel_prevalence = function(
 #' @inheritDotParams bayesian_panel_complex_model
 #' @inheritDotParams bayesian_panel_simpler_model
 #' @inheritDotParams bayesian_panel_logit_model
-#' @param model_type The bayesian model used - `r pkgutils::doc_formals(bayesian_panel_true_prevalence_model, model_type)`
+#' @param model_type The bayesian model used one of "logit", "simpler", "complex"
 #'
 #' @return `r .output_data`
 #' @export

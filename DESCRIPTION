@@ -1,6 +1,6 @@
 Package: testerror
 Title: Uncertainty in Multiplex Panel Testing 
-Version: 0.0.4
+Version: 0.1.0
 Authors@R: 
     person(given = "Robert",
            family = "Challen",
@@ -33,8 +33,8 @@ Imports:
     rstan (>= 2.18.1),
     stats,
     extraDistr,
-    interfacer (>= 0.0.6),
-    pkgutils (>= 0.0.0.9005),
+    interfacer (>= 0.1.7),
+    pkgutils (>= 0.1.0),
     BH (>= 1.66.0),
     Rcpp (>= 0.12.0),
     RcppEigen (>= 0.3.3.3.0),
@@ -49,7 +49,8 @@ Suggests:
     huxtable,
     here,
     testthat,
-    devtools
+    devtools,
+    ggh4x
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 URL: https://bristol-vaccine-centre.github.io/testerror/index.html, https://github.com/bristol-vaccine-centre/testerror, https://doi.org/10.5281/zenodo.7691196

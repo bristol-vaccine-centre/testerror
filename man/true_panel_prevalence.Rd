@@ -23,11 +23,13 @@ true_panel_prevalence(
 \item{test_results}{A dataframe containing the following columns:
 \itemize{
 \item id (character) - the patient identifier
-\item result (logical) - the test result
 \item test (factor) - the test type
+\item result (logical) - the test result
 }
 
-Ungrouped}
+Ungrouped.
+
+No default value.}
 
 \item{false_pos_controls}{the number of positives that appeared in the specificity
 disease-free control group. These are by definition false positives. This
@@ -64,7 +66,7 @@ session}
     hence these warmup samples should not be used for inference). The number of 
     warmup iterations should be smaller than \code{iter} and the default is
     \code{iter/2}.}
-    \item{\code{model_type}}{The bayesian model used - one of: \code{logit}, \code{simpler}, \code{complex}; default \code{logit}}
+    \item{\code{model_type}}{The bayesian model used one of "logit", "simpler", "complex"}
   }}
 
 \item{sens}{the prior sensitivity of the test as a \code{beta_dist}.}
@@ -87,15 +89,17 @@ session}
 \value{
 A dataframe containing the following columns:
 \itemize{
-\item prevalence.label (character) - a fomatted label of the true prevalence estimate with CI
+\item test (character) - the name of the test or panel
 \item prevalence.lower (numeric) - the lower estimate
 \item prevalence.median (numeric) - the median estimate
-\item prevalence.method (character) - the method of estimation
 \item prevalence.upper (numeric) - the upper estimate
-\item test (character) - the name of the test or panel
+\item prevalence.method (character) - the method of estimation
+\item prevalence.label (character) - a fomatted label of the true prevalence estimate with CI
 }
 
-Ungrouped
+Ungrouped.
+
+No default value.
 }
 \description{
 Uses apparent prevalence, and uncertain
