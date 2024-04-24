@@ -231,7 +231,7 @@ In the schematic in Fig~\ref{fig1}, we distinguish between multiplex testing (\r
 
 % Place figure captions after the first paragraph in which they are cited.
 \begin{figure}[!ht]
-\centerline{\includegraphics{fig/fig1-testerror-v2.eps}}
+% \centerline{\includegraphics{Fig1.eps}}
 \caption{{\bf Two scenarios for multiple testing.}
 Figs~\ref{fig1}A-\ref{fig1}D depict a multiplex panel test which is the subject of this analysis. It depicts the situation where multiple tests are employed to detect multiple subtypes of disease which may be present separately or together, the results of which are combined to give an overall result, such that if any component test is positive, the combination is positive. An alternative, shown in Figs~\ref{fig1}E-\ref{fig1}H, and not in scope of this paper concerns the situation where multiple tests are used to identify a single condition. In this case two interpretations of the multiple test results are possible, which either maximise test sensitivity or test specificity.}
 \label{fig1}
@@ -244,7 +244,7 @@ In more formal language, we assume a multiplex panel consists of a set of compon
 If a condition is composed of many subtypes, then the prevalence of each individual subtype must be less than or equal to the overall condition prevalence; and on average the subtype prevalence must be less, even when we account for the possibility of co-infection with multiple subtypes. The more subtypes in a multiplex panel, the smaller that average prevalence will be. If the prevalence of a particular component is low, then that component test is operating at a level where the positive predictive value of the test (i.e. the probability that a positive test result represents a true positive rather than a false positive) is also relatively low. This leads to a high probability of observing false positives in low prevalence components. We will also observe false negatives depending on the sensitivity of the test, but if the prevalence of a subtype is low, there are fewer true positives to be missed.
 
 \begin{figure}[hb!]
-\centerline{\includegraphics{fig/fig2-low-prevalence-sensitivity-specificity.eps}}
+% \centerline{\includegraphics{Fig2.eps}}
 \caption{{\bf Error distributions of test results in low pre-test probability settings.}
  Distribution of false positives (cyan bars, with expected value, \(E(\textrm{FP})\), as a blue vertical line) and false negatives (orange bars, expected value, \(E(\textrm{FN})\), red line) of 1000 hypothetical test results with 0.9975 specificity and 0.8 sensitivity at different prevalence levels. (A), (D) and (G) show the disaggregated distribution of false positives and false negatives and (B), (E) and (H) show the combined error distribution of test positive observations (grey bars), and expected test positivity (magenta line, \(E(\textrm{Test pos})\)) compared to the true condition positives (black line). (C) shows numerically the parameters plotted in (A) and (B); (F) relates to (D) and (E); and (I) to (G) and (H)}
 \label{fig2}
@@ -316,7 +316,7 @@ For single tests, there are approaches to estimating true prevalence from test p
 In the illustrative simulation motivated by IPD serotype distributions, the serotypes range from having no observed cases to making up 25.6\% of the total\cite{hyams2023}. When this is scaled to a synthetic population with 10\% overall prevalence, the component prevalence ranges from 0\% to 3.8\% and, as with the theoretical examples in Fig~\ref{fig2}D-\ref{fig2}I, the majority of serotypes fall into the category where the apparent prevalence is higher than the true prevalence due to false positives, despite assuming a highly specific test with 99.75\% specificity (Fig~\ref{fig3}A). The bias towards overestimation due to false positives is strongest for subtypes with low, or zero, prevalence, whereas the underestimation due to low sensitivity is strongest for subtypes with higher prevalence (also demonstrated in Fig~\ref{fig2}A-\ref{fig2}C).
 
 \begin{figure}[ht!]
-\centerline{\includegraphics{fig/fig3-true-apparent-prevalence-component-panels.eps}}
+% \centerline{\includegraphics{Fig3.eps}}
 \caption{{\bf True versus apparent prevalence in multiplex test components and panel results.}
 The apparent prevalence as a function of true prevalence in a simulated realistic scenario with excellent test specificity (99.75\%) and moderate test sensitivity (80\%). Fig~\ref{fig3}A shows the individual component relationship and Fig~\ref{fig3}B shows the panel relationship when 20 components are combined. Black lines show the relationship and the grey transparent lines are a guide to the eye showing perfect agreement. Note that Fig~\ref{fig3}A and \ref{fig3}B are on very different scales.
 }
@@ -326,7 +326,7 @@ The apparent prevalence as a function of true prevalence in a simulated realisti
 In the synthetic but realistic scenario in Fig~\ref{fig3}A, with excellent test specificity (99.75\%) and moderate test sensitivity (80\%), test positivity rate (apparent prevalence) is expected to be higher than true prevalence under a threshold of 1.2\%. When a set of 20 components are combined, that together result in a true panel prevalence of 10\%, the combined errors mean that the panel test positivity is higher than the true prevalence (Fig~\ref{fig3}B, dashed black lines). In Fig~\ref{fig1}D and \nameref{S1_Appendix} we identify that false positives in one test balance out false positives in another test, and this makes panel test sensitivity a complex quantity that counter-intuitively depends on disease prevalence, component distribution, sensitivity and specificity. As a result, the relationship between true panel prevalence and apparent panel prevalence (test positivity) is non-linear (Fig~\ref{fig3}B), and in this particular simulation, test positivity will be an over-estimate of true prevalence, until true prevalence exceeds 22\%.
 
 \begin{figure}[ht!]
-\centerline{\includegraphics{fig/fig4-impact-error-by-sensitivity-specificity.eps}}
+% \centerline{\includegraphics{Fig4.eps}}
 \caption{{\bf Bias in apparent prevalence as an estimator for true prevalence.}
 A simulated scenario of 20 components realistically distributed following patterns seen in IPD, with a simulated true prevalence of 10\%, and assuming the same sensitivity and specificity for each of the component tests. Expected test positivity rates are calculated for all combinations of sensitivity and specificity, and compared to the true prevalence (10\%) as a ratio. At sensitivity of 80\% and specificity of 99.75\% (the blue cross) the test positivity rate will be about 1.26 times higher than true prevalence. Blue areas represent parameter space where test positivity is an underestimate of true prevalence due to excess of false negatives, and red areas where test positivity is an overestimate due to excess of false positives. The specificity, presented here on the x-axis, is logit scaled.}
 \label{fig4}
@@ -337,7 +337,7 @@ Component sensitivity and specificity determine the difference between true and 
 We have described that even low false positive rates in component tests lead to overestimates of uncommon components. The converse is true for components with comparatively high prevalence. In the scenario we have been using as an example, despite the excellent specificity of the tests and 10\% overall prevalence the balance of the component estimates is such that test positivity will overestimate true prevalence. This is seen more clearly in Fig~\ref{fig5} (left subfigure) in which simulated true prevalence levels (blue) are lower than test positivity (red) for all but two of the components (serotypes 3 and 8). In the right subfigure we see the effect of combining these into groups of 7, 13, 15 and 20 components, representing combinations of serotypes targeted by vaccines. As predicted, overestimates of prevalence are compounded and the size of each overestimate depends both on the number and distribution of test components.
 
 \begin{figure}[hb!]
-\centerline{\includegraphics[width = \textwidth]{fig/fig5-simulation-result-bayes-v2.eps}}
+% \centerline{\includegraphics[width = \textwidth]{Fig5.eps}}
 \caption{{\bf Correction of bias in a single IPD scenario.}
 The relative frequency of the 20 pneumococcal serotypes contained in PCV20, and identified in Bristol within the last 2 years, informed a simulation of a serotype distribution with an overall PCV20 pneumococcal prevalence of 10\% (blue lines) in a sample size of 4000 synthetic patients. Test positivity was simulated assuming each serotype test had a sensitivity of 80\% and a specificity of 99.75\% (red lines) resulting in underestimates of 'true` prevalence for serotypes 3 and 8, and overestimates for the rest. In the right subfigure combined test positivity for each PCV group (red lines) overestimate true prevalence (blue lines) for this scenario. We estimate true prevalence from test positivity (red lines), incorporating uncertainty in component sensitivity and specificity using a Bayesian model described in \nameref{S2_Appendix}. These estimates are shown as point estimates and 95\% credible intervals (black), which accurately estimate the true prevalence.}
 \label{fig5}
@@ -371,23 +371,223 @@ Uncertainty in test results due to lower sensitivity and specificity result in m
 
 \nolinenumbers
 
-\bibliography{refs}
+% \bibliography{refs}
+\begin{thebibliography}{10}
 
-\section*{Funding}
+\bibitem{ramanan2017}
+Ramanan P, Bryson AL, Binnicker MJ, Pritt BS, Patel R.
+\newblock Syndromic {{Panel-Based Testing}} in {{Clinical Microbiology}}.
+\newblock Clinical Microbiology Reviews. 2017;31(1).
+\newblock doi:{10.1128/cmr.00024-17}.
 
-RC and LD are funded by UK Research and Innovation AI programme of the Engineering and Physical Sciences Research Council (EPSRC grant EP/Y028392/1; \url{https://www.ukri.org/councils/epsrc/}). RC and LD are affiliated with the JUNIPER partnership funded by the Medical Research Council (MRC grant MR/X018598/1; \url{https://www.ukri.org/councils/mrc/}). KTA gratefully acknowledges the financial support of the Engineering and Physical Sciences Research Council (EPSRC grant EP/T017856/1; \url{https://www.ukri.org/councils/epsrc/}). CH is funded by an Academic Clinical Fellowship from the National Institute for Health Research (NIHR grant ACF-2015-25-002; \url{https://www.nihr.ac.uk/}). The views expressed are those of the authors. The funders had no role in study design, data collection and analysis, decision to publish, or preparation of the manuscript.
+\bibitem{bonten2015}
+Bonten MJM, Huijts SM, Bolkenbaas M, Webber C, Patterson S, Gault S, et~al.
+\newblock Polysaccharide {{Conjugate Vaccine}} against {{Pneumococcal
+  Pneumonia}} in {{Adults}}.
+\newblock New England Journal of Medicine. 2015;372(12):1114--1125.
+\newblock doi:{10.1056/NEJMoa1408544}.
 
-\section*{Competing interests}
+\bibitem{henson2023}
+Henson SN, Elko EA, Swiderski PM, Liang Y, Engelbrektson AL, Piña A, et~al.
+\newblock {{PepSeq}}: A Fully in Vitro Platform for Highly Multiplexed Serology
+  Using Customizable {{DNA-barcoded}} Peptide Libraries.
+\newblock Nature Protocols. 2023;18(2):396--423.
+\newblock doi:{10.1038/s41596-022-00766-8}.
 
-CH is Principal Investigator and AF is the Chief Investigator of the AvonCAP study which is an investigator-led University of Bristol study funded by Pfizer (\url{https://www.bristol.ac.uk/translational-health-sciences/research/bcvc/research/avoncap-study/}). RC, AC, GQ, GO, RK, and LD also receive research funding from Pfizer via the AvonCAP study. AF leads another project investigating transmission of respiratory bacteria in families jointly funded by Pfizer and the Gates Foundation. AF is a member of the Joint Committee on Vaccination and Immunization (JCVI) pneumococcal subcommittee. Funding for the AvonCAP study was provided by Pfizer, however, the manuscript development and the analysis that is the subject of this manuscript were conducted independently of the AvonCAP study and Pfizer. Pfizer had no role in study design, data collection and analysis, decision to publish, or preparation of the manuscript.
+\bibitem{pride2012}
+Pride MW, Huijts SM, Wu K, Souza V, Passador S, Tinder C, et~al.
+\newblock Validation of an {{Immunodiagnostic Assay}} for {{Detection}} of 13
+  {{Streptococcus}} Pneumoniae {{Serotype-Specific Polysaccharides}} in {{Human
+  Urine}}.
+\newblock Clinical and Vaccine Immunology. 2012;19(8):1131--1141.
+\newblock doi:{10.1128/CVI.00064-12}.
 
-\section*{Author contributions}
+\bibitem{kalina2020}
+Kalina WV, Souza V, Wu K, Giardina P, McKeen A, Jiang Q, et~al.
+\newblock Qualification and {{Clinical Validation}} of an {{Immunodiagnostic
+  Assay}} for {{Detecting}} 11 {{Additional Streptococcus}} Pneumoniae
+  {{Serotype-specific Polysaccharides}} in {{Human Urine}}.
+\newblock Clinical Infectious Diseases: An Official Publication of the
+  Infectious Diseases Society of America. 2020;71(9):e430--e438.
+\newblock doi:{10.1093/cid/ciaa158}.
 
-RC and LD generated the research questions. RC, KTA, LD performed the mathematical analysis and simulations, and RC created the supporting software package. AC and LD provided validation of the methods. LD, KTA and AF provided supervision of the research. RC developed the first draft of the manuscript. RC, AC, GQ, GO, RK, CH, AF, KTA and LD contributed to the final editing of the manuscript and its revision for publication and had responsibility for the decision to publish.
+\bibitem{mengelle2013}
+Mengelle C, Mansuy JM, Prere MF, Grouteau E, Claudet I, Kamar N, et~al.
+\newblock Simultaneous Detection of Gastrointestinal Pathogens with a Multiplex
+  {{Luminex-based}} Molecular Assay in Stool Samples from Diarrhoeic Patients.
+\newblock Clinical Microbiology and Infection. 2013;19(10):E458--E465.
+\newblock doi:{10.1111/1469-0691.12255}.
 
-\section*{Data and code availability}
+\bibitem{murphy2020}
+Murphy CN, Fowler R, {Balada-Llasat} JM, Carroll A, Stone H, Akerele O, et~al.
+\newblock Multicenter {{Evaluation}} of the {{BioFire FilmArray
+  Pneumonia}}/{{Pneumonia Plus Panel}} for {{Detection}} and {{Quantification}}
+  of {{Agents}} of {{Lower Respiratory Tract Infection}}.
+\newblock Journal of Clinical Microbiology. 2020;58(7):10.1128/jcm.00128--20.
+\newblock doi:{10.1128/jcm.00128-20}.
 
-All data and code used for running experiments, model fitting, and plotting is available on a GitHub repository at \url{https://bristol-vaccine-centre.github.io/testerror/}. This is in the form of an R package providing methods to support the estimation of epidemiological parameters based on the results of multiplex panel tests and it is deployed on the Bristol Vaccine Centre r-universe (\url{https://bristol-vaccine-centre.r-universe.dev/testerror}). We have also used Zenodo to assign a DOI to the repository: doi:10.5281/zenodo.7691196.
+\bibitem{jaaskelainen2006}
+Jääskeläinen AJ, Piiparinen H, Lappalainen M, Koskiniemi M, Vaheri A.
+\newblock Multiplex-{{PCR}} and Oligonucleotide Microarray for Detection of
+  Eight Different Herpesviruses from Clinical Specimens.
+\newblock Journal of Clinical Virology. 2006;37(2):83--90.
+\newblock doi:{10.1016/j.jcv.2006.05.010}.
+
+\bibitem{jansen2011}
+Jansen RR, Schinkel J, Koekkoek S, Pajkrt D, Beld M, de~Jong MD, et~al.
+\newblock Development and Evaluation of a Four-Tube Real Time Multiplex {{PCR}}
+  Assay Covering Fourteen Respiratory Viruses, and Comparison to Its
+  Corresponding Single Target Counterparts.
+\newblock Journal of Clinical Virology. 2011;51(3):179--185.
+\newblock doi:{10.1016/j.jcv.2011.04.010}.
+
+\bibitem{grondahl1999}
+Gröndahl B, Puppe W, Hoppe A, Kühne I, Weigl JAI, Schmitt HJ.
+\newblock Rapid {{Identification}} of {{Nine Microorganisms Causing Acute
+  Respiratory Tract Infections}} by {{Single-Tube Multiplex Reverse
+  Transcription-PCR}}: {{Feasibility Study}}.
+\newblock Journal of Clinical Microbiology. 1999;37(1):1--7.
+\newblock doi:{10.1128/jcm.37.1.1-7.1999}.
+
+\bibitem{hendolin1997}
+Hendolin PH, Markkanen A, Ylikoski J, Wahlfors JJ.
+\newblock Use of Multiplex {{PCR}} for Simultaneous Detection of Four Bacterial
+  Species in Middle Ear Effusions.
+\newblock Journal of Clinical Microbiology. 1997;35(11):2854--2858.
+\newblock doi:{10.1128/jcm.35.11.2854-2858.1997}.
+
+\bibitem{weinstein2005}
+Weinstein S, Obuchowski NA, Lieber ML.
+\newblock Clinical {{Evaluation}} of {{Diagnostic Tests}}.
+\newblock American Journal of Roentgenology. 2005;184(1):14--19.
+\newblock doi:{10.2214/ajr.184.1.01840014}.
+
+\bibitem{shaffer1995}
+Shaffer JP.
+\newblock Multiple Hypothesis Testing.
+\newblock Annual Review of Psychology. 1995;46:561--585.
+
+\bibitem{rogan1978}
+Rogan WJ, Gladen B.
+\newblock Estimating Prevalence from the Results of a Screening Test.
+\newblock American Journal of Epidemiology. 1978;107(1):71--76.
+\newblock doi:{10.1093/oxfordjournals.aje.a112510}.
+
+\bibitem{hyams2023}
+Hyams C, Challen R, Hettle D, {Amin-Chowdhury} Z, Grimes C, Ruffino G, et~al.
+\newblock Serotype {{Distribution}} and {{Disease Severity}} in {{Adults
+  Hospitalized}} with {{Streptococcus}} Pneumoniae {{Infection}}, {{Bristol}}
+  and {{Bath}}, {{UK}}, 2006‒2022.
+\newblock Emerging Infectious Diseases. 2023;29(10):1953--1964.
+\newblock doi:{10.3201/eid2910.230519}.
+
+\bibitem{lang2014}
+Lang Z, Reiczigel J.
+\newblock Confidence Limits for Prevalence of Disease Adjusted for Estimated
+  Sensitivity and Specificity.
+\newblock Preventive Veterinary Medicine. 2014;113(1):13--22.
+\newblock doi:{10.1016/j.prevetmed.2013.09.015}.
+
+\bibitem{thomas2022}
+Thomas A, Shaheen NA, Hussein MA.
+\newblock An Efficient Confidence Interval Estimation for Prevalence Calculated
+  from Misclassified Data.
+\newblock Biostatistics \& Epidemiology. 2022;0(0):1--17.
+\newblock doi:{10.1080/24709360.2022.2076530}.
+
+\bibitem{flor2020}
+Flor M, Weiß M, Selhorst T, {Müller-Graf} C, Greiner M.
+\newblock Comparison of {{Bayesian}} and Frequentist Methods for Prevalence
+  Estimation under Misclassification.
+\newblock BMC Public Health. 2020;20(1):1135.
+\newblock doi:{10.1186/s12889-020-09177-4}.
+
+\bibitem{gelman2020}
+Gelman A, Carpenter B.
+\newblock Bayesian {{Analysis}} of {{Tests}} with {{Unknown Specificity}} and
+  {{Sensitivity}}.
+\newblock Journal of the Royal Statistical Society Series C: Applied
+  Statistics. 2020;69(5):1269--1283.
+\newblock doi:{10.1111/rssc.12435}.
+
+\bibitem{diggle2011}
+Diggle PJ.
+\newblock Estimating {{Prevalence Using}} an {{Imperfect Test}}.
+\newblock Epidemiology Research International. 2011;2011:e608719.
+\newblock doi:{10.1155/2011/608719}.
+
+\bibitem{loeffelholz2020}
+Loeffelholz MJ, Pong DL, Pyles RB, Xiong Y, Miller AL, Bufton KK, et~al.
+\newblock Comparison of the {{FilmArray Respiratory Panel}} and {{Prodesse
+  Real-Time PCR Assays}} for {{Detection}} of {{Respiratory Pathogens}}.
+\newblock Journal of Clinical Microbiology. 2020;49(12):4083--4088.
+\newblock doi:{10.1128/jcm.05010-11}.
+
+\bibitem{leber2018}
+Leber AL, Everhart K, Daly JA, Hopper A, Harrington A, Schreckenberger P,
+  et~al.
+\newblock Multicenter {{Evaluation}} of {{BioFire FilmArray Respiratory Panel}}
+  2 for {{Detection}} of {{Viruses}} and {{Bacteria}} in {{Nasopharyngeal Swab
+  Samples}}.
+\newblock Journal of Clinical Microbiology. 2018;56(6):10.1128/jcm.01945--17.
+\newblock doi:{10.1128/jcm.01945-17}.
+
+\bibitem{pepin2008}
+Pepin KM, Lambeth K, Hanley KA.
+\newblock Asymmetric Competitive Suppression between Strains of Dengue Virus.
+\newblock BMC Microbiology. 2008;8(1):28.
+\newblock doi:{10.1186/1471-2180-8-28}.
+
+\bibitem{singer2010}
+Singer M.
+\newblock Pathogen-Pathogen Interaction.
+\newblock Virulence. 2010;1(1):10--18.
+\newblock doi:{10.4161/viru.1.1.9933}.
+
+\bibitem{chang2022}
+Chang YC, Hsiao CT, Chen WL, Su YD, Hsueh PR.
+\newblock {{BioFire FilmArray}} Respiratory Panel {{RP2}}.1 for {{SARS-CoV-2}}
+  Detection: {{The}} Pitfalls.
+\newblock Journal of Infection. 2022;85(5):e149--e151.
+\newblock doi:{10.1016/j.jinf.2022.07.030}.
+
+\bibitem{popowitch2020}
+Popowitch EB, O'Neill SS, Miller MB.
+\newblock Comparison of the {{Biofire FilmArray RP}}, {{Genmark eSensor RVP}},
+  {{Luminex xTAG RVPv1}}, and {{Luminex xTAG RVP Fast Multiplex Assays}} for
+  {{Detection}} of {{Respiratory Viruses}}.
+\newblock Journal of Clinical Microbiology. 2020;51(5):1528--1533.
+\newblock doi:{10.1128/jcm.03368-12}.
+
+\bibitem{babady2013}
+Babady NE.
+\newblock The {{FilmArray}} Respiratory Panel: An Automated, Broadly
+  Multiplexed Molecular Test for the Rapid and Accurate Detection of
+  Respiratory Pathogens.
+\newblock Expert Review of Molecular Diagnostics. 2013;13(8):779--788.
+\newblock doi:{10.1586/14737159.2013.848794}.
+
+\bibitem{chan2018}
+Chan M, Koo SH, Jiang B, Lim PQ, Tan TY.
+\newblock Comparison of the {{Biofire FilmArray Respiratory Panel}}, {{Seegene
+  AnyplexII RV16}}, and {{Argene}} for the Detection of Respiratory Viruses.
+\newblock Journal of Clinical Virology. 2018;106:13--17.
+\newblock doi:{10.1016/j.jcv.2018.07.002}.
+
+\bibitem{haile2024}
+Haile SR, Kronthaler D. Potential for Bias in (Sero)Prevalence Estimates When
+  Not Accounting for Test Sensitivity and Specificity; 2024.
+\newblock Available from:
+  \url{https://www.medrxiv.org/content/10.1101/2022.11.24.22282720v8}.
+
+\bibitem{endo2020}
+Endo A, Funk S, Kucharski AJ.
+\newblock Bias Correction Methods for Test-Negative Designs in the Presence of
+  Misclassification.
+\newblock Epidemiology and Infection. 2020;148:e216.
+\newblock doi:{10.1017/S0950268820002058}.
+
+\end{thebibliography}
 
 \section*{Supporting information}
 
